@@ -8,7 +8,7 @@ const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;let desktop;
   const pet=await desktop.firstWindow();await pet.waitForFunction(()=>window.meoPet?.snapshot().frame);
   await desktop.evaluate(()=>{global.__meo.setPaused(false);global.__meo.setVisible(true);});
   const opened=desktop.waitForEvent('window');await desktop.evaluate(()=>global.__meo.openSettings());const page=await opened;
-  await page.waitForLoadState('domcontentloaded');await page.waitForFunction(()=>document.querySelector('#version').textContent.includes('0.4.0'));
+  await page.waitForLoadState('domcontentloaded');await page.waitForFunction(version=>document.querySelector('#version').textContent.includes(version),require('../package.json').version);
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   const state=()=>desktop.evaluate(()=>global.__meo.state());
   assert.equal(await page.title(),'Mèo Desktop — Cài đặt');assert.equal(await page.evaluate(()=>typeof require),'undefined');assert.equal(await pet.evaluate(()=>typeof window.settings),'undefined');

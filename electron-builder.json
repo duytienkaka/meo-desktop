@@ -1,0 +1,24 @@
+{
+  "appId": "vn.meo.desktop",
+  "productName": "Mèo Desktop",
+  "executableName": "Meo",
+  "electronVersion": "45.0.0",
+  "asar": false,
+  "directories": {"output": "outputs/setup", "buildResources": "assets"},
+  "files": ["src/**/*", "assets/**/*", "package.json", "!src/native/*.cs"],
+  "win": {"target": [{"target": "nsis", "arch": ["x64"]}], "icon": "assets/meo.ico", "requestedExecutionLevel": "asInvoker"},
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowElevation": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Mèo Desktop",
+    "uninstallDisplayName": "Mèo Desktop",
+    "deleteAppDataOnUninstall": false,
+    "artifactName": "Meo-Desktop-Setup-${version}-${arch}.${ext}",
+    "runAfterFinish": true
+  },
+  "publish": null
+}

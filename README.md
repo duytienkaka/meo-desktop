@@ -1,6 +1,6 @@
 # Mèo Desktop
 
-App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.4.0**.
+App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.5.0**.
 
 ## Tính năng
 
@@ -30,9 +30,12 @@ Mở app sẽ hiện Cài đặt. Đóng Cài đặt thì mèo vẫn chạy tron
 npm run check
 npm test
 npm run package:win
+npm run setup:win
 ```
 
-Bản Windows nằm ở `../outputs/Meo-Desktop-0.4-win-x64/Meo.exe`. Giữ cả thư mục đi kèm. Script tải Electron chính thức và kiểm tra SHA-256; không đóng gói đè vào thư mục đã có `Meo.exe`.
+File cài đặt nằm ở `outputs/setup/Meo-Desktop-Setup-0.5.0-x64.exe`, kèm SHA-256. Trình cài tạo shortcut, hỗ trợ gỡ cài đặt và giữ cấu hình khi gỡ. Bản chưa ký số.
+
+Bản portable Windows nằm ở `../outputs/Meo-Desktop-0.5-win-x64/Meo.exe`. Giữ cả thư mục đi kèm. Script tải Electron chính thức và kiểm tra SHA-256; không đóng gói đè vào thư mục đã có `Meo.exe`.
 
 Các helper Windows đã có trong `src/native/` để chạy ngay. Sau khi sửa C#, build lại helper tương ứng và commit cả source/helper:
 
