@@ -61,7 +61,7 @@ else {
   let lastHitAt=0,lastBounds='',persistTimer,lastMenuKey='';
   const modes=['play','music','game','focus','sleep'];
   const modeLabels={play:'Tinh nghịch',music:'Nghe nhạc',game:'Chơi game',focus:'Tập trung',sleep:'Buồn ngủ'};
-  const defaults={mode:'play',size:112,roam:true,follow:true,displayId:null,autoMedia:true,autoGame:true,customGames:[],ignoredGames:[],visible:true,paused:false};
+  const defaults={mode:'play',size:112,roam:true,follow:true,displayId:null,autoMedia:!mac,autoGame:true,customGames:[],ignoredGames:[],visible:true,paused:false};
   let preferences={...defaults};
   try {preferences={...defaults,...JSON.parse(fs.readFileSync(path.join(app.getPath('userData'),'settings.json'),'utf8'))};} catch {}
   if(!modes.includes(preferences.mode))preferences.mode='play';
@@ -209,7 +209,7 @@ else {
     if(state.autoGame)gameDecision.update(sample,gameRules());refreshMenu();
   }
   const gameMonitor=mac?createMacMonitor({kind:'game',onSample:receiveGame,onError:log,interval:1500}):createGameMonitor({onSample:receiveGame,onError:log});
-  function startGame(){if(suspended||process.platform!=='win32')return;state.gameStatus='connecting';if(!testMode||process.argv.includes('--meo-live-game-test'))gameMonitor.start();}
+  function startGame(){if(suspended||!desktopSupported)return;state.gameStatus='connecting';if(!testMode||process.argv.includes('--meo-live-game-test'))gameMonitor.start();}
   function setAutoGame(enabled){
     state.autoGame=!!enabled&&desktopSupported;gameDecision.reset();state.gameActive=false;state.gameExe='';
     if(state.autoGame&&lastGameSample)gameDecision.update(lastGameSample,gameRules());applyAutomaticMode();persist();refreshMenu();

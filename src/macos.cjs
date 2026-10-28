@@ -8,10 +8,10 @@ function createMacBridge({exec=execFile,timeout=7000}={}){
  return {request,stop:()=>{for(const child of active)child.kill();active.clear();}};
 }
 function createMacMonitor({kind,onSample,onError=()=>{},bridge=createMacBridge(),interval=2000}){
- let stopped=true,timer,generation=0;
+ let stopped=true,timer,generation=0,lastError='';
  const unavailable=()=>kind==='game'?{available:false,foreground:{},runningPids:[]}:{available:false,playing:false,hasSession:false};
  function start(){if(!stopped)return;stopped=false;const current=++generation;
-  async function poll(){try{const sample=await bridge.request({kind,action:'read'});if(current===generation&&!stopped)onSample(sample);}catch(error){if(current===generation&&!stopped){onError(error.message);onSample(unavailable());}}finally{if(current===generation&&!stopped)timer=setTimeout(poll,interval);}}
+  async function poll(){try{const sample=await bridge.request({kind,action:'read'});if(current===generation&&!stopped){lastError='';onSample(sample);}}catch(error){if(current===generation&&!stopped){if(lastError!==error.message){lastError=error.message;onError(error.message);}onSample(unavailable());}}finally{if(current===generation&&!stopped)timer=setTimeout(poll,interval);}}
   poll();
  }
  return {start,stop:()=>{stopped=true;generation++;clearTimeout(timer);bridge.stop();},isRunning:()=>!stopped,pid:()=>null};
