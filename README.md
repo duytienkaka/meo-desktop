@@ -2,6 +2,8 @@
 
 App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.5.0**.
 
+**[Website & tải ứng dụng](https://meo-desktop.cozydrum8.chatgpt.site)** · [Các bản phát hành](https://github.com/duytienkaka/meo-desktop/releases)
+
 ## Tính năng
 
 - Đi dạo theo mép màn hình, rình/vồ con trỏ, phản ứng khi vuốt ve và cuộn tròn nghỉ.
