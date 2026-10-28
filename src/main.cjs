@@ -8,6 +8,8 @@ const {createGameMonitor,createGameDecision,resolveMood,ruleList,exeName,isApp}=
 const {appName}=require('./app-names.cjs');
 const {scanLibrary,idFor,validLibrary}=require('./library.cjs');
 const {createPlayBehavior}=require('./play.cjs');
+const {constrainPosition,freePlacement}=require('./placement.cjs');
+const {playerLayout}=require('./player-layout.cjs');
 const testMode=process.argv.includes('--meo-test');
 app.setName('Meo Desktop');
 app.setPath('userData',testMode?path.resolve(__dirname,'../checks/user-data'):path.join(app.getPath('appData'),'MeoDesktop'));
@@ -26,6 +28,20 @@ else {
   const state={...preferences,baseMode:preferences.mode,autoMedia:process.platform==='win32'&&preferences.autoMedia!==false,autoGame:process.platform==='win32'&&preferences.autoGame!==false,customGames:ruleList(preferences.customGames),ignoredGames:ruleList(preferences.ignoredGames),gameActive:false,gameExe:'',gameStatus:'connecting',lastApp:null,mediaStatus:'connecting',mediaPlaying:false,visible:preferences.visible!==false,paused:preferences.paused===true,time:0,distance:0,target:null,direction:1,action:'idle',actionStart:0,jump:null,petUntil:0,nextWander:3,nextPounce:2,interactive:false,dragging:false,dragAt:0,toast:'Chuột phải lên mèo để mở menu',toastUntil:5,closeEnough:false};
   const log=message=>{try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.appendFileSync(path.join(app.getPath('userData'),'app.log'),new Date().toISOString()+' '+message+'\n');}catch{}};
   const appLabels={};
+  let nativeMouseState=null,nextMouseRepair=0,dragOffset={x:0,y:0};
+  if(!state.freePosition||!Number.isFinite(state.freePosition.x)||!Number.isFinite(state.freePosition.y))state.freePosition=null;
+  function syncMouseInput(hit,force=false){
+    const enabled=!!hit&&state.visible&&!suspended&&state.mode!=='game';state.interactive=enabled;
+    if(!win||win.isDestroyed())return;
+    const focusable=state.mode!=='game';if(win.isFocusable()!==focusable)win.setFocusable(focusable);
+    const now=Date.now();if(!force&&nativeMouseState===enabled&&(!enabled||now<nextMouseRepair))return;
+    // Only request forwarding while passing through. Re-enabling real input must
+    // remove the forwarding hook as well as WS_EX_TRANSPARENT on Windows.
+    if(enabled)win.setIgnoreMouseEvents(false);else win.setIgnoreMouseEvents(true,{forward:true});
+    win.setAlwaysOnTop(true,state.mode==='game'?'screen-saver':'floating');
+    nativeMouseState=enabled;nextMouseRepair=now+400;
+  }
+  function currentPlacement(){return state.freePosition&&state.mode!=='game'?freePlacement(display.workArea,state.freePosition,state.size):route.windowAt(state.distance);}
   const playBehavior=createPlayBehavior();let nextOverlayAt=0,overlayRaises=0;
   function maintainOverlay(force=false){
     if(!win||win.isDestroyed()||!ready||!state.visible||suspended)return;
@@ -35,7 +51,7 @@ else {
     win.setAlwaysOnTop(true,state.mode==='game'?'screen-saver':'floating');
     if(state.mode==='game'){
       // No focus()/show(): raising this nonfocusable window must not interrupt the game.
-      win.setIgnoreMouseEvents(true,{forward:true});state.interactive=false;
+      syncMouseInput(false,true);
       if(!win.isVisible())win.showInactive();
       win.moveTop();overlayRaises++;
     }
@@ -62,10 +78,10 @@ else {
     })();return scanTask;
   }
   for(const [id,label]of Object.entries(preferences.appLabels||{}).slice(0,400)){const exe=exeName(id);if(exe&&typeof label==='string')appLabels[exe]=appName(exe,label);}
-  function saveSettings(){try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.writeFileSync(path.join(app.getPath('userData'),'settings.json'),JSON.stringify({mode:state.baseMode,size:state.size,roam:state.roam,follow:state.follow,visible:state.visible,paused:state.paused,displayId:display.id,autoMedia:state.autoMedia,autoGame:state.autoGame,customGames:state.customGames,ignoredGames:state.ignoredGames,appLabels:Object.fromEntries([...state.customGames,...state.ignoredGames].map(id=>[id,appName(id,appLabels[id])]))},null,2));return true;}catch(error){log(error.message);return false;}}
+  function saveSettings(){try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.writeFileSync(path.join(app.getPath('userData'),'settings.json'),JSON.stringify({mode:state.baseMode,size:state.size,roam:state.roam,follow:state.follow,visible:state.visible,paused:state.paused,freePosition:state.freePosition,displayId:display.id,autoMedia:state.autoMedia,autoGame:state.autoGame,customGames:state.customGames,ignoredGames:state.ignoredGames,appLabels:Object.fromEntries([...state.customGames,...state.ignoredGames].map(id=>[id,appName(id,appLabels[id])]))},null,2));return true;}catch(error){log(error.message);return false;}}
   function persist(){clearTimeout(persistTimer);persistTimer=setTimeout(saveSettings,300);}
   function applyAutomaticMode(){const mode=resolveMood(state);if(mode!==state.mode)setMode(mode,{automatic:true});}
-  let mediaData=decodeMedia({available:false,playing:false}),lastPlayerKey='',playerOpen=false,playerLoaded=false,playerHideTimer,playerBlurTimer,petPressedAt=0;
+  let mediaData=decodeMedia({available:false,playing:false}),lastPlayerKey='',playerOpen=false,playerLoaded=false,playerHideTimer,playerBlurTimer,petPressedAt=0,playerPresentation=null,playerMouseIgnored=null;
   const mediaTransport=createMediaTransport();
   function playerSnapshot(){return{...mediaData,sourceName:mediaData.sourceAppId?appName(exeName(mediaData.sourceAppId)||'player.exe',/spotify/i.test(mediaData.sourceAppId)?'Spotify':/chrome/i.test(mediaData.sourceAppId)?'Google Chrome':/msedge/i.test(mediaData.sourceAppId)?'Microsoft Edge':/firefox/i.test(mediaData.sourceAppId)?'Firefox':'Trình phát trên Windows'):''};}
   function publishPlayer(){if(!playerWindow||playerWindow.isDestroyed()||!playerWindow.isVisible())return;const value=playerSnapshot(),key=JSON.stringify(value);if(key!==lastPlayerKey){lastPlayerKey=key;playerWindow.webContents.send('meo:player:state',value);}}
@@ -73,11 +89,11 @@ else {
     playerOpen=false;clearTimeout(playerHideTimer);clearTimeout(playerBlurTimer);
     const finish=()=>{if(playerOpen)return;if(playerWindow&&!playerWindow.isDestroyed())playerWindow.hide();if(!state.autoMedia){mediaMonitor.stop();mediaData=decodeMedia({available:false,playing:false});}};
     if(immediate||!playerLoaded||!playerWindow?.isVisible()){finish();return;}
-    playerWindow.webContents.send('meo:player:motion',false);playerHideTimer=setTimeout(finish,240);
+    playerWindow.webContents.send('meo:player:motion',{open:false,presentation:playerPresentation});playerHideTimer=setTimeout(finish,300);
   }
   function revealPlayer(){
     if(!playerOpen||!playerLoaded||suspended||state.mode==='game')return;
-    clearTimeout(playerHideTimer);positionPlayer();playerWindow.show();playerWindow.focus();lastPlayerKey='';publishPlayer();startMedia();playerWindow.webContents.send('meo:player:motion',true);
+    const reset=!playerWindow.isVisible();clearTimeout(playerHideTimer);positionPlayer();playerWindow.show();playerWindow.focus();lastPlayerKey='';publishPlayer();startMedia();playerWindow.webContents.send('meo:player:motion',{open:true,reset,presentation:playerPresentation});
   }
   function togglePlayer(){if(playerOpen)hidePlayer();else openPlayer();}
   function playerVisible(){return playerOpen&&playerWindow?.isVisible();}
@@ -87,7 +103,8 @@ else {
     state.target=null;state.action='idle';state.jump=null;playBehavior.affection(state.time);
     if(!playerWindow||playerWindow.isDestroyed()){
       playerLoaded=false;
-      playerWindow=new BrowserWindow({width:460,height:204,frame:false,transparent:true,hasShadow:false,resizable:false,show:false,skipTaskbar:true,alwaysOnTop:true,backgroundColor:'#00000000',title:'Mèo · Nhạc của bạn',webPreferences:{preload:path.join(__dirname,'player-preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,spellcheck:false}});
+      playerWindow=new BrowserWindow({width:460,height:256,frame:false,transparent:true,hasShadow:false,resizable:false,show:false,skipTaskbar:true,alwaysOnTop:true,backgroundColor:'#00000000',title:'Mèo · Nhạc của bạn',webPreferences:{preload:path.join(__dirname,'player-preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,spellcheck:false}});
+      playerMouseIgnored=null;
       playerWindow.setMenu(null);playerWindow.webContents.setWindowOpenHandler(()=>({action:'deny'}));playerWindow.webContents.on('will-navigate',event=>event.preventDefault());
       playerWindow.on('close',event=>{if(!quitting){event.preventDefault();hidePlayer();}});
       // A click on the pet belongs to togglePlayer, not outside-click dismissal.
@@ -98,7 +115,17 @@ else {
     }
     revealPlayer();
   }
-  function positionPlayer(){const p=route.point(state.distance),area=display.workArea;playerWindow.setPosition(clamp(Math.round(p.x-230),area.x+4,area.x+area.width-464),clamp(Math.round(p.y-state.size-212),area.y+4,area.y+area.height-208),false);}
+  function positionPlayer(){
+    const p=currentPlacement(),angle=p.rotation,size=state.size;
+    const head={x:p.x+p.anchorX+Math.sin(angle)*size*.8+Math.cos(angle)*state.direction*size*.1,y:p.y+p.anchorY-Math.cos(angle)*size*.8+Math.sin(angle)*state.direction*size*.1};
+    playerPresentation=playerLayout(display.workArea,head);playerWindow.setBounds(playerPresentation.window,false);updatePlayerMouse();
+  }
+  function updatePlayerMouse(){
+    if(!playerWindow||playerWindow.isDestroyed()||!playerPresentation)return;
+    const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint(),bounds=playerPresentation.window,card=playerPresentation.card;
+    const x=cursor.x-bounds.x,y=cursor.y-bounds.y,ignored=!(x>=card.x&&x<=card.x+card.width&&y>=card.y&&y<=card.y+card.height);
+    if(ignored!==playerMouseIgnored){if(ignored)playerWindow.setIgnoreMouseEvents(true,{forward:true});else playerWindow.setIgnoreMouseEvents(false);playerMouseIgnored=ignored;}
+  }
   function requirePlayer(event){if(!playerWindow||playerWindow.isDestroyed()||!playerVisible()||event.sender.id!==playerWindow.webContents.id)throw new Error('Cửa sổ điều khiển không hợp lệ.');}
   ipcMain.handle('meo:player:get',event=>{if(!playerWindow||event.sender.id!==playerWindow.webContents.id)throw new Error('Cửa sổ không hợp lệ.');return playerSnapshot();});
   ipcMain.handle('meo:player:close',event=>{if(!playerWindow||event.sender.id!==playerWindow.webContents.id)throw new Error('Cửa sổ không hợp lệ.');if(playerOpen)hidePlayer();});
@@ -151,6 +178,7 @@ else {
   function refreshRoute(id=state.displayId){
     const displays=screen.getAllDisplays();display=displays.find(d=>String(d.id)===String(id))||screen.getPrimaryDisplay();
     route=makeRoute(display.workArea);state.displayId=display.id;
+    if(state.freePosition){if(String(state.freePosition.displayId)!==String(display.id))state.freePosition=null;else state.freePosition={...constrainPosition(display.workArea,state.freePosition,state.size),displayId:display.id};}
     state.distance=route.bottomLength*.76;state.target=null;state.jump=null;state.dragging=false;lastBounds='';
     if(state.mode==='game')state.distance=Math.max(0,route.bottomLength-24);
     refreshMenu();
@@ -158,7 +186,7 @@ else {
   function setMode(mode,{automatic=false}={}){
     if(!modes.includes(mode))return;
     if(!automatic){state.baseMode=mode;state.autoMedia=false;state.mediaStatus='off';state.mediaPlaying=false;mediaDecision.reset();mediaMonitor.stop();state.autoGame=false;state.gameActive=false;state.gameExe='';gameDecision.reset();if(playerWindow?.isVisible())startMedia();}
-    state.mode=mode;state.jump=null;state.dragging=false;state.petUntil=0;state.target=null;state.action='idle';
+    const keepDragging=automatic&&state.dragging&&mode!=='game';state.mode=mode;state.jump=null;state.dragging=keepDragging;state.petUntil=0;state.target=null;state.action='idle';
     if(mode==='game')hidePlayer(true);
     playBehavior.reset(state.time);
     // Quiet modes rest on the lower edge, with the same screen-safe routing.
@@ -172,7 +200,7 @@ else {
   function setVisible(visible){
     state.visible=!!visible;state.interactive=false;state.dragging=false;
     if(!visible)hidePlayer(true);
-    if(win&&!win.isDestroyed()){win.setIgnoreMouseEvents(true,{forward:true});if(state.visible&&!suspended&&ready)win.showInactive();else win.hide();}
+    if(win&&!win.isDestroyed()){syncMouseInput(false,true);if(state.visible&&!suspended&&ready){win.showInactive();}else win.hide();}
     lastTick=0;persist();refreshMenu();
   }
   function setSize(size){if(![80,112,148].includes(size))return;state.size=size;persist();refreshMenu();tickFrame();}
@@ -245,7 +273,7 @@ else {
     throw new Error('Thao tác thư viện không hợp lệ.');
   });
   ipcMain.handle('meo:settings:action',(event,value)=>{
-    requireSettings(event);if(value==='close')settingsWindow.hide();else if(value==='music')openPlayer();else if(value==='home'){state.jump=null;state.dragging=false;state.target=null;state.distance=route.bottomLength*.76;setVisible(true);note('Mình ở đây!');tickFrame();}else throw new Error('Thao tác không hợp lệ.');return settingsSnapshot();
+    requireSettings(event);if(value==='close')settingsWindow.hide();else if(value==='music')openPlayer();else if(value==='home'){state.freePosition=null;state.jump=null;state.dragging=false;state.target=null;state.distance=route.bottomLength*.76;setVisible(true);note('Mình ở đây!');tickFrame();}else throw new Error('Thao tác không hợp lệ.');return settingsSnapshot();
   });
   function refreshMenu(){
     publishSettings();
@@ -254,7 +282,7 @@ else {
     if(key===lastMenuKey)return;lastMenuKey=key;
     tray.setContextMenu(buildMenu());tray.setToolTip('Mèo Desktop');
   }
-  function popup(){if(win&&!win.isDestroyed())buildMenu().popup({window:win,callback:()=>{if(win&&!win.isDestroyed())win.setIgnoreMouseEvents(true,{forward:true});state.interactive=false;}});}
+  function popup(){if(win&&!win.isDestroyed())buildMenu().popup({window:win,callback:()=>syncMouseInput(false,true)});}
   function pet(){if(state.paused||state.mode==='game')return;state.petUntil=state.time+2.3;state.target=null;state.jump=null;state.action='pet';state.actionStart=state.time;state.nextWander=state.time+5;playBehavior.affection(state.time);}
   function startJump(destination){state.jump={from:state.distance,to:destination,start:state.time,duration:1.12};state.action='pounce';state.actionStart=state.time;state.nextPounce=state.time+6;state.nextWander=state.time+5;}
   function moveToward(target,dt,speed){
@@ -266,15 +294,16 @@ else {
     state.action='walk';
   }
   function advance(dt,cursor){
-    if(state.paused||suspended)return;
-    state.time+=dt;
+    if(suspended)return;
+    if(!state.paused)state.time+=dt;
     if(playerVisible()||playerWindow?.isVisible()){state.target=null;state.action='idle';return;}
     if(state.dragging){
       if(Date.now()-state.dragAt>12000){state.dragging=false;return;}
       const nextDisplay=screen.getDisplayNearestPoint(cursor);
       if(nextDisplay.id!==display.id){refreshRoute(nextDisplay.id);state.dragging=true;state.dragAt=Date.now();}
-      state.distance=route.nearest(cursor).distance;state.action='idle';state.target=null;return;
+      state.freePosition={...constrainPosition(display.workArea,{x:cursor.x-dragOffset.x,y:cursor.y-dragOffset.y},state.size),displayId:display.id};state.distance=route.nearest(state.freePosition).distance;state.action='idle';state.target=null;return;
     }
+    if(state.paused)return;
     if(state.jump){
       const p=(state.time-state.jump.start)/state.jump.duration;
       if(p>.18){const f=clamp((p-.18)/.47,0,1),ease=f*f*(3-2*f);state.distance=wrap(state.jump.from+route.delta(state.jump.from,state.jump.to)*ease,route.total);}
@@ -282,6 +311,7 @@ else {
       return;
     }
     if(state.time<state.petUntil){state.action='pet';return;}
+    if(state.freePosition){state.action='idle';return;}
     if(state.mode!=='play'){state.action='idle';return;}
     const projected=route.nearest(cursor),difference=route.delta(state.distance,projected.distance);
     const near=state.follow&&projected.separation<state.size*1.45&&Math.abs(difference)<420;
@@ -306,7 +336,7 @@ else {
     else state.action='idle';
   }
   function frameData(cursor){
-    const placement=route.windowAt(state.distance);
+    const placement=currentPlacement();
     return {time:state.time,mode:state.mode,size:state.mode==='game'?70:state.size,direction:state.direction,action:state.action,actionElapsed:state.time-state.actionStart,jumpPhase:state.jump?(state.time-state.jump.start)/state.jump.duration:null,pet:state.time<state.petUntil,paused:state.paused,dragging:state.dragging,toast:state.mode!=='game'&&state.time<state.toastUntil?state.toast:'',...placement,cursor:{x:cursor.x-placement.x,y:cursor.y-placement.y}};
   }
   function tickFrame(){
@@ -321,14 +351,16 @@ else {
     if(ready&&state.visible&&!suspended){
       const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint();advance(dt,cursor);tickFrame();
       maintainOverlay();
-      if(state.interactive&&Date.now()-lastHitAt>700){state.interactive=false;win.setIgnoreMouseEvents(true,{forward:true});}
+      if(playerWindow?.isVisible())updatePlayerMouse();
+      syncMouseInput(state.interactive||state.dragging);
+      if(state.interactive&&!state.dragging&&Date.now()-lastHitAt>700)syncMouseInput(false,true);
     }
     timer=setTimeout(loop,!state.visible||suspended?250:state.mode==='game'||state.paused?80:33);
   }
   function createWindow(){
-    ready=false;lastBounds='';
-    win=new BrowserWindow({width:320,height:320,show:false,frame:false,transparent:true,backgroundColor:'#00000000',hasShadow:false,resizable:false,movable:false,minimizable:false,maximizable:false,fullscreenable:false,skipTaskbar:true,focusable:false,alwaysOnTop:true,title:'Mèo Desktop',webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false,spellcheck:false}});
-    win.setMenu(null);win.setIgnoreMouseEvents(true,{forward:true});win.setAlwaysOnTop(true,'floating');
+    ready=false;lastBounds='';nativeMouseState=null;state.interactive=false;
+    win=new BrowserWindow({width:320,height:320,show:false,frame:false,transparent:true,backgroundColor:'#00000000',hasShadow:false,resizable:false,movable:false,minimizable:false,maximizable:false,fullscreenable:false,skipTaskbar:true,focusable:true,alwaysOnTop:true,title:'Mèo Desktop',webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false,spellcheck:false}});
+    win.setMenu(null);syncMouseInput(false,true);win.setAlwaysOnTop(true,'floating');win.on('focus',()=>maintainOverlay(true));
     if(process.platform==='darwin')win.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});
     win.webContents.setWindowOpenHandler(()=>({action:'deny'}));
     win.webContents.on('will-navigate',event=>event.preventDefault());
@@ -338,17 +370,17 @@ else {
     win.loadFile(path.join(__dirname,'pet.html'));
   }
   function valid(event){return win&&!win.isDestroyed()&&event.sender.id===win.webContents.id;}
-  ipcMain.on('meo:ready',event=>{if(!valid(event))return;ready=true;tickFrame();if(state.visible&&!suspended)win.showInactive();maintainOverlay(true);});
+  ipcMain.on('meo:ready',event=>{if(!valid(event))return;ready=true;tickFrame();if(state.visible&&!suspended){win.showInactive();}maintainOverlay(true);});
   ipcMain.on('meo:hit',(event,hit)=>{
     if(!valid(event)||typeof hit!=='boolean')return;lastHitAt=Date.now();if(state.mode==='game')hit=false;
-    if(state.interactive!==hit){state.interactive=hit;win.setIgnoreMouseEvents(!hit,{forward:true});}
+    syncMouseInput(hit||state.dragging);
   });
   ipcMain.on('meo:action',(event,value)=>{
     if(!valid(event))return;
-    if(value==='press'){petPressedAt=Date.now();clearTimeout(playerBlurTimer);}
+    if(value==='press'){petPressedAt=Date.now();const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint(),placement=currentPlacement();dragOffset={x:cursor.x-placement.x-placement.anchorX,y:cursor.y-placement.y-placement.anchorY};clearTimeout(playerBlurTimer);}
     else if(value==='menu')popup();else if(value==='pet'){petPressedAt=0;if(playerOpen||state.mode==='music'||(state.autoMedia&&mediaData.hasSession&&state.mode!=='game'))togglePlayer();else pet();}
-    else if(value==='drag-start'){petPressedAt=0;if(state.paused||state.mode==='game')return;if(playerOpen)hidePlayer(true);playBehavior.affection(state.time);state.dragging=true;state.dragAt=Date.now();state.jump=null;state.action='idle';}
-    else if(value==='drag-end'){petPressedAt=0;state.dragging=false;state.nextWander=state.time+4;persist();}
+    else if(value==='drag-start'){petPressedAt=0;if(state.mode==='game')return;if(playerOpen)hidePlayer(true);playBehavior.affection(state.time);state.dragging=true;state.dragAt=Date.now();state.jump=null;state.action='idle';syncMouseInput(true,true);}
+    else if(value==='drag-end'){petPressedAt=0;state.dragging=false;if(state.freePosition){const nearest=route.nearest(state.freePosition);if(nearest.separation<24){state.distance=nearest.distance;state.freePosition=null;}}state.nextWander=state.time+4;persist();}
     else if(value==='error')log('Renderer could not load character assets');
   });
   app.whenReady().then(()=>{
@@ -364,10 +396,10 @@ else {
     const wake=()=>{suspended=false;lastTick=0;startMedia();startGame();if(state.visible&&ready)win.showInactive();};
     powerMonitor.on('suspend',sleep);powerMonitor.on('resume',wake);
     powerMonitor.on('lock-screen',sleep);powerMonitor.on('unlock-screen',wake);
-    if(testMode)global.__meo={cursor:null,window:()=>win,setMode,setSize,setVisible,setPaused,setAutoMedia,receiveMedia,setAutoGame,receiveGame,setGameRule,gamePid:()=>gameMonitor.pid(),mediaPid:()=>mediaMonitor.pid(),route:()=>route,state:()=>({...state,ready,display:{id:display.id,workArea:display.workArea},bounds:win.getBounds(),visible:win.isVisible(),alwaysOnTop:win.isAlwaysOnTop(),focusable:win.isFocusable()}),move:s=>{state.distance=wrap(s,route.total);state.target=null;state.jump=null;state.action='idle';tickFrame();},menu:()=>buildMenu().items.map(i=>i.label),drag:value=>{state.dragging=value;state.dragAt=Date.now();},shutdown:()=>{quitting=true;app.quit();}};
+    if(testMode)global.__meo={cursor:null,window:()=>win,setMode,setSize,setVisible,setPaused,setAutoMedia,receiveMedia,setAutoGame,receiveGame,setGameRule,gamePid:()=>gameMonitor.pid(),mediaPid:()=>mediaMonitor.pid(),route:()=>route,state:()=>({...state,ready,display:{id:display.id,workArea:display.workArea},bounds:win.getBounds(),visible:win.isVisible(),alwaysOnTop:win.isAlwaysOnTop(),focusable:win.isFocusable()}),move:s=>{state.freePosition=null;state.distance=wrap(s,route.total);state.target=null;state.jump=null;state.action='idle';tickFrame();},menu:()=>buildMenu().items.map(i=>i.label),drag:value=>{state.dragging=value;state.dragAt=Date.now();},shutdown:()=>{quitting=true;app.quit();}};
     if(testMode)Object.assign(global.__meo,{openSettings,settingsSnapshot,settingsWindow:()=>settingsWindow});
     if(testMode)Object.assign(global.__meo,{overlay:()=>({raises:overlayRaises}),advancePlay:seconds=>{for(let t=0;t<seconds;t+=.05)advance(.05,{x:-10000,y:-10000});tickFrame();}});
-    if(testMode)Object.assign(global.__meo,{openPlayer,togglePlayer,playerWindow:()=>playerWindow,playerState:()=>({open:playerOpen,loaded:playerLoaded}),playerSnapshot,mediaTransport});
+    if(testMode)Object.assign(global.__meo,{placeFree:point=>{state.freePosition={...constrainPosition(display.workArea,point,state.size),displayId:display.id};state.target=null;state.jump=null;tickFrame();},openPlayer,togglePlayer,playerWindow:()=>playerWindow,playerState:()=>({open:playerOpen,loaded:playerLoaded}),playerSnapshot,mediaTransport});
     startMedia();startGame();
     if(!testMode)scanGames();
     loop();

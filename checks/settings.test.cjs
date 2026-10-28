@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{spawn}=require('node:child_process');
 const {_electron}=require('playwright');
-const executable=path.resolve(__dirname,'../../outputs/Meo-Desktop-0.4-win-x64/Meo.exe');
+const executable=process.env.MEO_EXECUTABLE||path.resolve(__dirname,'../../outputs/Meo-Desktop-0.4-win-x64/Meo.exe');
 const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;let desktop;
 (async()=>{
   const testData=path.join(path.dirname(executable),'resources/app/checks/user-data');fs.mkdirSync(testData,{recursive:true});fs.writeFileSync(path.join(testData,'games.json'),JSON.stringify({games:[],excluded:[]}));

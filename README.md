@@ -8,7 +8,7 @@ App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.4.0*
 - Tự nghe nhạc cùng bạn. Nhấp mèo để bật/tắt bảng có ảnh bìa, tên bài, tiến trình và nút phát/dừng/chuyển bài.
 - Nhận diện game để thu nhỏ và ngồi ở góc; quét Steam/Epic và hỗ trợ thêm game thủ công.
 - Cài đặt kích thước, màn hình, chuyển động, chế độ tự động và tâm trạng.
-- Kéo để đổi vị trí, chuột phải để mở menu; `Ctrl + Alt + M` ẩn/hiện trên Windows.
+- Giữ và kéo để đặt mèo ở vị trí bất kỳ; vị trí được lưu. Thả giữa màn hình thì mèo ở lại đó; kéo về mép hoặc chọn **Đưa mèo về mép dưới** trong Cài đặt để đi dạo tiếp. Chuột phải mở menu; `Ctrl + Alt + M` ẩn/hiện trên Windows.
 
 ## Cài và chạy
 
