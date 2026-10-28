@@ -257,8 +257,8 @@ else {
     return Menu.buildFromTemplate([
       {label:'Cài đặt…',click:()=>openSettings()},
       {label:'Ứng dụng đã ghim',submenu:pinnedMenu()},
-      {label:'Chụp vùng màn hình…',accelerator:'CommandOrControl+Alt+S',enabled:process.platform==='win32'&&state.mode!=='game',click:()=>runDesktopAction(()=>screenshots.capture())},
-      {label:'Bỏ ảnh mèo đang giữ',enabled:process.platform==='win32'&&!!screenshots?.snapshot().photos.length,click:()=>screenshots?.clear()},
+      {label:'Chụp vùng màn hình…',accelerator:'CommandOrControl+Alt+S',enabled:desktopSupported&&state.mode!=='game',click:()=>runDesktopAction(()=>screenshots.capture())},
+      {label:'Bỏ ảnh mèo đang giữ',enabled:desktopSupported&&!!screenshots?.snapshot().photos.length,click:()=>screenshots?.clear()},
       {label:audioState.muted?'Bật tiếng hệ thống':'Tắt tiếng hệ thống',enabled:desktopSupported&&state.mode!=='game',click:()=>runDesktopAction(()=>controlAudio('toggle'))},
       {label:state.visible?'Ẩn mèo':'Hiện mèo',click:()=>setVisible(!state.visible)},
       {label:state.paused?'Tiếp tục hoạt ảnh':'Tạm dừng hoạt ảnh',click:()=>setPaused(!state.paused)},
@@ -458,7 +458,7 @@ else {
     const icon=nativeImage.createFromPath(path.join(__dirname,'../assets/core.png')).crop({x:53,y:50,width:280,height:292}).resize({height:24});
     tray=new Tray(icon);refreshMenu();refreshPinIcons();tray.on('double-click',()=>openSettings());
     globalShortcut.register('CommandOrControl+Alt+M',()=>setVisible(!state.visible));
-    if(process.platform==='win32')globalShortcut.register('CommandOrControl+Alt+S',()=>runDesktopAction(()=>screenshots.capture()));
+    if(desktopSupported)globalShortcut.register('CommandOrControl+Alt+S',()=>runDesktopAction(()=>screenshots.capture()));
     for(const event of ['display-added','display-removed','display-metrics-changed'])screen.on(event,()=>{refreshRoute(display.id);tickFrame();});
     const sleep=()=>{suspended=true;screenshots?.hide();hidePlayer(true);audioControl.stop();mediaTransport.stop();mediaMonitor.stop();gameMonitor.stop();win?.hide();};
     const wake=()=>{suspended=false;if(!testMode)audioControl.start();lastTick=0;startMedia();startGame();if(state.visible&&ready)win.showInactive();};

@@ -1,13 +1,13 @@
 name: macOS packages
 on:
   push:
-    branches: [feat/macos-release]
+    branches: [feat/macos-release, feat/screenshot-pocket]
   workflow_dispatch:
     inputs:
       version:
         description: Version (must match package.json)
         required: true
-        default: '0.6.0'
+        default: '0.7.1'
 permissions:
   contents: read
 jobs:
@@ -32,7 +32,7 @@ jobs:
       - name: Check requested version
         run: node -e "if(require('./package.json').version!==process.env.RELEASE_VERSION)process.exit(1)"
         env:
-          RELEASE_VERSION: ${{ inputs.version || '0.6.0' }}
+          RELEASE_VERSION: ${{ inputs.version || '0.7.1' }}
       - run: npm run check
       - run: npm test
       - name: Build DMG and ZIP with ad-hoc signature

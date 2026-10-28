@@ -5,7 +5,7 @@ const {createPhotoStore,selectionRect}=require('./screenshot-core.cjs');
 const {createScreenshotBridge}=require('./screenshot-bridge.cjs');
 function createScreenshotFeature({electron,getPet,getPlacement,getWindows,canUse,onStatus=()=>{},onCapture=()=>{},testMode=false}){
  const {app,BrowserWindow,ipcMain,screen,desktopCapturer,nativeImage}=electron;
- const supported=process.platform==='win32',temporary=path.join(app.getPath('temp'),'MeoDesktop-photos-'+crypto.randomUUID());
+ const supported=['win32','darwin'].includes(process.platform),temporary=path.join(app.getPath('temp'),'MeoDesktop-photos-'+crypto.randomUUID());
  const leasedFiles=new Set();
  const store=createPhotoStore({onRemove:photo=>{if(photo.file&&!leasedFiles.has(photo.file))try{fs.unlinkSync(photo.file);}catch{}}});
  let overlays=[],capturing=false,captureRevision=0,captureRestore=[],target=null,busy=false,lastState='',flightWindows=[],lastAction='';
@@ -21,11 +21,12 @@ function createScreenshotFeature({electron,getPet,getPlacement,getWindows,canUse
  function closeOverlays(){for(const overlay of overlays)if(!overlay.window.isDestroyed())overlay.window.destroy();overlays=[];}
  function cancelCapture(){captureRevision++;closeOverlays();restoreCapture();}
  async function capture(){
-  if(!supported)throw new Error('Chụp và đưa ảnh nhanh hiện hỗ trợ Windows.');if(!canUse()||capturing||busy)return;
+  if(!supported)throw new Error('Chụp và đưa ảnh nhanh hiện hỗ trợ Windows và macOS.');if(!canUse()||capturing||busy)return;
   capturing=true;const revision=++captureRevision;onCapture();captureRestore=getWindows().filter(Boolean).filter(w=>!w.isDestroyed()).map(window=>({window,visible:window.isVisible()}));for(const item of captureRestore)item.window.hide();publish();
   try{
    await delay(180);if(revision!==captureRevision)return;
    const displays=screen.getAllDisplays(),maxWidth=Math.max(...displays.map(d=>Math.ceil(d.bounds.width*d.scaleFactor))),maxHeight=Math.max(...displays.map(d=>Math.ceil(d.bounds.height*d.scaleFactor)));
+   if(process.platform==='darwin'&&electron.systemPreferences.getMediaAccessStatus('screen')==='denied')throw new Error('Cho phép Mèo tại System Settings → Privacy & Security → Screen Recording, rồi mở lại ứng dụng.');
    const sources=await desktopCapturer.getSources({types:['screen'],thumbnailSize:{width:maxWidth,height:maxHeight},fetchWindowIcons:false});if(revision!==captureRevision)return;
    for(const display of displays){
     const source=sources.find(s=>s.display_id===String(display.id));if(!source||source.thumbnail.isEmpty())continue;
@@ -41,7 +42,7 @@ function createScreenshotFeature({electron,getPet,getPlacement,getWindows,canUse
  ipcMain.on('meo:capture:cancel',event=>{try{validCapture(event);cancelCapture();}catch{}});
  function ensureFile(photo){if(photo.file&&fs.existsSync(photo.file))return photo.file;fs.mkdirSync(temporary,{recursive:true});photo.file=path.join(temporary,photo.id+'.png');fs.writeFileSync(photo.file,photo.image.toPNG());return photo.file;}
  async function fly(photos,destination){
-  const placement=getPlacement(),from={x:placement.x+placement.anchorX,y:placement.y+placement.anchorY-65},to=screen.screenToDipPoint({x:Math.round(destination.x),y:Math.round(destination.y)});
+  const placement=getPlacement(),from={x:placement.x+placement.anchorX,y:placement.y+placement.anchorY-65},to=process.platform==='win32'?screen.screenToDipPoint({x:Math.round(destination.x),y:Math.round(destination.y)}):{x:destination.x,y:destination.y};
   const displays=screen.getAllDisplays(),left=Math.min(...displays.map(d=>d.bounds.x)),top=Math.min(...displays.map(d=>d.bounds.y)),right=Math.max(...displays.map(d=>d.bounds.x+d.bounds.width)),bottom=Math.max(...displays.map(d=>d.bounds.y+d.bounds.height));
   const window=new BrowserWindow({x:left,y:top,width:right-left,height:bottom-top,show:false,frame:false,transparent:true,backgroundColor:'#00000000',hasShadow:false,focusable:false,resizable:false,skipTaskbar:true,alwaysOnTop:true,enableLargerThanScreen:true,webPreferences:{preload:path.join(__dirname,'flight-preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false}});flightWindows.push(window);window.setIgnoreMouseEvents(true);window.setAlwaysOnTop(true,'screen-saver');window.setMenu(null);window.webContents.setWindowOpenHandler(()=>({action:'deny'}));
   await window.loadFile(path.join(__dirname,'flight.html'));if(window.isDestroyed())return;

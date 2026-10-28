@@ -1,12 +1,12 @@
 # Mèo Desktop
 
-App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.7.0**.
+App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.7.1**.
 
 **[Tải ứng dụng tại GitHub Releases](https://github.com/duytienkaka/meo-desktop/releases)**
 
 ## Tính năng
 
-- **Windows — chụp ảnh gọn:** chuột phải mèo → **Chụp vùng màn hình…** hoặc `Ctrl + Alt + S`. Kéo chọn vùng, Esc để hủy. Mèo tạm ẩn khi chụp và giữ tối đa **3 ảnh gần nhất**; ảnh thứ 4 thay ảnh cũ nhất.
+- **Chụp ảnh gọn (Windows và Mac):** chuột phải mèo → **Chụp vùng màn hình…** hoặc `Ctrl + Alt + S` (Mac: `⌘ + ⌥ + S`). Kéo chọn vùng, Esc để hủy. Mèo tạm ẩn khi chụp và giữ tối đa **3 ảnh gần nhất**; ảnh thứ 4 thay ảnh cũ nhất.
 - Mèo cầm một xấp ảnh nhỏ và chỉ hiện **một nút “Đưa N ảnh ↗”**. Bấm vào ô nhận ảnh trong app đích trước, rồi bấm nút để ném và dán cả bộ 1–3 ảnh vào bản nháp. Bạn tự bỏ ảnh không muốn trong app chat và tự bấm gửi; mèo không bấm Enter. Dùng menu chuột phải **Bỏ ảnh mèo đang giữ** để dọn xấp ảnh. Ảnh ở RAM và các PNG tạm phục vụ đính kèm được giữ đến khi thoát app để bản nháp còn đọc được file. Không tải ảnh lên server.
 - Đi dạo theo mép màn hình, rình/vồ con trỏ, phản ứng khi vuốt ve và cuộn tròn nghỉ.
 - Tự nghe nhạc cùng bạn. Nhấp mèo để bật/tắt bảng có ảnh bìa, tên bài, tiến trình và nút phát/dừng/chuyển bài. Bấm ảnh bìa hoặc nút ↗ để mở trình phát, kéo thanh tiến trình để tua khi được hỗ trợ. Rê chuột lên tên bài dài để đọc hết; mèo gật đầu và thả vài nốt nhạc khi chuyển bài.
@@ -22,6 +22,7 @@ App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.7.0*
 macOS 13 Ventura trở lên. Có hai bản: **Apple Silicon (arm64, M1 trở lên)** và **Intel (x64)**. Mở DMG rồi kéo **Meo.app** vào Applications. App nằm ở thanh menu; phím ẩn/hiện là **⌘ + ⌥ + M**.
 
 - Kéo/thả file, ghim ứng dụng .app, di chuyển mèo và chỉnh âm lượng hệ thống.
+- Chụp vùng màn hình bằng **⌘ + ⌥ + S**, giữ tối đa 3 ảnh và đưa vào bản nháp. Cho phép **Screen Recording** khi chụp và **Accessibility** khi đưa ảnh; có thể phải mở lại app sau khi cấp quyền. Chỉ dán bằng ⌘ + V, không tự gửi tin nhắn. Nếu app đích không nhận nhiều file từ clipboard, dùng ⌘ + V thủ công hoặc đính kèm theo cách của app đó.
 - Apple Music / Spotify: bật “Nghe nhạc cùng bạn” và cấp quyền **Automation** khi macOS hỏi. Nhạc trong trình duyệt và ảnh bìa trên Mac chưa hỗ trợ; vẫn có tên bài, điều khiển phát/chuyển bài/tua. Mèo không tự mở trình phát đang đóng.
 - Quét game .app từ Steam; thêm game .app thủ công nếu còn thiếu. Nhận diện game theo ứng dụng, không đọc bàn phím hoặc màn hình.
 - Âm lượng không điều chỉnh được trên một số thiết bị xuất âm thanh có mức cố định; app sẽ báo không hỗ trợ.
@@ -49,7 +50,7 @@ npm run package:win
 npm run setup:win
 ```
 
-File cài đặt nằm ở `outputs/setup/Meo-Desktop-Setup-0.7.0-x64.exe`, kèm SHA-256. Trình cài tạo shortcut, hỗ trợ gỡ cài đặt và giữ cấu hình khi gỡ. Bản chưa ký số.
+File cài đặt nằm ở `outputs/setup/Meo-Desktop-Setup-0.7.1-x64.exe`, kèm SHA-256. Trình cài tạo shortcut, hỗ trợ gỡ cài đặt và giữ cấu hình khi gỡ. Bản chưa ký số.
 
 Bản portable Windows nằm ở `../outputs/Meo-Desktop-0.5-win-x64/Meo.exe`. Giữ cả thư mục đi kèm. Script tải Electron chính thức và kiểm tra SHA-256; không đóng gói đè vào thư mục đã có `Meo.exe`.
 

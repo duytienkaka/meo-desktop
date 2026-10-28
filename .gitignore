@@ -19,3 +19,6 @@ Thumbs.db
 .vscode/
 .idea/
 npm-debug.log*
+
+# Compiled on macOS during packaging
+src/native/mac/MeoScreenshotBridge
