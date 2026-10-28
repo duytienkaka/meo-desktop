@@ -82,6 +82,10 @@ document.querySelectorAll('[data-command]').forEach(button=>button.addEventListe
 $('#toggle').addEventListener('click',()=>command(state.playing?'pause':'play'));
 $('#close').addEventListener('click',()=>api.close());
 document.addEventListener('keydown',event=>{if(event.key==='Escape')api.close();});
+let audioBusy=false;
+function renderAudio(audio){const button=$('#audio-toggle');button.disabled=audioBusy||!audio.available;button.classList.toggle('muted',audio.muted);button.setAttribute('aria-label',audio.muted?'Bật tiếng hệ thống':'Tắt tiếng hệ thống');button.title='Âm lượng hệ thống: '+Math.round(audio.level)+'% · '+(audio.muted?'Bật tiếng':'Tắt tiếng');}
+api.audio.onChange(renderAudio);api.audio.get().then(renderAudio).catch(()=>{});
+$('#audio-toggle').addEventListener('click',async()=>{if(audioBusy)return;audioBusy=true;$('#audio-toggle').disabled=true;try{await api.audio.command('toggle');}catch(error){$('#feedback').textContent=error.message?.replace(/^Error invoking remote method '[^']+': Error: /,'')||'Chưa điều khiển được âm thanh.';$('#feedback').className='error';}finally{audioBusy=false;api.audio.get().then(renderAudio).catch(()=>{});}});
 let motionAnimation=null;
 api.onMotion(({open,reset,presentation})=>{
   const card=$('#card'),revision=++motionRevision;

@@ -3,7 +3,29 @@
   const canvas=document.querySelector('#pet'),ctx=canvas.getContext('2d');
   const images={},pixels={},atlas=window.CAT_SPRITES;
   let width=320,height=320,dpr=1,frame=null,previousTime=null,displaySize=112,previousMode=null,lastPounce=false,held=null,hit=false,transform=null;
-  const particles=[],seen=new Set();
+  const particles=[],seen=new Set();let fileHover=false,fileHoverTimer;
+  const audioHud=document.querySelector('#audio-hud'),muteButton=document.querySelector('#pet-mute');let audioHover=false,wheelRemainder=0,wheelSteps=0,wheelTimer,audioBusy=false;
+  function onAudioHud(point){if(audioHud.hidden)return false;const r=audioHud.getBoundingClientRect();return point.x>=r.left&&point.x<=r.right&&point.y>=r.top&&point.y<=r.bottom;}
+  function renderAudio(f){
+    const audio=f.audio||{available:false,level:0,muted:false};audioHud.hidden=f.mode==='game'||f.fileHover||!(f.audioFeedback||audioHover);
+    const angle=f.rotation,cx=f.anchorX+Math.sin(angle)*displaySize*.9,cy=f.anchorY-Math.cos(angle)*displaySize*.9;
+    audioHud.style.left=clamp(cx-65,6,width-136)+'px';audioHud.style.top=clamp(cy-62,6,height-42)+'px';
+    document.querySelector('#audio-level').textContent=Math.round(audio.level)+'%';
+    muteButton.disabled=audioBusy||!audio.available;muteButton.setAttribute('aria-label',audio.muted?'Bật tiếng hệ thống':'Tắt tiếng hệ thống');muteButton.title=audio.muted?'Bật tiếng hệ thống':'Tắt tiếng hệ thống';muteButton.classList.toggle('muted',audio.muted);audioHud.classList.toggle('muted',audio.muted);
+  }
+  audioHud.addEventListener('pointerenter',()=>{audioHover=true;});audioHud.addEventListener('pointerleave',()=>{audioHover=false;});
+  muteButton.addEventListener('click',async event=>{event.stopPropagation();if(audioBusy)return;audioBusy=true;try{await window.meo.audio.command('toggle');}catch{}finally{audioBusy=false;}});
+  async function flushWheel(){
+    wheelTimer=null;if(!wheelSteps||frame?.mode==='game'){wheelSteps=0;return;}
+    const steps=clamp(wheelSteps,-5,5);wheelSteps-=steps;
+    try{await window.meo.audio.command('step',steps*2);}catch{wheelSteps=0;}
+    if(wheelSteps)wheelTimer=setTimeout(flushWheel,60);
+  }
+  addEventListener('wheel',event=>{
+    if(!frame||frame.mode==='game'||held||fileHover||event.ctrlKey||event.metaKey||!Number.isFinite(event.deltaY)||!(sampleHit({x:event.clientX,y:event.clientY})||onAudioHud({x:event.clientX,y:event.clientY})))return;
+    event.preventDefault();const delta=event.deltaY*(event.deltaMode===1?40:event.deltaMode===2?100:1);wheelRemainder+=clamp(-delta,-1000,1000);
+    const steps=Math.trunc(wheelRemainder/100);if(steps){wheelRemainder-=steps*100;wheelSteps=clamp(wheelSteps+steps,-20,20);if(!wheelTimer)wheelTimer=setTimeout(flushWheel,60);}
+  },{passive:false});
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   function resize(){width=innerWidth;height=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
   function blink(t){const p=t%4.8;return p>4.33&&p<4.42?1:p>=4.42&&p<4.55?2:p>=4.55&&p<4.64?1:0;}
@@ -61,6 +83,7 @@
     const x=f.anchorX+s*p.altitude,y=f.anchorY-c*p.altitude;
     transform={x,y,angle,sx:f.direction*p.sx,sy:p.sy,drawWidth,drawHeight,unit,source,sheet:p.sheet};
     ctx.clearRect(0,0,width,height);
+    if(f.fileHover){ctx.save();ctx.translate(f.anchorX,f.anchorY);ctx.rotate(f.rotation);ctx.fillStyle='#b8dba02b';ctx.strokeStyle='#a2c18a';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.beginPath();ctx.roundRect(-displaySize*.65,-displaySize*1.1,displaySize*1.3,displaySize*1.2,18);ctx.fill();ctx.stroke();ctx.restore();}
     ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(transform.sx,transform.sy);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
     ctx.drawImage(images[p.sheet],source.x,source.y,source.w,source.h,-drawWidth/2,-drawHeight,drawWidth,drawHeight);ctx.restore();
     if(f.pet&&!window.__wasPet&&f.mode!=='game')emit(clamp(x,25,width-25),clamp(y-displaySize*.8,25,height-25),'heart');window.__wasPet=f.pet;
@@ -70,9 +93,16 @@
     window.__wasMusicReaction=reaction;window.__lastMusicReaction=f.musicReactionElapsed;
     if(lastPounce&&f.jumpPhase===null)emit(clamp(x,25,width-25),clamp(y-5,25,height-25),'spark',3);lastPounce=f.jumpPhase!==null;
     drawParticles(dt);
-    if(f.toast)textBubble(f.toast);
-    hit=f.mode!=='game'&&sampleHit(f.cursor);canvas.style.cursor=f.dragging?'grabbing':hit?'grab':'default';window.meo.hit(hit||!!held);
+    renderAudio(f);
+    if(f.fileHover)textBubble('Thả file ở đây');else if(f.toast&&!f.audioFeedback)textBubble(f.toast);
+    hit=f.mode!=='game'&&(sampleHit(f.cursor)||onAudioHud(f.cursor));canvas.style.cursor=f.dragging?'grabbing':hit?'grab':'default';window.meo.hit(hit||!!held||fileHover);
   }
+  function nearPet(event){if(!frame||frame.mode==='game'||!transform)return false;const angle=frame.rotation,cx=transform.x+Math.sin(angle)*displaySize*.55,cy=transform.y-Math.cos(angle)*displaySize*.55;return sampleHit({x:event.clientX,y:event.clientY})||Math.hypot(event.clientX-cx,event.clientY-cy)<displaySize*.8;}
+  function setFileHover(active){clearTimeout(fileHoverTimer);fileHover=active;window.meo.fileHover(active);if(active)fileHoverTimer=setTimeout(()=>setFileHover(false),1100);}
+  for(const type of ['dragenter','dragover'])canvas.addEventListener(type,event=>{if(!Array.from(event.dataTransfer?.types||[]).includes('Files'))return;event.preventDefault();const near=nearPet(event);event.dataTransfer.dropEffect=near?'copy':'none';setFileHover(near);});
+  canvas.addEventListener('dragleave',()=>setFileHover(false));
+  addEventListener('dragend',()=>setFileHover(false));
+  canvas.addEventListener('drop',event=>{event.preventDefault();const accept=nearPet(event);setFileHover(false);if(accept)window.meo.dropFiles([...event.dataTransfer.files]).catch(()=>{});});
   canvas.addEventListener('contextmenu',event=>{event.preventDefault();if(hit)window.meo.action('menu');});
   canvas.addEventListener('pointerdown',event=>{
     if(event.button!==0||frame?.mode==='game'||!sampleHit({x:event.clientX,y:event.clientY}))return;event.preventDefault();
