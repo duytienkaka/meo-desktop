@@ -2,7 +2,7 @@
 
 App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.6.0**.
 
-**[Website & tải ứng dụng](https://meo-desktop.cozydrum8.chatgpt.site)** · [Các bản phát hành](https://github.com/duytienkaka/meo-desktop/releases)
+**[Website & tải ứng dụng](https://meo-desktop-download.equalhinny18.chatgpt.site)** · [Các bản phát hành](https://github.com/duytienkaka/meo-desktop/releases)
 
 ## Tính năng
 
@@ -17,7 +17,7 @@ App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.6.0*
 
 ## macOS
 
-macOS 13 Ventura trở lên. Có hai bản: **Apple Silicon (arm64, M1 trở lên)** và **Intel (x64)**. Mở DMG rồi kéo **Meo Desktop.app** vào Applications. App nằm ở thanh menu; phím ẩn/hiện là **⌘ + ⌥ + M**.
+macOS 13 Ventura trở lên. Có hai bản: **Apple Silicon (arm64, M1 trở lên)** và **Intel (x64)**. Mở DMG rồi kéo **Meo.app** vào Applications. App nằm ở thanh menu; phím ẩn/hiện là **⌘ + ⌥ + M**.
 
 - Kéo/thả file, ghim ứng dụng .app, di chuyển mèo và chỉnh âm lượng hệ thống.
 - Apple Music / Spotify: bật “Nghe nhạc cùng bạn” và cấp quyền **Automation** khi macOS hỏi. Nhạc trong trình duyệt và ảnh bìa trên Mac chưa hỗ trợ; vẫn có tên bài, điều khiển phát/chuyển bài/tua. Mèo không tự mở trình phát đang đóng.
