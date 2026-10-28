@@ -67,11 +67,14 @@
   }
   canvas.addEventListener('contextmenu',event=>{event.preventDefault();if(hit)window.meo.action('menu');});
   canvas.addEventListener('pointerdown',event=>{
-    if(event.button!==0||!hit)return;event.preventDefault();
+    if(event.button!==0||frame?.mode==='game'||!sampleHit({x:event.clientX,y:event.clientY}))return;event.preventDefault();
+    hit=true;window.meo.hit(true);
     window.meo.action('press');
     held={x:event.screenX,y:event.screenY,drag:false,id:event.pointerId};canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener('pointermove',event=>{
+    if(!frame||frame.mode==='game')return;
+    hit=sampleHit({x:event.clientX,y:event.clientY});window.meo.hit(hit||!!held);
     if(held&&!held.drag&&Math.hypot(event.screenX-held.x,event.screenY-held.y)>7){held.drag=true;window.meo.action('drag-start');}
   });
   function release(){if(!held)return;window.meo.action(held.drag?'drag-end':'pet');held=null;}

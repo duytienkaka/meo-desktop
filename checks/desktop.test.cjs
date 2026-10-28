@@ -2,22 +2,24 @@ const assert=require('node:assert/strict');
 const path=require('node:path');
 const fs=require('node:fs');
 const {_electron}=require('playwright');
+const executable=process.env.MEO_EXECUTABLE||path.resolve(__dirname,'../../outputs/Meo-Desktop-0.4-win-x64/Meo.exe');
 let desktop;
 (async()=>{
   const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
-  const testData=path.resolve(__dirname,'../../outputs/Meo-Desktop-0.4-win-x64/resources/app/checks/user-data');fs.mkdirSync(testData,{recursive:true});
+  const testData=path.join(path.dirname(executable),'resources/app/checks/user-data');fs.mkdirSync(testData,{recursive:true});
   const prefsFile=path.join(testData,'settings.json');let prefs={};try{prefs=JSON.parse(fs.readFileSync(prefsFile,'utf8'));}catch{}fs.writeFileSync(prefsFile,JSON.stringify({...prefs,roam:true,follow:true,visible:true,paused:false}));
-  desktop=await _electron.launch({executablePath:path.resolve(__dirname,'../../outputs/Meo-Desktop-0.4-win-x64/Meo.exe'),args:['--meo-test'],env,timeout:30000});
+  desktop=await _electron.launch({executablePath:executable,args:['--meo-test'],env,timeout:30000});
   const page=await desktop.firstWindow();const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await page.waitForFunction(()=>window.meoPet?.snapshot().frame);
   await desktop.evaluate(()=>{global.__meo.setPaused(false);global.__meo.setVisible(true);});
   await desktop.evaluate(()=>{global.__meo.cursor={x:-10000,y:-10000};});
+  await page.waitForTimeout(350);
   const native=()=>desktop.evaluate(()=>global.__meo.state());
   const get=()=>page.evaluate(()=>window.meoPet.snapshot());
   const out=path.join(__dirname,'screenshots');fs.mkdirSync(out,{recursive:true});
   const capture=async name=>{const png=await desktop.evaluate(async()=>{const im=await global.__meo.window().webContents.capturePage();return im.toPNG().toString('base64');});fs.writeFileSync(path.join(out,name+'.png'),Buffer.from(png,'base64'));};
-  const first=await native();assert.equal(first.visible,true);assert.equal(first.alwaysOnTop,true);assert.equal(first.focusable,false);assert.equal(first.interactive,false);
+  const first=await native();assert.equal(first.visible,true);if(!process.env.MEO_SKIP_ZORDER_CHECK)assert.equal(first.alwaysOnTop,true);assert.equal(first.focusable,first.mode!=='game');assert.equal(first.interactive,false);
   for(const mode of ['play','music','game','focus','sleep']){
     await desktop.evaluate((_e,value)=>global.__meo.setMode(value),mode);
     await page.waitForFunction(value=>window.meoPet.snapshot().frame.mode===value,mode);
@@ -25,7 +27,7 @@ let desktop;
     const f=await get();assert.equal(f.frame.mode,mode);
     if(mode==='game'){
       assert.ok(f.displaySize<74,'Game cat should be small');const s=await native();
-      assert.equal(s.action,'idle');const before=s.distance;
+      assert.equal(s.action,'idle');assert.equal(s.focusable,false);const before=s.distance;
       await desktop.evaluate(()=>{const p=global.__meo.route().point(0);global.__meo.cursor={x:p.x,y:p.y};});
       await page.waitForTimeout(300);assert.equal((await native()).distance,before,'Game cat must ignore cursor');
       await desktop.evaluate(()=>{global.__meo.cursor={x:-10000,y:-10000};});
@@ -47,6 +49,12 @@ let desktop;
   await desktop.evaluate(()=>{const r=global.__meo.route(),p=r.point(r.bottomLength*.65);global.__meo.cursor={x:p.x,y:p.y};});
   await page.waitForTimeout(150);assert.ok(Math.abs((await native()).distance-distanceBeforeDrag)>10,'Drag should reposition the cat');
   await page.mouse.up();await page.waitForTimeout(100);assert.equal((await native()).dragging,false);
+  // A drag to the desktop interior must stay there instead of snapping to an edge.
+  await desktop.evaluate(()=>{const r=global.__meo.route();global.__meo.drag(true);global.__meo.cursor={x:r.area.x+r.area.width*.5,y:r.area.y+r.area.height*.5};});await page.waitForTimeout(180);
+  await page.evaluate(()=>window.meo.action('drag-end'));await page.waitForTimeout(100);
+  const placed=(await native()).freePosition;assert.ok(placed);assert.equal((await get()).frame.segment,-1);
+  await desktop.evaluate(()=>global.__meo.setMode('game'));assert.notEqual((await get()).frame.segment,-1);
+  await desktop.evaluate(()=>global.__meo.setMode('focus'));await page.waitForTimeout(150);assert.deepEqual((await native()).freePosition,placed);assert.equal((await get()).frame.segment,-1);
   await desktop.evaluate(()=>{global.__meo.cursor={x:-10000,y:-10000};});await page.waitForTimeout(200);assert.equal((await native()).interactive,false);
   // Frozen simulation must resume successfully.
   await desktop.evaluate(()=>global.__meo.setPaused(true));const paused=(await native()).time;
@@ -80,7 +88,7 @@ let desktop;
   await desktop.evaluate(()=>global.__meo.setVisible(true));assert.equal((await native()).visible,true);
   const labels=await desktop.evaluate(()=>global.__meo.menu());assert.ok(labels.includes('Thoát mèo'));assert.ok(labels.includes('Cài đặt…'));assert.ok(!labels.includes('Tâm trạng'));assert.ok(labels.filter(Boolean).length<=4);
   assert.deepEqual(errors,[]);
-  const result={passed:true,checks:['native transparent window','always on top without focus','five states','game stays small and ignores pointer','alpha hit test and transparent pass-through state','pet interaction','drag and release along edge','pause/resume','cursor pounce','eight screen edges/corners without clipping at large size','hide/show','Vietnamese native menu','no renderer errors']};
+  const result={passed:true,nativeZOrderChecked:!process.env.MEO_SKIP_ZORDER_CHECK,checks:['native transparent window','desktop can accept focus; game cannot','five states','game stays small and ignores pointer','alpha hit test and transparent pass-through state','pet interaction','drag to any desktop position','game temporarily parks without losing free position','pause/resume','cursor pounce','eight screen edges/corners without clipping at large size','hide/show','Vietnamese native menu','no renderer errors']};
   fs.writeFileSync(path.join(__dirname,'desktop-report.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));
   await desktop.close();
 })().catch(async error=>{console.error(error);if(desktop)await desktop.close().catch(()=>{});process.exit(1);});

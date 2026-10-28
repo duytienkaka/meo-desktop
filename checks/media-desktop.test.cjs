@@ -2,7 +2,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const {_electron}=require('playwright');
-const executable=path.resolve(__dirname,'../../outputs/Meo-Desktop-0.4-win-x64/Meo.exe');
+const executable=process.env.MEO_EXECUTABLE||path.resolve(__dirname,'../../outputs/Meo-Desktop-0.4-win-x64/Meo.exe');
 let app;
 const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
 async function launch(extra=[]){app=await _electron.launch({executablePath:executable,args:['--meo-test',...extra],env,timeout:30000});const page=await app.firstWindow();await page.waitForFunction(()=>window.meoPet?.snapshot().frame);return page;}

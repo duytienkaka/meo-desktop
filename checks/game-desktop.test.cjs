@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {_electron}=require('playwright');
-const executable=path.resolve(__dirname,'../../outputs/Meo-Desktop-0.4-win-x64/Meo.exe');
+const executable=process.env.MEO_EXECUTABLE||path.resolve(__dirname,'../../outputs/Meo-Desktop-0.4-win-x64/Meo.exe');
 const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;let app;
 const makeSample=(exe,pid=100,runningPids=[100],more={})=>({available:true,foreground:{exe,pid,...more},runningPids});
 async function launch(extra=[]){app=await _electron.launch({executablePath:executable,args:['--meo-test',...extra],env,timeout:30000});const p=await app.firstWindow();await p.waitForFunction(()=>window.meoPet?.snapshot().frame);return p;}
