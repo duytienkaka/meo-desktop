@@ -57,3 +57,5 @@ Nút phụ thuộc khả năng của trình phát. Nút không được trình p
 `checks/player.test.cjs` kiểm tra bảng nhạc, gửi lệnh, tạm dừng/phát lại, nguồn thay đổi, nút không hỗ trợ và không lưu metadata. `checks/build-native-media-fixture.ps1` biên dịch trình phát thử nghiệm tắt tiếng, rồi `node checks/native-player.test.cjs` kiểm tra thật bốn lệnh Windows chỉ tới phiên thử nghiệm. Các trình phát của người dùng không được điều khiển trong bài kiểm tra này.
 
 Ảnh bìa lấy từ thumbnail do Windows media session cung cấp, thu gọn về 192×192 trong bộ nhớ, không tải ảnh qua mạng và không lưu ảnh vào thư viện app. Nếu trình phát không cung cấp ảnh hoặc thời lượng, bảng hiện hình nốt nhạc và thời gian trống. Thanh tiến trình chỉ hiển thị; chưa hỗ trợ tua. Native test xác nhận đọc cả thumbnail và timeline từ phiên thử nghiệm im lặng.
+#   m e o - d e s k t o p  
+ 
