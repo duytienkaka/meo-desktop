@@ -2,6 +2,7 @@ name: macOS packages
 on:
   push:
     branches: [feat/macos-release, feat/screenshot-pocket]
+    paths-ignore: [.github/workflows/publish-mac-assets.yml]
   workflow_dispatch:
     inputs:
       version:
