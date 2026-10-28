@@ -12,6 +12,7 @@ const {constrainPosition,freePlacement}=require('./placement.cjs');
 const {playerLayout}=require('./player-layout.cjs');
 const {createDesktopActions}=require('./desktop-actions.cjs');
 const {createAudioControl}=require('./audio.cjs');
+const {createScreenshotFeature}=require('./screenshots.cjs');
 const {createMacMonitor,createMacAudio,createMacTransport,scanMacLibrary}=require('./macos.cjs');
 const mac=process.platform==='darwin',desktopSupported=['win32','darwin'].includes(process.platform);
 const testMode=process.argv.includes('--meo-test');
@@ -20,7 +21,7 @@ app.setPath('userData',testMode?path.resolve(__dirname,'../checks/user-data'):pa
 if(!app.requestSingleInstanceLock()){app.quit();}
 else {
   const desktopActions=createDesktopActions({directory:app.getPath('userData'),shell,clipboard}),pinIcons=new Map();
-  let fileHoverUntil=0,fileMenuOpen=false;
+  let fileHoverUntil=0,fileMenuOpen=false,screenshots;
   let audioState={available:false,level:0,muted:false},audioFeedbackUntil=0;
   function receiveAudio(value){const changed=audioState.muted!==value.muted;audioState=value;if(changed)refreshMenu();if(playerWindow&&!playerWindow.isDestroyed())playerWindow.webContents.send('meo:audio:state',value);}
   const audioControl=(mac?createMacAudio:createAudioControl)({onSample:receiveAudio});
@@ -234,7 +235,7 @@ else {
     if(!modes.includes(mode))return;
     if(!automatic){state.baseMode=mode;state.autoMedia=false;state.mediaStatus='off';state.mediaPlaying=false;mediaDecision.reset();mediaMonitor.stop();state.autoGame=false;state.gameActive=false;state.gameExe='';gameDecision.reset();if(playerWindow?.isVisible())startMedia();}
     const keepDragging=automatic&&state.dragging&&mode!=='game';state.mode=mode;state.jump=null;state.dragging=keepDragging;state.petUntil=0;state.target=null;state.action='idle';
-    if(mode==='game')hidePlayer(true);
+    if(mode==='game'){hidePlayer(true);screenshots?.hide();}
     playBehavior.reset(state.time);
     // Quiet modes rest on the lower edge, with the same screen-safe routing.
     if(mode!=='play'){
@@ -246,7 +247,7 @@ else {
   }
   function setVisible(visible){
     state.visible=!!visible;state.interactive=false;state.dragging=false;
-    if(!visible)hidePlayer(true);
+    if(!visible){hidePlayer(true);screenshots?.hide();}
     if(win&&!win.isDestroyed()){syncMouseInput(false,true);if(state.visible&&!suspended&&ready){win.showInactive();}else win.hide();}
     lastTick=0;persist();refreshMenu();
   }
@@ -256,6 +257,8 @@ else {
     return Menu.buildFromTemplate([
       {label:'Cài đặt…',click:()=>openSettings()},
       {label:'Ứng dụng đã ghim',submenu:pinnedMenu()},
+      {label:'Chụp vùng màn hình…',accelerator:'CommandOrControl+Alt+S',enabled:process.platform==='win32'&&state.mode!=='game',click:()=>runDesktopAction(()=>screenshots.capture())},
+      {label:'Bỏ ảnh mèo đang giữ',enabled:process.platform==='win32'&&!!screenshots?.snapshot().photos.length,click:()=>screenshots?.clear()},
       {label:audioState.muted?'Bật tiếng hệ thống':'Tắt tiếng hệ thống',enabled:desktopSupported&&state.mode!=='game',click:()=>runDesktopAction(()=>controlAudio('toggle'))},
       {label:state.visible?'Ẩn mèo':'Hiện mèo',click:()=>setVisible(!state.visible)},
       {label:state.paused?'Tiếp tục hoạt ảnh':'Tạm dừng hoạt ảnh',click:()=>setPaused(!state.paused)},
@@ -339,7 +342,7 @@ else {
   function refreshMenu(){
     publishSettings();
     if(!tray||tray.isDestroyed())return;
-    const key=JSON.stringify([state.visible,state.paused,audioState.muted,desktopActions.pins()]);
+    const key=JSON.stringify([state.visible,state.paused,audioState.muted,screenshots?.snapshot().photos.length,desktopActions.pins()]);
     if(key===lastMenuKey)return;lastMenuKey=key;
     tray.setContextMenu(buildMenu());tray.setToolTip('Mèo Desktop');
   }
@@ -357,7 +360,7 @@ else {
   function advance(dt,cursor){
     if(suspended)return;
     if(!state.paused)state.time+=dt;
-    if(fileMenuOpen||Date.now()<fileHoverUntil||playerVisible()||playerWindow?.isVisible()){state.target=null;state.action='idle';return;}
+    if(screenshots?.isBusy()||fileMenuOpen||Date.now()<fileHoverUntil||playerVisible()||playerWindow?.isVisible()){state.target=null;state.action='idle';return;}
     if(state.dragging){
       if(Date.now()-state.dragAt>12000){state.dragging=false;return;}
       const nextDisplay=screen.getDisplayNearestPoint(cursor);
@@ -401,7 +404,7 @@ else {
     return {audio:audioState,audioFeedback:Date.now()<audioFeedbackUntil,fileHover:Date.now()<fileHoverUntil,musicReactionElapsed:state.mode==='music'&&!state.paused&&!state.dragging&&state.time-musicReactionAt<1.15?state.time-musicReactionAt:null,time:state.time,mode:state.mode,size:state.mode==='game'?70:state.size,direction:state.direction,action:state.action,actionElapsed:state.time-state.actionStart,jumpPhase:state.jump?(state.time-state.jump.start)/state.jump.duration:null,pet:state.time<state.petUntil,paused:state.paused,dragging:state.dragging,toast:state.mode!=='game'&&state.time<state.toastUntil?state.toast:'',...placement,cursor:{x:cursor.x-placement.x,y:cursor.y-placement.y}};
   }
   function tickFrame(){
-    if(!win||win.isDestroyed()||!ready||!state.visible||suspended)return;
+    if(!win||win.isDestroyed()||!ready||!state.visible||suspended||screenshots?.isCapturing())return;
     const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint();
     const f=frameData(cursor),bounds={x:f.x,y:f.y,width:f.width,height:f.height},key=JSON.stringify(bounds);
     if(key!==lastBounds){win.setBounds(bounds,false);lastBounds=key;}
@@ -451,16 +454,18 @@ else {
     if(process.platform==='win32')app.setAppUserModelId('vn.meo.desktop');
     if(mac){app.dock?.hide();Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'Mèo Desktop',submenu:[{role:'about'},{type:'separator'},{label:'Cài đặt…',accelerator:'Command+,',click:()=>openSettings()},{type:'separator'},{role:'quit'}]},{role:'editMenu'}]));}
     refreshRoute();createWindow();
+    screenshots=createScreenshotFeature({electron:require('electron'),getPet:()=>win,getPlacement:currentPlacement,getWindows:()=>[win,playerWindow,settingsWindow],canUse:()=>state.visible&&!suspended&&state.mode!=='game'&&!quitting,onStatus:text=>{note(text);lastMenuKey='';refreshMenu();},onCapture:()=>{hidePlayer(true);state.target=null;state.jump=null;state.action='idle';},testMode});
     const icon=nativeImage.createFromPath(path.join(__dirname,'../assets/core.png')).crop({x:53,y:50,width:280,height:292}).resize({height:24});
     tray=new Tray(icon);refreshMenu();refreshPinIcons();tray.on('double-click',()=>openSettings());
     globalShortcut.register('CommandOrControl+Alt+M',()=>setVisible(!state.visible));
+    if(process.platform==='win32')globalShortcut.register('CommandOrControl+Alt+S',()=>runDesktopAction(()=>screenshots.capture()));
     for(const event of ['display-added','display-removed','display-metrics-changed'])screen.on(event,()=>{refreshRoute(display.id);tickFrame();});
-    const sleep=()=>{suspended=true;hidePlayer(true);audioControl.stop();mediaTransport.stop();mediaMonitor.stop();gameMonitor.stop();win?.hide();};
+    const sleep=()=>{suspended=true;screenshots?.hide();hidePlayer(true);audioControl.stop();mediaTransport.stop();mediaMonitor.stop();gameMonitor.stop();win?.hide();};
     const wake=()=>{suspended=false;if(!testMode)audioControl.start();lastTick=0;startMedia();startGame();if(state.visible&&ready)win.showInactive();};
     powerMonitor.on('suspend',sleep);powerMonitor.on('resume',wake);
     powerMonitor.on('lock-screen',sleep);powerMonitor.on('unlock-screen',wake);
     if(testMode)global.__meo={cursor:null,window:()=>win,setMode,setSize,setVisible,setPaused,setAutoMedia,receiveMedia,setAutoGame,receiveGame,setGameRule,gamePid:()=>gameMonitor.pid(),mediaPid:()=>mediaMonitor.pid(),route:()=>route,state:()=>({...state,ready,display:{id:display.id,workArea:display.workArea},bounds:win.getBounds(),visible:win.isVisible(),alwaysOnTop:win.isAlwaysOnTop(),focusable:win.isFocusable()}),move:s=>{state.freePosition=null;state.distance=wrap(s,route.total);state.target=null;state.jump=null;state.action='idle';tickFrame();},menu:()=>buildMenu().items.map(i=>i.label),drag:value=>{state.dragging=value;state.dragAt=Date.now();},shutdown:()=>{quitting=true;app.quit();}};
-    if(testMode)Object.assign(global.__meo,{audioControl,receiveAudio,desktopActions,acceptDroppedFiles,fileMenuTemplate,pinnedMenu,refreshPinIcons,openSettings,settingsSnapshot,settingsWindow:()=>settingsWindow});
+    if(testMode)Object.assign(global.__meo,{screenshots,audioControl,receiveAudio,desktopActions,acceptDroppedFiles,fileMenuTemplate,pinnedMenu,refreshPinIcons,openSettings,settingsSnapshot,settingsWindow:()=>settingsWindow});
     if(testMode)Object.assign(global.__meo,{overlay:()=>({raises:overlayRaises}),advancePlay:seconds=>{for(let t=0;t<seconds;t+=.05)advance(.05,{x:-10000,y:-10000});tickFrame();}});
     if(testMode)Object.assign(global.__meo,{placeFree:point=>{state.freePosition={...constrainPosition(display.workArea,point,state.size),displayId:display.id};state.target=null;state.jump=null;tickFrame();},openPlayer,togglePlayer,playerWindow:()=>playerWindow,playerState:()=>({open:playerOpen,loaded:playerLoaded}),playerSnapshot,mediaTransport});
     startMedia();startGame();if(!testMode)audioControl.start();
@@ -471,5 +476,5 @@ else {
   app.on('second-instance',(_event,argv)=>{if(argv.includes('--meo-quit')){quitting=true;app.quit();return;}openSettings();});
   app.on('activate',()=>{if(app.isReady())openSettings();});
   app.on('window-all-closed',()=>{});
-  app.on('before-quit',()=>{quitting=true;clearTimeout(timer);clearTimeout(persistTimer);clearTimeout(playerHideTimer);clearTimeout(playerBlurTimer);mediaTransport.stop();mediaMonitor.stop();mediaDecision.reset();gameMonitor.stop();gameDecision.reset();audioControl.stop();if(display)saveSettings();globalShortcut.unregisterAll();tray?.destroy();});
+  app.on('before-quit',()=>{quitting=true;screenshots?.dispose();clearTimeout(timer);clearTimeout(persistTimer);clearTimeout(playerHideTimer);clearTimeout(playerBlurTimer);mediaTransport.stop();mediaMonitor.stop();mediaDecision.reset();gameMonitor.stop();gameDecision.reset();audioControl.stop();if(display)saveSettings();globalShortcut.unregisterAll();tray?.destroy();});
 }

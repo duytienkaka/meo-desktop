@@ -1,6 +1,7 @@
 const {contextBridge,ipcRenderer,webUtils}=require('electron');
 contextBridge.exposeInMainWorld('meo',{
   audio:{get:()=>ipcRenderer.invoke('meo:audio:get'),command:(action,value)=>ipcRenderer.invoke('meo:audio:command',{action,value}),onChange:callback=>ipcRenderer.on('meo:audio:state',(_event,state)=>callback(state))},
+  shots:{get:()=>ipcRenderer.invoke('meo:shots:get'),action:(action,id)=>ipcRenderer.invoke('meo:shots:pet',{action,id}),onChange:callback=>ipcRenderer.on('meo:shots:state',(_event,state)=>callback(state))},
   onFrame:callback=>ipcRenderer.on('meo:frame',(_event,frame)=>callback(frame)),
   ready:()=>ipcRenderer.send('meo:ready'),
   hit:value=>{if(typeof value==='boolean')ipcRenderer.send('meo:hit',value);},

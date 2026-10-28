@@ -1,11 +1,13 @@
 # Mèo Desktop
 
-App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.6.0**.
+App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.7.0**.
 
-**[Website & tải ứng dụng](https://meo-desktop-download.equalhinny18.chatgpt.site)** · [Các bản phát hành](https://github.com/duytienkaka/meo-desktop/releases)
+**[Tải ứng dụng tại GitHub Releases](https://github.com/duytienkaka/meo-desktop/releases)**
 
 ## Tính năng
 
+- **Windows — chụp ảnh gọn:** chuột phải mèo → **Chụp vùng màn hình…** hoặc `Ctrl + Alt + S`. Kéo chọn vùng, Esc để hủy. Mèo tạm ẩn khi chụp và giữ tối đa **3 ảnh gần nhất**; ảnh thứ 4 thay ảnh cũ nhất.
+- Mèo cầm một xấp ảnh nhỏ và chỉ hiện **một nút “Đưa N ảnh ↗”**. Bấm vào ô nhận ảnh trong app đích trước, rồi bấm nút để ném và dán cả bộ 1–3 ảnh vào bản nháp. Bạn tự bỏ ảnh không muốn trong app chat và tự bấm gửi; mèo không bấm Enter. Dùng menu chuột phải **Bỏ ảnh mèo đang giữ** để dọn xấp ảnh. Ảnh ở RAM và các PNG tạm phục vụ đính kèm được giữ đến khi thoát app để bản nháp còn đọc được file. Không tải ảnh lên server.
 - Đi dạo theo mép màn hình, rình/vồ con trỏ, phản ứng khi vuốt ve và cuộn tròn nghỉ.
 - Tự nghe nhạc cùng bạn. Nhấp mèo để bật/tắt bảng có ảnh bìa, tên bài, tiến trình và nút phát/dừng/chuyển bài. Bấm ảnh bìa hoặc nút ↗ để mở trình phát, kéo thanh tiến trình để tua khi được hỗ trợ. Rê chuột lên tên bài dài để đọc hết; mèo gật đầu và thả vài nốt nhạc khi chuyển bài.
 - Cuộn lên/xuống trên mèo để tăng/giảm âm lượng hệ thống, mỗi nấc 2%. Bấm nút loa trong ô âm lượng, card nhạc hoặc menu chuột phải để bật/tắt tiếng. Điều khiển âm lượng hiện hỗ trợ Windows và tạm nghỉ trong chế độ game.
@@ -47,7 +49,7 @@ npm run package:win
 npm run setup:win
 ```
 
-File cài đặt nằm ở `outputs/setup/Meo-Desktop-Setup-0.5.0-x64.exe`, kèm SHA-256. Trình cài tạo shortcut, hỗ trợ gỡ cài đặt và giữ cấu hình khi gỡ. Bản chưa ký số.
+File cài đặt nằm ở `outputs/setup/Meo-Desktop-Setup-0.7.0-x64.exe`, kèm SHA-256. Trình cài tạo shortcut, hỗ trợ gỡ cài đặt và giữ cấu hình khi gỡ. Bản chưa ký số.
 
 Bản portable Windows nằm ở `../outputs/Meo-Desktop-0.5-win-x64/Meo.exe`. Giữ cả thư mục đi kèm. Script tải Electron chính thức và kiểm tra SHA-256; không đóng gói đè vào thư mục đã có `Meo.exe`.
 
@@ -57,6 +59,7 @@ Các helper Windows đã có trong `src/native/` để chạy ngay. Sau khi sử
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-media.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-game.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-audio.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-screenshot.ps1
 ```
 
 Unit test chạy bằng `npm test`; `npm run check` kiểm tra cú pháp và dấu conflict. Các bài kiểm tra giao diện/native trong `checks/` cần bản đóng gói Windows ở đường dẫn trên. Thử điều khiển nhạc bằng fixture im lặng:

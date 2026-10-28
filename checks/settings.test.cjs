@@ -3,8 +3,8 @@ const {_electron}=require('playwright');
 const executable=process.env.MEO_EXECUTABLE||path.resolve(__dirname,'../../outputs/Meo-Desktop-0.4-win-x64/Meo.exe');
 const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;let desktop;
 (async()=>{
-  const testData=path.join(path.dirname(executable),'resources/app/checks/user-data');fs.mkdirSync(testData,{recursive:true});fs.writeFileSync(path.join(testData,'games.json'),JSON.stringify({games:[],excluded:[]}));
-  desktop=await _electron.launch({executablePath:executable,args:['--meo-test'],env,timeout:30000});
+  const testData=process.env.MEO_APP_ROOT?path.join(process.env.MEO_APP_ROOT,'checks/user-data'):path.join(path.dirname(executable),'resources/app/checks/user-data');fs.mkdirSync(testData,{recursive:true});fs.writeFileSync(path.join(testData,'games.json'),JSON.stringify({games:[],excluded:[]}));
+  desktop=await _electron.launch({executablePath:executable,args:[...(process.env.MEO_APP_ROOT?[process.env.MEO_APP_ROOT]:[]),'--meo-test'],env,timeout:30000});
   const pet=await desktop.firstWindow();await pet.waitForFunction(()=>window.meoPet?.snapshot().frame);
   await desktop.evaluate(()=>{global.__meo.setPaused(false);global.__meo.setVisible(true);});
   const opened=desktop.waitForEvent('window');await desktop.evaluate(()=>global.__meo.openSettings());const page=await opened;
@@ -12,7 +12,7 @@ const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;let desktop;
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   const state=()=>desktop.evaluate(()=>global.__meo.state());
   assert.equal(await page.title(),'Mèo Desktop — Cài đặt');assert.equal(await page.evaluate(()=>typeof require),'undefined');assert.equal(await pet.evaluate(()=>typeof window.settings),'undefined');
-  const menu=await desktop.evaluate(()=>global.__meo.menu());assert.deepEqual(menu.filter(Boolean),['Cài đặt…','Ứng dụng đã ghim','Tắt tiếng hệ thống','Ẩn mèo','Tạm dừng hoạt ảnh','Thoát mèo']);
+  const menu=await desktop.evaluate(()=>global.__meo.menu());assert.deepEqual(menu.filter(Boolean),['Cài đặt…','Ứng dụng đã ghim','Chụp vùng màn hình…','Bỏ ảnh mèo đang giữ','Tắt tiếng hệ thống','Ẩn mèo','Tạm dừng hoạt ảnh','Thoát mèo']);
   await page.locator('#roam').uncheck();await page.waitForTimeout(120);assert.equal((await state()).roam,false);
   await page.locator('[data-size="80"]').click();await page.waitForFunction(()=>document.querySelector('#preview').dataset.previewSize==='80');
   await page.locator('[data-size="148"]').click();await page.waitForTimeout(120);assert.equal((await state()).size,148);
@@ -53,7 +53,7 @@ const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;let desktop;
   await desktop.evaluate(()=>global.__meo.setPaused(true));const frozen=(await state()).distance;
   await page.locator('#done').click();assert.equal(await desktop.evaluate(()=>global.__meo.settingsWindow().isVisible()),false);assert.equal((await state()).visible,true);
   // A second executable launch must reopen the existing settings, preserving the pet and window count.
-  await new Promise((resolve,reject)=>{const process=spawn(executable,['--meo-test'],{env,windowsHide:true,stdio:'ignore'});process.once('error',reject);process.once('exit',code=>code===0?resolve():reject(new Error('Second launch failed: '+code)));});
+  await new Promise((resolve,reject)=>{const instance=spawn(executable,[...(process.env.MEO_APP_ROOT?[process.env.MEO_APP_ROOT]:[]),'--meo-test'],{env,windowsHide:true,stdio:'ignore'});instance.once('error',reject);instance.once('exit',code=>code===0?resolve():reject(new Error('Second launch failed: '+code)));});
   await page.waitForTimeout(250);assert.equal(await desktop.evaluate(()=>global.__meo.settingsWindow().isVisible()),true);assert.equal(desktop.windows().length,2);assert.equal((await state()).distance,frozen);
   // Native close also hides settings while the pet continues.
   await desktop.evaluate(()=>global.__meo.settingsWindow().close());assert.equal(await desktop.evaluate(()=>global.__meo.settingsWindow().isVisible()),false);assert.equal((await state()).ready,true);
