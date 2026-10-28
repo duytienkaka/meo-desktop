@@ -1,6 +1,6 @@
 # Mèo Desktop
 
-App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.5.0**.
+App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.6.0**.
 
 **[Website & tải ứng dụng](https://meo-desktop.cozydrum8.chatgpt.site)** · [Các bản phát hành](https://github.com/duytienkaka/meo-desktop/releases)
 
@@ -14,6 +14,18 @@ App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.5.0*
 - Nhận diện game để thu nhỏ và ngồi ở góc; quét Steam/Epic và hỗ trợ thêm game thủ công.
 - Cài đặt kích thước, màn hình, chuyển động, chế độ tự động và tâm trạng.
 - Giữ và kéo để đặt mèo ở vị trí bất kỳ; vị trí được lưu. Thả giữa màn hình thì mèo ở lại đó; kéo về mép hoặc chọn **Đưa mèo về mép dưới** trong Cài đặt để đi dạo tiếp. Chuột phải mở menu; `Ctrl + Alt + M` ẩn/hiện trên Windows.
+
+## macOS
+
+macOS 13 Ventura trở lên. Có hai bản: **Apple Silicon (arm64, M1 trở lên)** và **Intel (x64)**. Mở DMG rồi kéo **Meo Desktop.app** vào Applications. App nằm ở thanh menu; phím ẩn/hiện là **⌘ + ⌥ + M**.
+
+- Kéo/thả file, ghim ứng dụng .app, di chuyển mèo và chỉnh âm lượng hệ thống.
+- Apple Music / Spotify: bật “Nghe nhạc cùng bạn” và cấp quyền **Automation** khi macOS hỏi. Nhạc trong trình duyệt và ảnh bìa trên Mac chưa hỗ trợ; vẫn có tên bài, điều khiển phát/chuyển bài/tua. Mèo không tự mở trình phát đang đóng.
+- Quét game .app từ Steam; thêm game .app thủ công nếu còn thiếu. Nhận diện game theo ứng dụng, không đọc bàn phím hoặc màn hình.
+- Âm lượng không điều chỉnh được trên một số thiết bị xuất âm thanh có mức cố định; app sẽ báo không hỗ trợ.
+- Bản thử nghiệm có chữ ký ad-hoc, **chưa Developer ID / notarization**. macOS có thể chặn mở; xem hướng dẫn của Apple tại System Settings → Privacy & Security và chỉ quyết định cho phép nếu tin tưởng nguồn tải. Không cần tắt Gatekeeper.
+
+Build trên Mac: `npm ci`, `npm run setup:mac -- arm64` hoặc `npm run setup:mac -- x64`. GitHub Actions trong `.github/workflows/macos-release.yml` tạo DMG/ZIP, kiểm chữ ký và chạy smoke test trên cả hai kiến trúc. Chưa kiểm thử thủ công bằng Apple Music/Spotify thật.
 
 ## Cài và chạy
 
@@ -69,7 +81,7 @@ App dùng Electron, JavaScript/Node.js, HTML/CSS, Canvas 2D và C#/.NET Framewor
 
 ## Giới hạn
 
-- Nhận diện game/điều khiển nhạc mới triển khai trên Windows. Bản Mac cần tích hợp native và kiểm tra riêng; `npm run package:mac` chỉ chạy trên Mac.
+- Windows dùng các helper C#; macOS dùng các API/script hệ thống, không chạy file .exe. `npm run setup:mac` chỉ chạy trên Mac.
 - Fullscreen độc quyền có thể che pet; dùng **Borderless / Windowed Fullscreen**. Trong chế độ game, mèo không chặn chuột.
 - Ảnh bìa, thời lượng và nút nhạc phụ thuộc trình phát. Chỉ tua được khi trình phát cung cấp thời lượng và cho phép đổi vị trí; nếu không, thanh tiến trình chỉ để xem.
 - Game không có trong nguồn quét cần thêm thủ công. Nhận diện theo tên file chạy có thể nhầm nếu tên trùng nhau.

@@ -56,5 +56,5 @@ async function scanLibrary(options={}){
   }
   return {games:games.sort((a,b)=>a.name.localeCompare(b.name,'vi')),partial:partial||candidates.length>300};
 }
-function validLibrary(value){return (Array.isArray(value)?value:[]).filter(g=>g&&/^[a-f0-9]{20}$/.test(g.id)&&clean(g.name)&&Array.isArray(g.exes)).slice(0,300).map(g=>({...g,name:clean(g.name),source:clean(g.source),exes:[...new Set(g.exes.filter(e=>typeof e==='string'&&/^[^\\/\x00-\x1f]+\.exe$/i.test(e)).map(e=>e.toLowerCase()))].slice(0,40),manual:g.manual===true}));}
+function validLibrary(value){return (Array.isArray(value)?value:[]).filter(g=>g&&/^[a-f0-9]{20}$/.test(g.id)&&clean(g.name)&&Array.isArray(g.exes)).slice(0,300).map(g=>({...g,name:clean(g.name),source:clean(g.source),exes:[...new Set(g.exes.filter(e=>typeof e==='string'&&/^[^\\/\x00-\x1f]+\.(exe|app)$/i.test(e)).map(e=>e.toLowerCase()))].slice(0,40),manual:g.manual===true}));}
 module.exports={scanLibrary,executables,parseVdf,idFor,validLibrary,clean};

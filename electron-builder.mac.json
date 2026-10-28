@@ -1,0 +1,25 @@
+{
+  "appId": "vn.meo.desktop",
+  "productName": "Meo Desktop",
+  "executableName": "Meo",
+  "electronVersion": "45.0.0",
+  "asar": false,
+  "directories": {"output": "outputs/mac", "buildResources": "assets"},
+  "files": ["src/**/*", "assets/**/*", "package.json", "!src/native/*.exe", "!src/native/*.cs", "!src/native/*.ps1"],
+  "mac": {
+    "category": "public.app-category.utilities",
+    "icon": "assets/meo-mac.png",
+    "minimumSystemVersion": "13.0.0",
+    "identity": "-",
+    "hardenedRuntime": false,
+    "notarize": false,
+    "target": ["dmg", "zip"],
+    "artifactName": "Meo-Desktop-${version}-mac-${arch}.${ext}",
+    "extendInfo": {
+      "LSUIElement": true,
+      "NSAppleEventsUsageDescription": "Mèo Desktop dùng quyền Automation để hiển thị và điều khiển bài hát trong Apple Music hoặc Spotify khi bạn bật tính năng nghe nhạc."
+    }
+  },
+  "dmg": {"title": "Meo Desktop ${version}", "contents": [{"x": 130, "y": 200}, {"x": 410, "y": 200, "type": "link", "path": "/Applications"}]},
+  "publish": null
+}

@@ -1,0 +1,53 @@
+name: macOS packages
+on:
+  push:
+    branches: [feat/macos-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version (must match package.json)
+        required: true
+        default: '0.6.0'
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            arch: arm64
+          - os: macos-15-intel
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Check requested version
+        run: node -e "if(require('./package.json').version!==process.env.RELEASE_VERSION)process.exit(1)"
+        env:
+          RELEASE_VERSION: ${{ inputs.version || '0.6.0' }}
+      - run: npm run check
+      - run: npm test
+      - name: Build DMG and ZIP with ad-hoc signature
+        run: npm run setup:mac -- ${{ matrix.arch }}
+      - name: Verify app signature
+        run: codesign --verify --deep --strict "outputs/mac/${{ matrix.arch == 'arm64' && 'mac-arm64' || 'mac' }}/Meo Desktop.app"
+      - name: Packaged app and native smoke tests
+        run: node checks/macos-smoke.test.cjs
+        env:
+          MEO_EXECUTABLE: ${{ github.workspace }}/outputs/mac/${{ matrix.arch == 'arm64' && 'mac-arm64' || 'mac' }}/Meo Desktop.app/Contents/MacOS/Meo
+      - uses: actions/upload-artifact@v6
+        with:
+          name: Meo-Desktop-mac-${{ matrix.arch }}
+          path: |
+            outputs/mac/*.dmg
+            outputs/mac/*.zip
+            outputs/mac/*.sha256
+          if-no-files-found: error
