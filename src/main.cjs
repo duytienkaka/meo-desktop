@@ -81,12 +81,12 @@ else {
   function saveSettings(){try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.writeFileSync(path.join(app.getPath('userData'),'settings.json'),JSON.stringify({mode:state.baseMode,size:state.size,roam:state.roam,follow:state.follow,visible:state.visible,paused:state.paused,freePosition:state.freePosition,displayId:display.id,autoMedia:state.autoMedia,autoGame:state.autoGame,customGames:state.customGames,ignoredGames:state.ignoredGames,appLabels:Object.fromEntries([...state.customGames,...state.ignoredGames].map(id=>[id,appName(id,appLabels[id])]))},null,2));return true;}catch(error){log(error.message);return false;}}
   function persist(){clearTimeout(persistTimer);persistTimer=setTimeout(saveSettings,300);}
   function applyAutomaticMode(){const mode=resolveMood(state);if(mode!==state.mode)setMode(mode,{automatic:true});}
-  let mediaData=decodeMedia({available:false,playing:false}),lastPlayerKey='',playerOpen=false,playerLoaded=false,playerHideTimer,playerBlurTimer,petPressedAt=0,playerPresentation=null,playerMouseIgnored=null;
+  let mediaData=decodeMedia({available:false,playing:false}),lastPlayerKey='',playerOpen=false,playerLoaded=false,playerHideTimer,playerBlurTimer,petPressedAt=0,playerPresentation=null,playerMouseIgnored=null,playerScrubbing=false;
   const mediaTransport=createMediaTransport();
   function playerSnapshot(){return{...mediaData,sourceName:mediaData.sourceAppId?appName(exeName(mediaData.sourceAppId)||'player.exe',/spotify/i.test(mediaData.sourceAppId)?'Spotify':/chrome/i.test(mediaData.sourceAppId)?'Google Chrome':/msedge/i.test(mediaData.sourceAppId)?'Microsoft Edge':/firefox/i.test(mediaData.sourceAppId)?'Firefox':'Trình phát trên Windows'):''};}
   function publishPlayer(){if(!playerWindow||playerWindow.isDestroyed()||!playerWindow.isVisible())return;const value=playerSnapshot(),key=JSON.stringify(value);if(key!==lastPlayerKey){lastPlayerKey=key;playerWindow.webContents.send('meo:player:state',value);}}
   function hidePlayer(immediate=false){
-    playerOpen=false;clearTimeout(playerHideTimer);clearTimeout(playerBlurTimer);
+    playerOpen=false;playerScrubbing=false;clearTimeout(playerHideTimer);clearTimeout(playerBlurTimer);
     const finish=()=>{if(playerOpen)return;if(playerWindow&&!playerWindow.isDestroyed())playerWindow.hide();if(!state.autoMedia){mediaMonitor.stop();mediaData=decodeMedia({available:false,playing:false});}};
     if(immediate||!playerLoaded||!playerWindow?.isVisible()){finish();return;}
     playerWindow.webContents.send('meo:player:motion',{open:false,presentation:playerPresentation});playerHideTimer=setTimeout(finish,300);
@@ -123,21 +123,26 @@ else {
   function updatePlayerMouse(){
     if(!playerWindow||playerWindow.isDestroyed()||!playerPresentation)return;
     const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint(),bounds=playerPresentation.window,card=playerPresentation.card;
-    const x=cursor.x-bounds.x,y=cursor.y-bounds.y,ignored=!(x>=card.x&&x<=card.x+card.width&&y>=card.y&&y<=card.y+card.height);
+    const x=cursor.x-bounds.x,y=cursor.y-bounds.y,ignored=!playerScrubbing&&!(x>=card.x&&x<=card.x+card.width&&y>=card.y&&y<=card.y+card.height);
     if(ignored!==playerMouseIgnored){if(ignored)playerWindow.setIgnoreMouseEvents(true,{forward:true});else playerWindow.setIgnoreMouseEvents(false);playerMouseIgnored=ignored;}
   }
   function requirePlayer(event){if(!playerWindow||playerWindow.isDestroyed()||!playerVisible()||event.sender.id!==playerWindow.webContents.id)throw new Error('Cửa sổ điều khiển không hợp lệ.');}
   ipcMain.handle('meo:player:get',event=>{if(!playerWindow||event.sender.id!==playerWindow.webContents.id)throw new Error('Cửa sổ không hợp lệ.');return playerSnapshot();});
   ipcMain.handle('meo:player:close',event=>{if(!playerWindow||event.sender.id!==playerWindow.webContents.id)throw new Error('Cửa sổ không hợp lệ.');if(playerOpen)hidePlayer();});
+  ipcMain.on('meo:player:scrubbing',(event,active)=>{if(playerWindow&&!playerWindow.isDestroyed()&&event.sender.id===playerWindow.webContents.id){playerScrubbing=active===true&&playerOpen;updatePlayerMouse();}});
   ipcMain.handle('meo:player:command',async(event,value)=>{
     requirePlayer(event);
-    const key={play:'canPlay',pause:'canPause',next:'canNext',previous:'canPrevious'}[value?.action];
-    if(suspended||state.mode==='game'||!mediaData.available||!mediaData.hasSession||!key||!mediaData[key]||value.sourceAppId!==mediaData.sourceAppId)throw new Error('Trình phát đã đổi hoặc chưa hỗ trợ thao tác này.');
-    await mediaTransport.command(value.action,value.sourceAppId);return true;
+    const key={play:'canPlay',pause:'canPause',next:'canNext',previous:'canPrevious',seek:'canSeek'}[value?.action];
+    const opening=value?.action==='open';
+    if(suspended||state.mode==='game'||!mediaData.available||!mediaData.hasSession||(!opening&&(!key||!mediaData[key]))||value.sourceAppId!==mediaData.sourceAppId)throw new Error('Trình phát đã đổi hoặc chưa hỗ trợ thao tác này.');
+    if(value.action==='seek'&&(!Number.isFinite(value.position)||value.position<0||value.position>mediaData.duration||!mediaData.duration||value.trackKey!==JSON.stringify([mediaData.sourceAppId,mediaData.title,mediaData.artist])))throw new Error('Bài hát đã đổi hoặc vị trí tua không hợp lệ.');
+    await mediaTransport.command(value.action,value.sourceAppId,value.position);return true;
   });
   const mediaDecision=createMediaDecision({onChange:playing=>{state.mediaPlaying=playing;if(state.autoMedia)applyAutomaticMode();}});
+  let lastTrackKey='',musicReactionAt=-10;
   function receiveMedia(sample){
     mediaData=decodeMedia(sample);publishPlayer();
+    if(mediaData.hasSession&&mediaData.title){const key=JSON.stringify([mediaData.sourceAppId,mediaData.title,mediaData.artist]);if(lastTrackKey&&key!==lastTrackKey&&mediaData.playing&&state.mode==='music'&&!state.paused&&!state.dragging&&state.time-musicReactionAt>1.4)musicReactionAt=state.time;lastTrackKey=key;}
     if(!state.autoMedia)return;
     state.mediaStatus=sample.available?(sample.playing?'playing':'paused'):'unavailable';
     mediaDecision.update(sample);refreshMenu();
@@ -337,7 +342,7 @@ else {
   }
   function frameData(cursor){
     const placement=currentPlacement();
-    return {time:state.time,mode:state.mode,size:state.mode==='game'?70:state.size,direction:state.direction,action:state.action,actionElapsed:state.time-state.actionStart,jumpPhase:state.jump?(state.time-state.jump.start)/state.jump.duration:null,pet:state.time<state.petUntil,paused:state.paused,dragging:state.dragging,toast:state.mode!=='game'&&state.time<state.toastUntil?state.toast:'',...placement,cursor:{x:cursor.x-placement.x,y:cursor.y-placement.y}};
+    return {musicReactionElapsed:state.mode==='music'&&!state.paused&&!state.dragging&&state.time-musicReactionAt<1.15?state.time-musicReactionAt:null,time:state.time,mode:state.mode,size:state.mode==='game'?70:state.size,direction:state.direction,action:state.action,actionElapsed:state.time-state.actionStart,jumpPhase:state.jump?(state.time-state.jump.start)/state.jump.duration:null,pet:state.time<state.petUntil,paused:state.paused,dragging:state.dragging,toast:state.mode!=='game'&&state.time<state.toastUntil?state.toast:'',...placement,cursor:{x:cursor.x-placement.x,y:cursor.y-placement.y}};
   }
   function tickFrame(){
     if(!win||win.isDestroyed()||!ready||!state.visible||suspended)return;

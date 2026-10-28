@@ -4,6 +4,7 @@ using System.Threading;
 using Windows.Media;
 using Windows.Media.Core;
 using Windows.Media.Playback;
+using System.Windows.Forms;
 class MeoMediaFixture {
  static int Main(string[] args) {
   try {
@@ -22,9 +23,18 @@ class MeoMediaFixture {
       Console.Out.Flush();
     };
     typeof(SystemMediaTransportControls).GetMethod("add_ButtonPressed").Invoke(controls,new object[]{handler});
+    Windows.Foundation.TypedEventHandler<SystemMediaTransportControls,PlaybackPositionChangeRequestedEventArgs> seekHandler=(s,e)=>{
+      player.PlaybackSession.Position=e.RequestedPlaybackPosition;timeline.Position=e.RequestedPlaybackPosition;controls.UpdateTimelineProperties(timeline);
+      Console.WriteLine("seek:"+e.RequestedPlaybackPosition.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture));Console.Out.Flush();
+    };
+    typeof(SystemMediaTransportControls).GetMethod("add_PlaybackPositionChangeRequested").Invoke(controls,new object[]{seekHandler});
     player.Source=MediaSource.CreateFromUri(new Uri(args[0]));player.Play();controls.PlaybackStatus=MediaPlaybackStatus.Playing;
-    Console.WriteLine("ready");Console.Out.Flush();
-    int parentId=int.Parse(args[1]);while(true){try{using(var parent=Process.GetProcessById(parentId)){if(parent.HasExited)return 0;}}catch{return 0;}Thread.Sleep(500);}
+    using(var window=new Form()) {
+     window.Text="Meo native fixture "+track;window.Width=320;window.Height=160;window.WindowState=FormWindowState.Minimized;
+     window.Resize+=(s,e)=>{if(window.WindowState==FormWindowState.Normal){Console.WriteLine("restored");Console.Out.Flush();}};
+     window.Show();Console.WriteLine("ready");Console.Out.Flush();
+     int parentId=int.Parse(args[1]);while(true){try{using(var parent=Process.GetProcessById(parentId)){if(parent.HasExited)return 0;}}catch{return 0;}Application.DoEvents();Thread.Sleep(50);}
+    }
    }
   }catch(Exception e){Console.Error.WriteLine(e);return 1;}
  }

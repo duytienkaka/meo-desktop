@@ -5,7 +5,7 @@ App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.4.0*
 ## Tính năng
 
 - Đi dạo theo mép màn hình, rình/vồ con trỏ, phản ứng khi vuốt ve và cuộn tròn nghỉ.
-- Tự nghe nhạc cùng bạn. Nhấp mèo để bật/tắt bảng có ảnh bìa, tên bài, tiến trình và nút phát/dừng/chuyển bài.
+- Tự nghe nhạc cùng bạn. Nhấp mèo để bật/tắt bảng có ảnh bìa, tên bài, tiến trình và nút phát/dừng/chuyển bài. Bấm ảnh bìa hoặc nút ↗ để mở trình phát, kéo thanh tiến trình để tua khi được hỗ trợ. Rê chuột lên tên bài dài để đọc hết; mèo gật đầu và thả vài nốt nhạc khi chuyển bài.
 - Nhận diện game để thu nhỏ và ngồi ở góc; quét Steam/Epic và hỗ trợ thêm game thủ công.
 - Cài đặt kích thước, màn hình, chuyển động, chế độ tự động và tâm trạng.
 - Giữ và kéo để đặt mèo ở vị trí bất kỳ; vị trí được lưu. Thả giữa màn hình thì mèo ở lại đó; kéo về mép hoặc chọn **Đưa mèo về mép dưới** trong Cài đặt để đi dạo tiếp. Chuột phải mở menu; `Ctrl + Alt + M` ẩn/hiện trên Windows.
@@ -62,7 +62,7 @@ App dùng Electron, JavaScript/Node.js, HTML/CSS, Canvas 2D và C#/.NET Framewor
 
 - Nhận diện game/điều khiển nhạc mới triển khai trên Windows. Bản Mac cần tích hợp native và kiểm tra riêng; `npm run package:mac` chỉ chạy trên Mac.
 - Fullscreen độc quyền có thể che pet; dùng **Borderless / Windowed Fullscreen**. Trong chế độ game, mèo không chặn chuột.
-- Ảnh bìa, thời lượng và nút nhạc phụ thuộc trình phát. Thanh tiến trình chỉ để xem, chưa hỗ trợ tua.
+- Ảnh bìa, thời lượng và nút nhạc phụ thuộc trình phát. Chỉ tua được khi trình phát cung cấp thời lượng và cho phép đổi vị trí; nếu không, thanh tiến trình chỉ để xem.
 - Game không có trong nguồn quét cần thêm thủ công. Nhận diện theo tên file chạy có thể nhầm nếu tên trùng nhau.
 
 Hướng dẫn cộng tác và push code: **[GIT-GUIDE.md](GIT-GUIDE.md)**.
