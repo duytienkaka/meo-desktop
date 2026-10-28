@@ -1,0 +1,21 @@
+.cache/
+node_modules/
+outputs/
+checks/screenshots/
+checks/user-data/
+checks/settings-before-redesign/
+checks/*-report.json
+checks/*.log
+checks/*.exe
+checks/silent-fixture.wav
+checks/fixture-art.png
+.DS_Store
+Thumbs.db
+
+# Local credentials and editor state
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+npm-debug.log*
