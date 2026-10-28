@@ -19,12 +19,17 @@
     else if(f.mode==='game'){sheet='moods';index=4+blink(f.time*.76);sy=1+Math.sin(f.time*1.5)*.004;}
     else if(f.mode==='sleep'){sheet='moods';index=f.time%12>10.6&&f.time%12<11.6?10:9;sy=1+Math.sin(f.time*1.7)*.018;sx=1-Math.sin(f.time*1.7)*.006;}
     else {index=blink(f.time);sy=1+Math.sin(f.time*2)*.008;if(f.mode==='play'&&index===0&&f.time%13>11.3)index=3;}
+    if(f.musicReactionElapsed!==null&&f.musicReactionElapsed!==undefined&&f.mode==='music'&&!f.paused&&!f.dragging){
+      const phase=clamp(f.musicReactionElapsed/1.15,0,1),envelope=Math.sin(Math.PI*phase),beat=Math.sin(phase*Math.PI*4);
+      rotation+=beat*.11*envelope;sy-=Math.max(0,beat)*.05*envelope;sx+=Math.max(0,beat)*.025*envelope;altitude+=Math.max(0,-beat)*3*envelope;
+    }
     return {sheet,index,altitude,rotation,sx,sy};
   }
   function emit(x,y,kind,count=5){for(let i=0;i<count;i++)particles.push({x,y,age:0,life:.7+Math.random()*.5,vx:(Math.random()-.5)*28,vy:-20-Math.random()*30,kind,size:2+Math.random()*3});}
   function drawParticles(dt){
     for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.age+=dt;if(p.age>p.life){particles.splice(i,1);continue;}p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.save();ctx.translate(p.x,p.y);ctx.globalAlpha=Math.sin(p.age/p.life*Math.PI)*.9;
       if(p.kind==='heart'){ctx.scale(p.size/6,p.size/6);ctx.fillStyle='#d18e87';ctx.beginPath();ctx.moveTo(0,3);ctx.bezierCurveTo(-12,-4,-5,-11,0,-5);ctx.bezierCurveTo(5,-11,12,-4,0,3);ctx.fill();}
+      else if(p.kind==='note'){ctx.fillStyle='#b6a0d3';ctx.font=(p.size+9)+'px "Segoe UI",sans-serif';ctx.fillText('♪',0,0);}
       else {ctx.strokeStyle='#d1b077';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-p.size,0);ctx.lineTo(p.size,0);ctx.moveTo(0,-p.size);ctx.lineTo(0,p.size);ctx.stroke();}ctx.restore();
     }
   }
@@ -60,6 +65,9 @@
     ctx.drawImage(images[p.sheet],source.x,source.y,source.w,source.h,-drawWidth/2,-drawHeight,drawWidth,drawHeight);ctx.restore();
     if(f.pet&&!window.__wasPet&&f.mode!=='game')emit(clamp(x,25,width-25),clamp(y-displaySize*.8,25,height-25),'heart');window.__wasPet=f.pet;
     if(previousMode!==null&&previousMode!==f.mode)emit(clamp(x,25,width-25),clamp(y-displaySize*.6,25,height-25),'spark',4);previousMode=f.mode;
+    const reaction=f.musicReactionElapsed!==null&&f.musicReactionElapsed!==undefined;
+    if(reaction&&(!window.__wasMusicReaction||f.musicReactionElapsed<window.__lastMusicReaction))emit(clamp(x+displaySize*.25,25,width-25),clamp(y-displaySize*.85,25,height-25),'note',3);
+    window.__wasMusicReaction=reaction;window.__lastMusicReaction=f.musicReactionElapsed;
     if(lastPounce&&f.jumpPhase===null)emit(clamp(x,25,width-25),clamp(y-5,25,height-25),'spark',3);lastPounce=f.jumpPhase!==null;
     drawParticles(dt);
     if(f.toast)textBubble(f.toast);
@@ -81,7 +89,7 @@
   canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',()=>{if(held){window.meo.action('drag-end');held=null;}});
   canvas.addEventListener('lostpointercapture',()=>{if(held){window.meo.action('drag-end');held=null;}});
   addEventListener('resize',resize);resize();
-  window.meoPet={snapshot:()=>({frame,displaySize,hit,seen:[...seen],width,height}),hitAt:point=>sampleHit(point)};
+  window.meoPet={snapshot:()=>({frame,pose:frame?pose(frame):null,displaySize,hit,seen:[...seen],width,height}),hitAt:point=>sampleHit(point)};
   Promise.all(['core','moods'].map(name=>new Promise((resolve,reject)=>{
     const img=new Image();img.onload=()=>{
       images[name]=img;const buffer=document.createElement('canvas');buffer.width=img.naturalWidth;buffer.height=img.naturalHeight;

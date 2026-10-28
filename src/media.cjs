@@ -8,7 +8,7 @@ function decodeMedia(value){
   const text=value=>typeof value==='string'?value.replace(/[\x00-\x1f]/g,'').slice(0,200):'';
   const artwork=typeof value.artwork==='string'&&value.artwork.length<=350000&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(value.artwork)?value.artwork:'';
   const duration=Number.isFinite(value.duration)&&value.duration>0?Math.min(604800,value.duration):0,position=Number.isFinite(value.position)?Math.min(duration||604800,Math.max(0,value.position)):0;
-  return{available:value.available,playing:value.available&&value.playing,sourceAppId:typeof value.sourceAppId==='string'?value.sourceAppId.slice(0,512):'',hasSession:value.available&&value.hasSession===true,title:text(value.title),artist:text(value.artist),artwork,position,duration,canPlay:value.canPlay===true,canPause:value.canPause===true,canNext:value.canNext===true,canPrevious:value.canPrevious===true,sessionCount:Number.isInteger(value.sessionCount)?value.sessionCount:0,error:typeof value.error==='string'?value.error:''};
+  return{available:value.available,playing:value.available&&value.playing,sourceAppId:typeof value.sourceAppId==='string'?value.sourceAppId.slice(0,512):'',hasSession:value.available&&value.hasSession===true,title:text(value.title),artist:text(value.artist),artwork,position,duration,canSeek:value.canSeek===true,canPlay:value.canPlay===true,canPause:value.canPause===true,canNext:value.canNext===true,canPrevious:value.canPrevious===true,sessionCount:Number.isInteger(value.sessionCount)?value.sessionCount:0,error:typeof value.error==='string'?value.error:''};
 }
 function createMediaMonitor({onSample,onError=()=>{},platform=process.platform,helper=path.join(__dirname,'native/MeoMediaWatcher.exe'),parentId=process.pid,decode=decodeMedia,label='Media',maxLength=400000}){
   let child=null,retry=null,watchdog=null,stopped=true,generation=0,lastSample=0,failures=0;
@@ -63,13 +63,14 @@ function createMediaDecision({onChange,stopDelay=2200,setTimer=setTimeout,clearT
 }
 function createMediaTransport({platform=process.platform,exec=execFile,helper=path.join(__dirname,'native/MeoMediaWatcher.exe')}={}){
   let pending=null;
-  function command(action,source){
-    if(platform!=='win32'||!['play','pause','previous','next'].includes(action)||typeof source!=='string'||!source||source.length>512||/[\x00-\x1f]/.test(source))return Promise.reject(new Error('Lệnh nhạc không hợp lệ.'));
+  function command(action,source,position){
+    if(platform!=='win32'||!['play','pause','previous','next','open','seek'].includes(action)||typeof source!=='string'||!source||source.length>512||/[\x00-\x1f]/.test(source))return Promise.reject(new Error('Lệnh nhạc không hợp lệ.'));
+    if(action==='seek'&&(!Number.isFinite(position)||position<0||position>604800))return Promise.reject(new Error('Vị trí tua không hợp lệ.'));
     if(pending)return Promise.reject(new Error('Đang gửi lệnh trước. Hãy chờ một chút.'));
     return new Promise((resolve,reject)=>{
-      pending=exec(helper,[String(process.pid),action,source],{windowsHide:true,shell:false,timeout:12000,maxBuffer:32768,encoding:'utf8'},(error,stdout)=>{
+      pending=exec(helper,[String(process.pid),action,source,...(action==='seek'?[String(position)]:[])],{windowsHide:true,shell:false,timeout:12000,maxBuffer:32768,encoding:'utf8'},(error,stdout)=>{
         pending=null;if(error){reject(new Error('Chưa kết nối được với trình phát.'));return;}
-        try{const result=JSON.parse(stdout.replace(/^\uFEFF/,'').trim());if(result.success!==true)throw new Error();resolve();}catch{reject(new Error('Trình phát chưa hỗ trợ thao tác này hoặc đã đóng.'));}
+        try{const result=JSON.parse(stdout.replace(/^\uFEFF/,'').trim());if(result.success!==true)throw new Error();resolve();}catch{reject(new Error(action==='seek'?'Trình phát chưa hỗ trợ tua hoặc bài hát đã đổi.':action==='open'?'Chưa mở được cửa sổ ứng dụng phát nhạc.':'Trình phát chưa hỗ trợ thao tác này hoặc đã đóng.'));}
       });
     });
   }
