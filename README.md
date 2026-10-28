@@ -6,6 +6,9 @@ App mèo 2D nhỏ trên màn hình, hoàn toàn im lặng. Phiên bản **0.4.0*
 
 - Đi dạo theo mép màn hình, rình/vồ con trỏ, phản ứng khi vuốt ve và cuộn tròn nghỉ.
 - Tự nghe nhạc cùng bạn. Nhấp mèo để bật/tắt bảng có ảnh bìa, tên bài, tiến trình và nút phát/dừng/chuyển bài. Bấm ảnh bìa hoặc nút ↗ để mở trình phát, kéo thanh tiến trình để tua khi được hỗ trợ. Rê chuột lên tên bài dài để đọc hết; mèo gật đầu và thả vài nốt nhạc khi chuyển bài.
+- Cuộn lên/xuống trên mèo để tăng/giảm âm lượng hệ thống, mỗi nấc 2%. Bấm nút loa trong ô âm lượng, card nhạc hoặc menu chuột phải để bật/tắt tiếng. Điều khiển âm lượng hiện hỗ trợ Windows và tạm nghỉ trong chế độ game.
+- Thả file hoặc thư mục vào mèo để mở, mở thư mục chứa hoặc sao chép đường dẫn (tối đa 20 mục/lần). Thả ứng dụng .exe / lối tắt .lnk để ghim nhanh.
+- Ghim tối đa 20 ứng dụng trong **Cài đặt → Ứng dụng & game**, mở từ đó hoặc **chuột phải mèo → Ứng dụng đã ghim**. Bỏ ghim không gỡ ứng dụng; danh sách lưu ở `pinned-apps.json` trong thư mục cấu hình.
 - Nhận diện game để thu nhỏ và ngồi ở góc; quét Steam/Epic và hỗ trợ thêm game thủ công.
 - Cài đặt kích thước, màn hình, chuyển động, chế độ tự động và tâm trạng.
 - Giữ và kéo để đặt mèo ở vị trí bất kỳ; vị trí được lưu. Thả giữa màn hình thì mèo ở lại đó; kéo về mép hoặc chọn **Đưa mèo về mép dưới** trong Cài đặt để đi dạo tiếp. Chuột phải mở menu; `Ctrl + Alt + M` ẩn/hiện trên Windows.
@@ -31,11 +34,12 @@ npm run package:win
 
 Bản Windows nằm ở `../outputs/Meo-Desktop-0.4-win-x64/Meo.exe`. Giữ cả thư mục đi kèm. Script tải Electron chính thức và kiểm tra SHA-256; không đóng gói đè vào thư mục đã có `Meo.exe`.
 
-Hai helper Windows đã có trong `src/native/` để chạy ngay. Sau khi sửa C#, build lại helper tương ứng và commit cả source/helper:
+Các helper Windows đã có trong `src/native/` để chạy ngay. Sau khi sửa C#, build lại helper tương ứng và commit cả source/helper:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-media.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-game.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-audio.ps1
 ```
 
 Unit test chạy bằng `npm test`; `npm run check` kiểm tra cú pháp và dấu conflict. Các bài kiểm tra giao diện/native trong `checks/` cần bản đóng gói Windows ở đường dẫn trên. Thử điều khiển nhạc bằng fixture im lặng:

@@ -1,5 +1,6 @@
 const {contextBridge,ipcRenderer}=require('electron');
 contextBridge.exposeInMainWorld('player',{
+  audio:{get:()=>ipcRenderer.invoke('meo:audio:get'),command:(action,value)=>ipcRenderer.invoke('meo:audio:command',{action,value}),onChange:callback=>ipcRenderer.on('meo:audio:state',(_event,state)=>callback(state))},
   get:()=>ipcRenderer.invoke('meo:player:get'),
   command:(action,sourceAppId,position,trackKey)=>ipcRenderer.invoke('meo:player:command',{action,sourceAppId,position,trackKey}),
   close:()=>ipcRenderer.invoke('meo:player:close'),

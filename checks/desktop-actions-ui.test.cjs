@@ -1,0 +1,41 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
+const {_electron}=require('playwright');
+const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;let desktop,root;
+(async()=>{
+ const executable=process.env.MEO_EXECUTABLE||path.resolve(__dirname,'../../outputs/Meo-Desktop-0.4-win-x64/Meo.exe'),data=path.join(path.dirname(executable),'resources/app/checks/user-data');
+ fs.mkdirSync(data,{recursive:true});fs.writeFileSync(path.join(data,'settings.json'),JSON.stringify({visible:true,paused:true,autoMedia:false,autoGame:false}));fs.writeFileSync(path.join(data,'pinned-apps.json'),'[]');
+ root=fs.mkdtempSync(path.join(os.tmpdir(),'meo-ui-actions-'));const application=path.join(root,'Ứng dụng thử.exe'),document=path.join(root,'Ghi chú & tiếng Việt.txt');fs.writeFileSync(application,'fixture');fs.writeFileSync(document,'Nội dung thử');
+ desktop=await _electron.launch({executablePath:executable,args:['--meo-test'],env});const pet=await desktop.firstWindow();await pet.waitForFunction(()=>window.meoPet?.snapshot().frame);
+ await desktop.evaluate(({shell,clipboard,dialog,Menu},fixture)=>{
+  global.__calls=[];global.__picked=fixture;shell.openPath=async p=>{global.__calls.push(['open',p]);return '';};shell.showItemInFolder=p=>global.__calls.push(['reveal',p]);clipboard.writeText=p=>global.__calls.push(['copy',p]);
+  dialog.showOpenDialog=async()=>({canceled:false,filePaths:[global.__picked]});Menu.prototype.popup=function(options){global.__dropMenu=this;global.__dropDone=options.callback;};
+  const area=global.__meo.state().display.workArea;global.__meo.setMode('play');global.__meo.setPaused(true);global.__meo.placeFree({x:area.x+area.width/2,y:area.y+area.height/2});
+ },application);
+ const opened=desktop.waitForEvent('window');await desktop.evaluate(()=>global.__meo.openSettings('apps'));const settings=await opened;const errors=[];settings.on('pageerror',e=>errors.push(e.message));pet.on('pageerror',e=>errors.push(e.message));
+ await settings.waitForFunction(()=>document.querySelector('#page-apps').classList.contains('active'));assert.equal(await settings.locator('.pin-card').count(),0);
+ await settings.locator('#add-pin').click();await settings.waitForFunction(()=>document.querySelectorAll('.pin-card').length===1);
+ await settings.getByRole('button',{name:'Mở ứng dụng: Ứng dụng thử',exact:true}).click();await settings.waitForTimeout(120);assert.deepEqual(await desktop.evaluate(()=>global.__calls.at(-1)),['open',application]);
+ await desktop.evaluate(()=>global.__meo.pinnedMenu()[0].click());assert.deepEqual(await desktop.evaluate(()=>global.__calls.at(-1)),['open',application]);
+ await settings.locator('#add-pin').click();await settings.waitForTimeout(120);assert.equal(await settings.locator('.pin-card').count(),1);
+ await settings.getByRole('button',{name:'Bỏ ghim: Ứng dụng thử',exact:true}).click();await settings.waitForFunction(()=>document.querySelectorAll('.pin-card').length===0);assert.equal(fs.existsSync(application),true);
+ await settings.locator('#add-pin').click();await settings.waitForFunction(()=>document.querySelectorAll('.pin-card').length===1);
+ await settings.screenshot({path:path.join(__dirname,'screenshots/settings-pinned-apps.png')});
+ const session=await desktop.context().newCDPSession(pet),frame=await pet.evaluate(()=>window.meoPet.snapshot().frame),point={x:frame.anchorX,y:frame.anchorY-frame.size*.55};
+ const dragData={items:[],files:[document],dragOperationsMask:1};
+ await session.send('Input.dispatchDragEvent',{type:'dragEnter',...point,data:dragData});await session.send('Input.dispatchDragEvent',{type:'dragOver',...point,data:dragData});
+ await pet.waitForFunction(()=>window.meoPet.snapshot().frame.fileHover===true);await pet.screenshot({path:path.join(__dirname,'screenshots/pet-file-drop.png')});
+ await session.send('Input.dispatchDragEvent',{type:'drop',...point,data:dragData});await settings.waitForTimeout(150);
+ const labels=await desktop.evaluate(()=>global.__dropMenu?.items.map(i=>i.label));assert.ok(labels?.includes('Mở'));assert.ok(labels.includes('Mở thư mục chứa'));assert.ok(labels.includes('Sao chép đường dẫn'));
+ for(const label of ['Mở','Mở thư mục chứa','Sao chép đường dẫn'])await desktop.evaluate((_e,label)=>global.__dropMenu.items.find(i=>i.label===label).click(),label);
+ assert.deepEqual((await desktop.evaluate(()=>global.__calls)).slice(-3),[['open',document],['reveal',document],['copy',document]]);await desktop.evaluate(()=>global.__dropDone());
+ // A real disk-backed File crosses the isolated preload; a synthetic File cannot supply a disk path.
+ const rejected=await pet.evaluate(async()=>{try{await window.meo.dropFiles([new File(['x'],'fake.txt')]);return false;}catch{return true;}});assert.equal(rejected,true);
+ const multi=await desktop.evaluate((_e,files)=>global.__meo.acceptDroppedFiles(files),[document,application]);assert.equal(multi.count,2);await desktop.evaluate(()=>global.__dropMenu.items.find(i=>i.label==='Sao chép tất cả đường dẫn').click());assert.deepEqual(await desktop.evaluate(()=>global.__calls.at(-1)),['copy',document+'\r\n'+application]);await desktop.evaluate(()=>global.__dropDone());
+ await desktop.evaluate(()=>global.__meo.setMode('game'));const blocked=await desktop.evaluate((_e,file)=>{try{global.__meo.acceptDroppedFiles([file]);return false;}catch{return true;}},document);assert.equal(blocked,true);
+ assert.equal(await pet.evaluate(()=>typeof window.settings),'undefined');assert.deepEqual(errors,[]);
+ await desktop.close();desktop=null;
+ desktop=await _electron.launch({executablePath:executable,args:['--meo-test'],env});await (await desktop.firstWindow()).waitForFunction(()=>window.meoPet?.snapshot().frame);
+ const pins=await desktop.evaluate(()=>global.__meo.desktopActions.pins());assert.equal(pins.length,1);assert.equal(pins[0].location,application);await desktop.close();desktop=null;
+ fs.writeFileSync(path.join(data,'pinned-apps.json'),'[]');fs.rmSync(root,{recursive:true,force:true});root=null;
+ console.log(JSON.stringify({passed:true,checks:['pin picker, duplicate prevention and removal','settings and pet menu launch the selected app','native Chromium file drag reaches the isolated preload','drop hover and Vietnamese file menu','open/reveal/copy target exact dropped file','multi-file copy','synthetic files rejected','game mode remains noninteractive','pins survive restart','no renderer errors']}));
+})().catch(async error=>{console.error(error);if(desktop)await desktop.close().catch(()=>{});if(root)fs.rmSync(root,{recursive:true,force:true});process.exitCode=1;});
