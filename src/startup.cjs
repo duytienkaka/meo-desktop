@@ -13,7 +13,9 @@ function createStartup({app,platform=process.platform,executable=process.execPat
   if(!supported)return {...state};
   try{
    if(platform==='win32'){
-    const settings=app.getLoginItemSettings(options),own=settings.launchItems?.find(item=>item.name===NAME),registered=settings.openAtLogin===true;
+    // openAtLogin checks only AppUserModelID, even when setLoginItemSettings used
+    // a custom display name. launchItems contains the matching executable's keys.
+    const settings=app.getLoginItemSettings(options),own=settings.launchItems?.find(item=>item.name===NAME&&item.scope!=='machine'),registered=!!own;
     const blocked=registered&&(own?own.enabled===false:settings.executableWillLaunchAtLogin===false);
     state={supported:true,enabled:registered&&!blocked,status:blocked?'blocked':registered?'on':'off',message:blocked?'Windows đã tắt mục này. Bật lại tại Task Manager → Startup apps hoặc bật công tắc tại đây.':registered?'Mèo sẽ chạy nền khi bạn đăng nhập Windows.':'Mèo sẽ chỉ mở khi bạn tự bật ứng dụng.'};
    }else{

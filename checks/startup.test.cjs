@@ -3,7 +3,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const {createStartup,agentPlist,startsInBackground}=require('../src/startup.cjs');
 test('Windows uses installed executable/background args, reflects OS disable and removes registration',async()=>{
  let settings={openAtLogin:false},writes=[];
- const app={isPackaged:true,getLoginItemSettings:options=>{assert.deepEqual(options,{path:'C:\\Program Files\\Mèo\\Meo.exe',args:['--background']});return settings;},setLoginItemSettings:value=>{writes.push(value);settings={openAtLogin:value.openAtLogin,executableWillLaunchAtLogin:value.enabled};}};
+ const app={isPackaged:true,getLoginItemSettings:options=>{assert.deepEqual(options,{path:'C:\\Program Files\\Mèo\\Meo.exe',args:['--background']});return settings;},setLoginItemSettings:value=>{writes.push(value);settings={openAtLogin:false,executableWillLaunchAtLogin:value.enabled,launchItems:value.openAtLogin?[{name:'Meo Desktop',enabled:value.enabled,scope:'user'}]:[]};}};
  const startup=createStartup({app,platform:'win32',executable:'C:\\Program Files\\Mèo\\Meo.exe'});
  assert.equal(startup.refresh().enabled,false);assert.equal(writes.length,0);
  assert.equal((await startup.set(true)).enabled,true);assert.equal(writes[0].name,'Meo Desktop');assert.equal(writes[0].enabled,true);
