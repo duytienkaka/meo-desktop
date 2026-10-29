@@ -52,13 +52,23 @@
     }
   }
   function render(value){
+    const startup=value.startup||{supported:false,enabled:false,message:'Tính năng mở cùng máy chưa sẵn sàng.'};
+    document.querySelector('#startAtLogin').checked=startup.enabled;
+    document.querySelector('#startAtLogin').disabled=!startup.supported;
+    document.querySelector('#startup-status').textContent=startup.message;
+    const mac=value.platform==='darwin';
+    document.querySelector('kbd').textContent=value.shortcut||'Ctrl + Alt + M';
+    document.querySelector('#platform-note').textContent=mac?'macOS: nhạc hỗ trợ Apple Music và Spotify. Cho phép Automation khi được hỏi; nhạc trong trình duyệt chưa hỗ trợ.':'Nhận diện nhạc và game tự động hiện hỗ trợ Windows và macOS.';
+    document.querySelector('#platform-note').hidden=!mac&&value.autoSupported;
+    document.querySelector('.library-help').textContent=mac?'Thiếu game? Chọn “Thêm game” và chọn ứng dụng .app. Mèo tự quét game từ thư viện Steam.':'Thiếu game? Chọn “Thêm game” và tìm file .exe dùng để mở game. Mèo chỉ nhận diện game, không khởi chạy hay can thiệp vào trò chơi.';
+    document.querySelector('.pinned-section>.hint').textContent=mac?'Thả file hoặc thư mục vào mèo để mở, tìm vị trí hoặc sao chép đường dẫn. Có thể ghim ứng dụng bằng cách thả gói .app vào mèo.':'Thả file hoặc thư mục vào mèo để mở, tìm vị trí hoặc sao chép đường dẫn. Có thể ghim ứng dụng bằng cách thả file .exe / lối tắt .lnk vào mèo.';
     const pk=JSON.stringify(value.pinnedApps||[]);if(pk!==pinsKey){pinsKey=pk;renderPins(value.pinnedApps||[]);}
     document.querySelector('#pin-count').textContent=(value.pinnedApps||[]).length;document.querySelector('#add-pin').disabled=!value.pinSupported||(value.pinnedApps||[]).length>=20;
     snapshot=value;document.querySelector('#version').textContent='Mèo Desktop · '+value.version;document.querySelector('#current-mood').textContent=labels[value.mode]||'Mèo đang ở đây';
     document.querySelector('#preview-note').textContent=!value.visible?'Mèo đang ẩn. Bật hiển thị để gặp lại nhé.':value.paused?'Đang đứng yên một lát, vẫn ở bên bạn.':({play:'Một chút tinh nghịch, một chút đáng yêu.',music:'Giai điệu của bạn, niềm vui của mèo.',game:'Đồng đội nhỏ đã sẵn sàng!',focus:'Bạn cứ tập trung, mèo ngồi ngoan đây.',sleep:'Cuộn tròn và mơ một giấc mơ nhỏ.'}[value.mode]);
     for(const key of ['visible','paused','roam','follow','autoMedia','autoGame'])document.querySelector('#'+key).checked=value[key];
     for(const key of ['autoMedia','autoGame'])document.querySelector('#'+key).disabled=!value.autoSupported;
-    document.querySelector('#platform-note').hidden=value.autoSupported;document.querySelector('#open-player').disabled=!value.autoSupported||value.mode==='game';
+    document.querySelector('#open-player').disabled=!value.autoSupported||value.mode==='game';
     document.querySelectorAll('[data-size]').forEach(button=>{const active=Number(button.dataset.size)===value.size;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
     document.querySelectorAll('[data-mood]').forEach(button=>{const active=button.dataset.mood===value.mode;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
     const dk=JSON.stringify(value.displays);if(dk!==displayKey){displayKey=dk;const select=document.querySelector('#display');select.replaceChildren(...value.displays.map(item=>{const option=make('option','',item.name);option.value=item.id;return option;}));}document.querySelector('#display').value=value.displayId;
@@ -77,7 +87,7 @@
     document.querySelector('#add-game').disabled=!value.autoSupported;
     document.querySelector('.scan-summary').dataset.state=value.scanStatus;
     document.querySelector('#scan-title').textContent=({idle:'Sẵn sàng tìm game',scanning:'Mèo đang tìm game…',ready:'Thư viện đã cập nhật',error:'Chưa thể hoàn tất quét',unsupported:'Chưa hỗ trợ trên hệ điều hành này'}[value.scanStatus]||'Thư viện game');
-    document.querySelector('#scan-message').textContent=value.scanMessage||'Tự tìm trong Steam, Epic và thông tin cài đặt trên Windows.';
+    document.querySelector('#scan-message').textContent=value.scanMessage||(mac?'Tự tìm ứng dụng game macOS trong các thư viện Steam.':'Tự tìm trong Steam, Epic và thông tin cài đặt trên Windows.');
     document.querySelector('#scan-time').textContent=value.lastScan?'Quét gần nhất: '+new Date(value.lastScan).toLocaleString('vi-VN'):'';
     document.querySelector('#library-auto-note').hidden=value.autoGame;
     const lk=JSON.stringify(games);if(lk!==libraryKey){const focused=document.activeElement,focusId=focused?.dataset?.game;libraryKey=lk;renderLibrary(games);if(focusId&&!document.contains(focused))document.querySelector('#add-game').focus({preventScroll:true});}

@@ -4,6 +4,11 @@
   const images={},pixels={},atlas=window.CAT_SPRITES;
   let width=320,height=320,dpr=1,frame=null,previousTime=null,displaySize=112,previousMode=null,lastPounce=false,held=null,hit=false,transform=null;
   const particles=[],seen=new Set();let fileHover=false,fileHoverTimer;
+  const pocket=document.querySelector('#photo-pocket'),sendPhotos=document.querySelector('#send-photos');let photoState={photos:[]},carried=[],pocketKey='';
+  function onPocket(point){if(pocket.hidden)return false;const r=pocket.getBoundingClientRect();return point.x>=r.left&&point.x<=r.right&&point.y>=r.top&&point.y<=r.bottom;}
+  function receivePhotos(value){photoState=value;sendPhotos.disabled=value.busy||!value.target;sendPhotos.textContent=value.busy?'Đang đưa…':'Đưa '+value.photos.length+' ảnh ↗';sendPhotos.title=value.target?'Đưa toàn bộ ảnh vào ô vừa chọn trong '+value.target.name+'; bạn tự bấm gửi.':'Bấm vào ô nhận ảnh trong ứng dụng trước.';const key=JSON.stringify(value.photos.map(p=>p.id));if(key===pocketKey)return;pocketKey=key;carried=[];value.photos.forEach((photo,index)=>{const image=new Image();image.onload=()=>{if(pocketKey===key)carried[index]=image;};image.src=photo.thumb;});}
+  window.meo.shots.onChange(receivePhotos);window.meo.shots.get().then(receivePhotos).catch(()=>{});
+  sendPhotos.addEventListener('click',()=>window.meo.shots.action('send-all').catch(()=>{}));
   const audioHud=document.querySelector('#audio-hud'),muteButton=document.querySelector('#pet-mute');let audioHover=false,wheelRemainder=0,wheelSteps=0,wheelTimer,audioBusy=false;
   function onAudioHud(point){if(audioHud.hidden)return false;const r=audioHud.getBoundingClientRect();return point.x>=r.left&&point.x<=r.right&&point.y>=r.top&&point.y<=r.bottom;}
   function renderAudio(f){
@@ -85,7 +90,9 @@
     ctx.clearRect(0,0,width,height);
     if(f.fileHover){ctx.save();ctx.translate(f.anchorX,f.anchorY);ctx.rotate(f.rotation);ctx.fillStyle='#b8dba02b';ctx.strokeStyle='#a2c18a';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.beginPath();ctx.roundRect(-displaySize*.65,-displaySize*1.1,displaySize*1.3,displaySize*1.2,18);ctx.fill();ctx.stroke();ctx.restore();}
     ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(transform.sx,transform.sy);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-    ctx.drawImage(images[p.sheet],source.x,source.y,source.w,source.h,-drawWidth/2,-drawHeight,drawWidth,drawHeight);ctx.restore();
+    ctx.drawImage(images[p.sheet],source.x,source.y,source.w,source.h,-drawWidth/2,-drawHeight,drawWidth,drawHeight);
+    if(carried.length&&f.mode!=='game'){const count=photoState.photos.length;for(let i=0;i<count;i++){if(!carried[i])continue;ctx.save();ctx.translate(displaySize*.08+(i-(count-1)/2)*5,-displaySize*.29-i*2);ctx.rotate((i-(count-1)/2)*.17-.1);const w=displaySize*.36,h=w*.68;ctx.fillStyle='#fff9e9';ctx.shadowColor='#0003';ctx.shadowBlur=3;ctx.fillRect(-w/2-2,-h/2-2,w+4,h+7);ctx.shadowBlur=0;ctx.drawImage(carried[i],-w/2,-h/2,w,h);ctx.restore();}ctx.fillStyle='#e1c59e';ctx.beginPath();ctx.ellipse(displaySize*.23,-displaySize*.25,4,5,.2,0,Math.PI*2);ctx.fill();}ctx.restore();
+    pocket.hidden=!photoState.photos.length||f.mode==='game'||f.fileHover||f.audioFeedback||audioHover;const px=f.anchorX+Math.cos(f.rotation)*displaySize*.54,py=f.anchorY+Math.sin(f.rotation)*displaySize*.54-displaySize*.40;pocket.style.left=clamp(px+88>width?f.anchorX-displaySize*.54-88:px,5,width-93)+'px';pocket.style.top=clamp(py,5,height-30)+'px';
     if(f.pet&&!window.__wasPet&&f.mode!=='game')emit(clamp(x,25,width-25),clamp(y-displaySize*.8,25,height-25),'heart');window.__wasPet=f.pet;
     if(previousMode!==null&&previousMode!==f.mode)emit(clamp(x,25,width-25),clamp(y-displaySize*.6,25,height-25),'spark',4);previousMode=f.mode;
     const reaction=f.musicReactionElapsed!==null&&f.musicReactionElapsed!==undefined;
@@ -94,8 +101,8 @@
     if(lastPounce&&f.jumpPhase===null)emit(clamp(x,25,width-25),clamp(y-5,25,height-25),'spark',3);lastPounce=f.jumpPhase!==null;
     drawParticles(dt);
     renderAudio(f);
-    if(f.fileHover)textBubble('Thả file ở đây');else if(f.toast&&!f.audioFeedback)textBubble(f.toast);
-    hit=f.mode!=='game'&&(sampleHit(f.cursor)||onAudioHud(f.cursor));canvas.style.cursor=f.dragging?'grabbing':hit?'grab':'default';window.meo.hit(hit||!!held||fileHover);
+    if(f.fileHover)textBubble('Thả file ở đây');else if(f.toast&&!f.audioFeedback&&!photoState.photos.length)textBubble(f.toast);
+    hit=f.mode!=='game'&&(sampleHit(f.cursor)||onAudioHud(f.cursor)||onPocket(f.cursor));canvas.style.cursor=f.dragging?'grabbing':hit?'grab':'default';window.meo.hit(hit||!!held||fileHover);
   }
   function nearPet(event){if(!frame||frame.mode==='game'||!transform)return false;const angle=frame.rotation,cx=transform.x+Math.sin(angle)*displaySize*.55,cy=transform.y-Math.cos(angle)*displaySize*.55;return sampleHit({x:event.clientX,y:event.clientY})||Math.hypot(event.clientX-cx,event.clientY-cy)<displaySize*.8;}
   function setFileHover(active){clearTimeout(fileHoverTimer);fileHover=active;window.meo.fileHover(active);if(active)fileHoverTimer=setTimeout(()=>setFileHover(false),1100);}

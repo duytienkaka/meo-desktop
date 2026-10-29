@@ -1,0 +1,45 @@
+name: Attach macOS installers to Release
+on:
+  push:
+    branches: [feat/start-at-login]
+    paths: [.github/workflows/publish-mac-assets.yml]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful macOS packages workflow run
+        required: true
+        default: '40792170767'
+      tag:
+        description: Existing release tag
+        required: true
+        default: v0.7.2
+permissions:
+  actions: read
+  contents: write
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_ID: ${{ inputs.run_id || '40792170767' }}
+      RELEASE_TAG: ${{ inputs.tag || 'v0.7.2' }}
+    steps:
+      - name: Validate build and download Mac artifacts
+        run: |
+          set -euo pipefail
+          test "$(gh run view "$RUN_ID" --json conclusion --jq .conclusion)" = success
+          test "$(gh run view "$RUN_ID" --json workflowName --jq .workflowName)" = 'macOS packages'
+          gh release view "$RELEASE_TAG" --json tagName
+          gh run download "$RUN_ID" --pattern 'Meo-Desktop-mac-*' --dir artifacts
+      - name: Verify checksums and attach both installers
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          for arch in arm64 x64; do
+            dir="artifacts/Meo-Desktop-mac-$arch"
+            name="Meo-Desktop-$version-mac-$arch.dmg"
+            (cd "$dir" && sha256sum --check "$name.sha256")
+            gh release upload "$RELEASE_TAG" "$dir/$name" "$dir/$name.sha256"
+          done
