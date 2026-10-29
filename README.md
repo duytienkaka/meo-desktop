@@ -2,17 +2,17 @@
 
 Một chú mèo hoạt hình 2D nhỏ sống trên màn hình: đi dạo, chơi với con trỏ, nghe nhạc cùng bạn và giữ hộ ảnh chụp. Hoàn toàn im lặng, hỗ trợ **Windows và macOS**.
 
-## Tải và cài đặt — 0.7.1
+## Tải và cài đặt — 0.7.2
 
-**[Release 0.7.1](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.7.1)** · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+**[Release 0.7.2](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.7.2)** · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 Người dùng cài ứng dụng **không cần Node.js**. Các bộ cài được phân phối trực tiếp qua GitHub Releases.
 
 | Máy của bạn | Bộ cài |
 | --- | --- |
-| Windows 64-bit | [Meo-Desktop-Setup-0.7.1-x64.exe](https://github.com/duytienkaka/meo-desktop/releases/download/v0.7.1/Meo-Desktop-Setup-0.7.1-x64.exe) |
-| Mac Apple Silicon — M1 trở lên | [Meo-Desktop-0.7.1-mac-arm64.dmg](https://github.com/duytienkaka/meo-desktop/releases/download/v0.7.1/Meo-Desktop-0.7.1-mac-arm64.dmg) |
-| Mac Intel | [Meo-Desktop-0.7.1-mac-x64.dmg](https://github.com/duytienkaka/meo-desktop/releases/download/v0.7.1/Meo-Desktop-0.7.1-mac-x64.dmg) |
+| Windows 64-bit | [Meo-Desktop-Setup-0.7.2-x64.exe](https://github.com/duytienkaka/meo-desktop/releases/download/v0.7.2/Meo-Desktop-Setup-0.7.2-x64.exe) |
+| Mac Apple Silicon — M1 trở lên | [Meo-Desktop-0.7.2-mac-arm64.dmg](https://github.com/duytienkaka/meo-desktop/releases/download/v0.7.2/Meo-Desktop-0.7.2-mac-arm64.dmg) |
+| Mac Intel | [Meo-Desktop-0.7.2-mac-x64.dmg](https://github.com/duytienkaka/meo-desktop/releases/download/v0.7.2/Meo-Desktop-0.7.2-mac-x64.dmg) |
 
 - **Windows:** mở file `.exe` và làm theo trình cài đặt.
 - **Mac:** cần **macOS 13 Ventura trở lên**. Mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app. Xem chip tại menu Apple → About This Mac nếu chưa biết chọn bản nào.
@@ -21,6 +21,9 @@ Người dùng cài ứng dụng **không cần Node.js**. Các bộ cài đư�
 Đây là bản thử nghiệm. Windows chưa ký số; Mac ký ad-hoc, **chưa Developer ID / Apple notarization**, nên hệ điều hành có thể cảnh báo hoặc chặn mở. Xem lưu ý Mac bên dưới.
 
 ## Tính năng
+
+- **Mở cùng máy tính:** vào **Cài đặt → Tự động → Mở cùng máy tính**. Mặc định tắt; khi bật, mèo chạy nền sau khi đăng nhập Windows/Mac, không mở Cài đặt và không tạo thêm mèo nếu app đã chạy. Tắt công tắc để gỡ đăng ký. Mac cần mở ứng dụng từ Applications, không bật trực tiếp trong DMG.
+
 
 - **Chụp ảnh gọn (Windows và Mac):** chuột phải mèo → **Chụp vùng màn hình…** hoặc `Ctrl + Alt + S` (Mac: `⌘ + ⌥ + S`). Kéo chọn vùng, Esc để hủy. Mèo tạm ẩn khi chụp và giữ tối đa **3 ảnh gần nhất**; ảnh thứ 4 thay ảnh cũ nhất.
 - Mèo cầm một xấp ảnh nhỏ và chỉ hiện **một nút “Đưa N ảnh ↗”**. Bấm vào ô nhận ảnh trong app đích trước, rồi bấm nút để ném và dán cả bộ 1–3 ảnh vào bản nháp. Bạn tự bỏ ảnh không muốn trong app chat và tự bấm gửi; mèo không bấm Enter. Dùng menu chuột phải **Bỏ ảnh mèo đang giữ** để dọn xấp ảnh. Ảnh ở RAM và các PNG tạm phục vụ đính kèm được giữ đến khi thoát app để bản nháp còn đọc được file. Không tải ảnh lên server.
@@ -56,7 +59,7 @@ Build trên Mac: `npm ci`, `npm run setup:mac -- arm64` hoặc `npm run setup:ma
 
 ## Phát triển từ mã nguồn
 
-Cần **Node.js 24** có npm. [Tag v0.7.1](https://github.com/duytienkaka/meo-desktop/tree/v0.7.1) chứa mã nguồn tương ứng với bộ cài đã phát hành; các thay đổi trên nhánh phát triển có thể chưa được merge vào `main`.
+Cần **Node.js 24** có npm. [Tag v0.7.2](https://github.com/duytienkaka/meo-desktop/tree/v0.7.2) chứa mã nguồn tương ứng với bộ cài đã phát hành; các thay đổi trên nhánh phát triển có thể chưa được merge vào `main`.
 
 Clone dự án rồi mở terminal trong thư mục source:
 
@@ -67,7 +70,7 @@ npm ci
 npm start
 ```
 
-Muốn xem đúng mã của bản phát hành, dùng `git switch --detach v0.7.1` sau khi clone. Khi phát triển tính năng mới, tạo nhánh theo **[GIT-GUIDE.md](GIT-GUIDE.md)**.
+Muốn xem đúng mã của bản phát hành, dùng `git switch --detach v0.7.2` sau khi clone. Khi phát triển tính năng mới, tạo nhánh theo **[GIT-GUIDE.md](GIT-GUIDE.md)**.
 
 Mở app sẽ hiện Cài đặt. Đóng Cài đặt thì mèo vẫn chạy trong khay hệ thống. Dùng `npm start -- --background` để chỉ hiện mèo khi khởi động.
 
@@ -80,7 +83,7 @@ npm run package:win
 npm run setup:win
 ```
 
-File cài đặt nằm ở `outputs/setup/Meo-Desktop-Setup-0.7.1-x64.exe`, kèm SHA-256. Trình cài tạo shortcut, hỗ trợ gỡ cài đặt và giữ cấu hình khi gỡ. Bản chưa ký số.
+File cài đặt nằm ở `outputs/setup/Meo-Desktop-Setup-0.7.2-x64.exe`, kèm SHA-256. Trình cài tạo shortcut, hỗ trợ gỡ cài đặt và giữ cấu hình khi gỡ. Bản chưa ký số.
 
 Bản portable Windows tạo bằng `npm run package:win` nằm ở `../outputs/Meo-Desktop-0.7-win-x64/Meo.exe`. Giữ cả thư mục đi kèm. Script tải Electron chính thức và kiểm tra SHA-256; không đóng gói đè vào thư mục đã có `Meo.exe`.
 
@@ -95,7 +98,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-audio.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-screenshot.ps1
 ```
 
-Unit test chạy bằng `npm test`; `npm run check` kiểm tra cú pháp và dấu conflict. Bản 0.7.1 đã qua **42 unit test**, kiểm tra Windows dán đủ 3 PNG vào receiver riêng mà không nhấn Enter, và kiểm tra Mac khởi chạy/card nhạc/giao diện ba ảnh/chuẩn bị clipboard PNG native trên cả hai kiến trúc. Quyền chụp và thao tác dán trong ứng dụng Mac bên ngoài vẫn cần kiểm thử thủ công trên máy thực tế.
+Unit test chạy bằng `npm test`; `npm run check` kiểm tra cú pháp và dấu conflict. Bản 0.7.2 đã qua **48 unit test**, kiểm tra Windows dán đủ 3 PNG vào receiver riêng mà không nhấn Enter, và kiểm tra Mac khởi chạy/card nhạc/giao diện ba ảnh/chuẩn bị clipboard PNG native trên cả hai kiến trúc. Quyền chụp và thao tác dán trong ứng dụng Mac bên ngoài vẫn cần kiểm thử thủ công trên máy thực tế.
 
 Các bài kiểm tra giao diện/native trong `checks/` cần bản đóng gói tương ứng. Thử điều khiển nhạc Windows bằng fixture im lặng:
 
@@ -120,6 +123,7 @@ App dùng **Electron 45, JavaScript/Node.js, HTML/CSS và Canvas 2D**. Windows d
 
 ## Giới hạn
 
+- Mac đăng ký mở khi đăng nhập bằng LaunchAgent của tài khoản tại `~/Library/LaunchAgents/vn.meo.desktop.plist`, không cần quyền quản trị. Nếu xóa app thủ công trên Mac, nên tắt công tắc này trước để dọn đăng ký.
 - Windows dùng các helper C#; macOS dùng các API/script hệ thống, không chạy file .exe. `npm run setup:mac` chỉ chạy trên Mac.
 - Fullscreen độc quyền có thể che pet; dùng **Borderless / Windowed Fullscreen**. Trong chế độ game, mèo không chặn chuột.
 - Ảnh bìa, thời lượng và nút nhạc phụ thuộc trình phát. Chỉ tua được khi trình phát cung cấp thời lượng và cho phép đổi vị trí; nếu không, thanh tiến trình chỉ để xem.

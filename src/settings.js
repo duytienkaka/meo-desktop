@@ -52,6 +52,10 @@
     }
   }
   function render(value){
+    const startup=value.startup||{supported:false,enabled:false,message:'Tính năng mở cùng máy chưa sẵn sàng.'};
+    document.querySelector('#startAtLogin').checked=startup.enabled;
+    document.querySelector('#startAtLogin').disabled=!startup.supported;
+    document.querySelector('#startup-status').textContent=startup.message;
     const mac=value.platform==='darwin';
     document.querySelector('kbd').textContent=value.shortcut||'Ctrl + Alt + M';
     document.querySelector('#platform-note').textContent=mac?'macOS: nhạc hỗ trợ Apple Music và Spotify. Cho phép Automation khi được hỏi; nhạc trong trình duyệt chưa hỗ trợ.':'Nhận diện nhạc và game tự động hiện hỗ trợ Windows và macOS.';

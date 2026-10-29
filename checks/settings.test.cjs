@@ -22,6 +22,9 @@ const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;let desktop;
   await page.locator('#visible').uncheck();await page.waitForTimeout(100);assert.equal((await state()).visible,false);assert.equal(await desktop.evaluate(()=>global.__meo.settingsWindow().isVisible()),true);
   await page.locator('#visible').check();
   await page.locator('[data-tab="auto"]').click();await page.locator('[data-mood="focus"]').click();await page.waitForTimeout(120);assert.equal((await state()).autoMedia,false);assert.equal((await state()).autoGame,false);
+  assert.equal(await page.locator('#startAtLogin').isDisabled(),true);
+  assert.match(await page.locator('#startup-status').innerText(),/đóng gói/);
+  assert.equal(await page.evaluate(async()=>{try{await window.settings.update({startAtLogin:true});return false;}catch{return true;}}),true);
   assert.equal(await page.locator('#media-status').evaluate(e=>e.parentElement.dataset.state),'off');
   await page.locator('#autoMedia').check();await page.locator('#autoGame').check();
   await desktop.evaluate(()=>global.__meo.receiveMedia({available:true,playing:true}));await page.waitForFunction(()=>document.querySelector('#current-mood').textContent==='Nghe nhạc');
@@ -53,6 +56,8 @@ const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;let desktop;
   await desktop.evaluate(()=>global.__meo.setPaused(true));const frozen=(await state()).distance;
   await page.locator('#done').click();assert.equal(await desktop.evaluate(()=>global.__meo.settingsWindow().isVisible()),false);assert.equal((await state()).visible,true);
   // A second executable launch must reopen the existing settings, preserving the pet and window count.
+  await new Promise((resolve,reject)=>{const instance=spawn(executable,[...(process.env.MEO_APP_ROOT?[process.env.MEO_APP_ROOT]:[]),'--meo-test','--background'],{env,windowsHide:true,stdio:'ignore'});instance.once('error',reject);instance.once('exit',code=>code===0?resolve():reject(new Error('Background launch failed: '+code)));});
+  await page.waitForTimeout(150);assert.equal(await desktop.evaluate(()=>global.__meo.settingsWindow().isVisible()),false);assert.equal(desktop.windows().length,2);
   await new Promise((resolve,reject)=>{const instance=spawn(executable,[...(process.env.MEO_APP_ROOT?[process.env.MEO_APP_ROOT]:[]),'--meo-test'],{env,windowsHide:true,stdio:'ignore'});instance.once('error',reject);instance.once('exit',code=>code===0?resolve():reject(new Error('Second launch failed: '+code)));});
   await page.waitForTimeout(250);assert.equal(await desktop.evaluate(()=>global.__meo.settingsWindow().isVisible()),true);assert.equal(desktop.windows().length,2);assert.equal((await state()).distance,frozen);
   // Native close also hides settings while the pet continues.
