@@ -13,6 +13,7 @@ const {playerLayout}=require('./player-layout.cjs');
 const {createDesktopActions}=require('./desktop-actions.cjs');
 const {createAudioControl}=require('./audio.cjs');
 const {createScreenshotFeature}=require('./screenshots.cjs');
+const {createStartup,startsInBackground}=require('./startup.cjs');
 const {createMacMonitor,createMacAudio,createMacTransport,scanMacLibrary}=require('./macos.cjs');
 const mac=process.platform==='darwin',desktopSupported=['win32','darwin'].includes(process.platform);
 const testMode=process.argv.includes('--meo-test');
@@ -20,6 +21,7 @@ app.setName('Meo Desktop');
 app.setPath('userData',testMode?path.resolve(__dirname,'../checks/user-data'):path.join(app.getPath('appData'),'MeoDesktop'));
 if(!app.requestSingleInstanceLock()){app.quit();}
 else {
+  const startup=createStartup({app,testMode});
   const desktopActions=createDesktopActions({directory:app.getPath('userData'),shell,clipboard}),pinIcons=new Map();
   let fileHoverUntil=0,fileMenuOpen=false,screenshots;
   let audioState={available:false,level:0,muted:false},audioFeedbackUntil=0;
@@ -266,7 +268,7 @@ else {
       {label:'Thoát mèo',click:()=>{quitting=true;app.quit();}}
     ]);
   }
-  function settingsSnapshot(){return{pinnedApps:desktopActions.pins().map(pin=>({...pin,icon:pinIcons.get(pin.id)?.toDataURL()||''})),pinSupported:['win32','darwin'].includes(process.platform),version:app.getVersion(),mode:state.mode,baseMode:state.baseMode,visible:state.visible,paused:state.paused,size:state.size,roam:state.roam,follow:state.follow,autoMedia:state.autoMedia,autoGame:state.autoGame,mediaStatus:state.mediaStatus,gameStatus:state.gameStatus,gameActive:state.gameActive,gameName:state.gameExe?(library.find(g=>g.exes.includes(state.gameExe))?.name||appName(state.gameExe,appLabels[state.gameExe])):'',platform:process.platform,shortcut:mac?'⌘ + ⌥ + M':'Ctrl + Alt + M',autoSupported:desktopSupported,displayId:String(display.id),displays:screen.getAllDisplays().map((d,i)=>({id:String(d.id),name:`Màn hình ${i+1} · ${d.size.width} × ${d.size.height}`})),library:library.map(g=>({id:g.id,name:g.name,source:g.source,manual:g.manual})),scanStatus,scanMessage,lastScan};}
+  function settingsSnapshot(){return{startup:startup.snapshot(),pinnedApps:desktopActions.pins().map(pin=>({...pin,icon:pinIcons.get(pin.id)?.toDataURL()||''})),pinSupported:['win32','darwin'].includes(process.platform),version:app.getVersion(),mode:state.mode,baseMode:state.baseMode,visible:state.visible,paused:state.paused,size:state.size,roam:state.roam,follow:state.follow,autoMedia:state.autoMedia,autoGame:state.autoGame,mediaStatus:state.mediaStatus,gameStatus:state.gameStatus,gameActive:state.gameActive,gameName:state.gameExe?(library.find(g=>g.exes.includes(state.gameExe))?.name||appName(state.gameExe,appLabels[state.gameExe])):'',platform:process.platform,shortcut:mac?'⌘ + ⌥ + M':'Ctrl + Alt + M',autoSupported:desktopSupported,displayId:String(display.id),displays:screen.getAllDisplays().map((d,i)=>({id:String(d.id),name:`Màn hình ${i+1} · ${d.size.width} × ${d.size.height}`})),library:library.map(g=>({id:g.id,name:g.name,source:g.source,manual:g.manual})),scanStatus,scanMessage,lastScan};}
   let lastSettingsKey='';
   function publishSettings(){
     if(!settingsWindow||settingsWindow.isDestroyed()||!settingsWindow.isVisible())return;
@@ -280,17 +282,19 @@ else {
     settingsWindow=new BrowserWindow({width:Math.min(980,area.width-40),height:Math.min(760,area.height-40),minWidth:Math.min(760,area.width-40),minHeight:Math.min(570,area.height-40),show:false,autoHideMenuBar:true,title:'Mèo Desktop — Cài đặt',icon:catIcon(),backgroundColor:'#f7f5ef',webPreferences:{preload:path.join(__dirname,'settings-preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,spellcheck:false}});
     settingsWindow.setMenu(null);settingsWindow.webContents.setWindowOpenHandler(()=>({action:'deny'}));settingsWindow.webContents.on('will-navigate',event=>event.preventDefault());
     settingsWindow.once('ready-to-show',()=>{settingsWindow.show();settingsWindow.focus();});settingsWindow.webContents.once('did-finish-load',navigate);
-    settingsWindow.on('show',()=>{lastSettingsKey='';publishSettings();});
+    settingsWindow.on('show',()=>{startup.refresh();lastSettingsKey='';publishSettings();});
+    settingsWindow.on('focus',()=>{startup.refresh();publishSettings();});
     settingsWindow.on('close',event=>{if(!quitting){event.preventDefault();settingsWindow.hide();}});
     settingsWindow.on('closed',()=>{settingsWindow=null;});
     settingsWindow.loadFile(path.join(__dirname,'settings.html'));
   }
   function validSettings(event){return settingsWindow&&!settingsWindow.isDestroyed()&&event.sender.id===settingsWindow.webContents.id;}
   function requireSettings(event){if(!validSettings(event))throw new Error('Cửa sổ không hợp lệ.');}
-  ipcMain.handle('meo:settings:get',event=>{requireSettings(event);return settingsSnapshot();});
-  ipcMain.handle('meo:settings:update',(event,patch)=>{
+  ipcMain.handle('meo:settings:get',event=>{requireSettings(event);startup.refresh();return settingsSnapshot();});
+  ipcMain.handle('meo:settings:update',async(event,patch)=>{
     requireSettings(event);if(!patch||typeof patch!=='object'||Array.isArray(patch)||Object.keys(patch).length!==1)throw new Error('Thiết lập không hợp lệ.');
     const [key,value]=Object.entries(patch)[0];
+    if(key==='startAtLogin'){await startup.set(value);publishSettings();return settingsSnapshot();}
     if(['visible','paused','roam','follow','autoMedia','autoGame'].includes(key)){
       if(typeof value!=='boolean')throw new Error('Giá trị không hợp lệ.');
       if(key==='visible')setVisible(value);else if(key==='paused')setPaused(value);else if(key==='autoMedia')setAutoMedia(value);else if(key==='autoGame')setAutoGame(value);else{state[key]=value;state.target=null;}
@@ -452,6 +456,7 @@ else {
   app.whenReady().then(()=>{
     if(process.argv.includes('--meo-quit')){quitting=true;app.quit();return;}
     if(process.platform==='win32')app.setAppUserModelId('vn.meo.desktop');
+    startup.refresh();
     if(mac){app.dock?.hide();Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'Mèo Desktop',submenu:[{role:'about'},{type:'separator'},{label:'Cài đặt…',accelerator:'Command+,',click:()=>openSettings()},{type:'separator'},{role:'quit'}]},{role:'editMenu'}]));}
     refreshRoute();createWindow();
     screenshots=createScreenshotFeature({electron:require('electron'),getPet:()=>win,getPlacement:currentPlacement,getWindows:()=>[win,playerWindow,settingsWindow],canUse:()=>state.visible&&!suspended&&state.mode!=='game'&&!quitting,onStatus:text=>{note(text);lastMenuKey='';refreshMenu();},onCapture:()=>{hidePlayer(true);state.target=null;state.jump=null;state.action='idle';},testMode});
@@ -471,9 +476,9 @@ else {
     startMedia();startGame();if(!testMode)audioControl.start();
     if(!testMode)scanGames();
     loop();
-    if(!testMode&&!process.argv.includes('--background'))openSettings();
+    if(!testMode&&!startsInBackground(process.argv))openSettings();
   }).catch(error=>{log(error.stack||error.message);app.quit();});
-  app.on('second-instance',(_event,argv)=>{if(argv.includes('--meo-quit')){quitting=true;app.quit();return;}openSettings();});
+  app.on('second-instance',(_event,argv)=>{if(argv.includes('--meo-quit')){quitting=true;app.quit();return;}if(!startsInBackground(argv))openSettings();});
   app.on('activate',()=>{if(app.isReady())openSettings();});
   app.on('window-all-closed',()=>{});
   app.on('before-quit',()=>{quitting=true;screenshots?.dispose();clearTimeout(timer);clearTimeout(persistTimer);clearTimeout(playerHideTimer);clearTimeout(playerBlurTimer);mediaTransport.stop();mediaMonitor.stop();mediaDecision.reset();gameMonitor.stop();gameDecision.reset();audioControl.stop();if(display)saveSettings();globalShortcut.unregisterAll();tray?.destroy();});

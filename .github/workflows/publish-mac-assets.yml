@@ -1,18 +1,18 @@
 name: Attach macOS installers to Release
 on:
   push:
-    branches: [feat/screenshot-pocket]
+    branches: [feat/start-at-login]
     paths: [.github/workflows/publish-mac-assets.yml]
   workflow_dispatch:
     inputs:
       run_id:
         description: Successful macOS packages workflow run
         required: true
-        default: '40678052099'
+        default: '40792170767'
       tag:
         description: Existing release tag
         required: true
-        default: v0.7.1
+        default: v0.7.2
 permissions:
   actions: read
   contents: write
@@ -23,8 +23,8 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
-      RUN_ID: ${{ inputs.run_id || '40678052099' }}
-      RELEASE_TAG: ${{ inputs.tag || 'v0.7.1' }}
+      RUN_ID: ${{ inputs.run_id || '40792170767' }}
+      RELEASE_TAG: ${{ inputs.tag || 'v0.7.2' }}
     steps:
       - name: Validate build and download Mac artifacts
         run: |

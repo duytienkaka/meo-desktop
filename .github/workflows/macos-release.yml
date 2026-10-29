@@ -1,14 +1,14 @@
 name: macOS packages
 on:
   push:
-    branches: [feat/macos-release, feat/screenshot-pocket]
+    branches: [feat/macos-release, feat/screenshot-pocket, feat/start-at-login]
     paths-ignore: [.github/workflows/publish-mac-assets.yml]
   workflow_dispatch:
     inputs:
       version:
         description: Version (must match package.json)
         required: true
-        default: '0.7.1'
+        default: '0.7.2'
 permissions:
   contents: read
 jobs:
@@ -33,7 +33,7 @@ jobs:
       - name: Check requested version
         run: node -e "if(require('./package.json').version!==process.env.RELEASE_VERSION)process.exit(1)"
         env:
-          RELEASE_VERSION: ${{ inputs.version || '0.7.1' }}
+          RELEASE_VERSION: ${{ inputs.version || '0.7.2' }}
       - run: npm run check
       - run: npm test
       - name: Build DMG and ZIP with ad-hoc signature
@@ -46,6 +46,8 @@ jobs:
           echo "MEO_EXECUTABLE=$PWD/$bundle/Contents/MacOS/Meo" >> "$GITHUB_ENV"
       - name: Packaged app and native smoke tests
         run: node checks/macos-smoke.test.cjs
+      - name: Native startup registration with isolated fixture
+        run: node checks/startup-macos-native.test.cjs
       - uses: actions/upload-artifact@v6
         with:
           name: Meo-Desktop-mac-${{ matrix.arch }}
