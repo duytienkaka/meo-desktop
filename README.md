@@ -16,7 +16,7 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 
 ## Xem trước
 
-![Giao diện Tiện ích Mèo Desktop 0.10.0 trên Windows](docs/images/settings.png)
+![Giao diện Tiện ích Mèo Desktop 0.11.0 trên Windows](docs/images/settings.png)
 
 <details>
 <summary>Xem card điều khiển nhạc</summary>
@@ -40,15 +40,15 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 
 ## Tải xuống và cài ứng dụng
 
-**Bản hiện tại: 0.10.0 — Preview. Người dùng cài app không cần Node.js hay công cụ lập trình.**
+**Bản hiện tại: 0.11.0 — Preview. Người dùng cài app không cần Node.js hay công cụ lập trình.**
 
 | Máy của bạn | Bấm để tải | Yêu cầu |
 | --- | --- | --- |
-| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.10.0/Meo-Desktop-Setup-0.10.0-x64.exe)** | Windows 10/11, x64 |
-| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.10.0/Meo-Desktop-0.10.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
-| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.10.0/Meo-Desktop-0.10.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
+| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.11.0/Meo-Desktop-Setup-0.11.0-x64.exe)** | Windows 10/11, x64 |
+| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.11.0/Meo-Desktop-0.11.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
+| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.11.0/Meo-Desktop-0.11.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
 
-[Xem Release 0.10.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.10.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+[Xem Release 0.11.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.11.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 1. Chọn đúng bộ cài trong bảng. Trên Mac, xem loại chip tại menu Apple → **About This Mac** nếu chưa biết chọn bản nào.
 2. **Windows:** mở `.exe` và làm theo trình cài đặt. **Mac:** mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app từ đó.
@@ -78,7 +78,7 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 - **Mở cùng máy tính:** tùy chọn chạy nền khi đăng nhập, mặc định tắt.
 - **Cập nhật phiên bản:** kiểm tra bản mới trên GitHub Releases, hiển thị trạng thái trong Cài đặt → Cập nhật; Windows tải/cài khi bạn chọn, Mac tải đúng DMG theo chip.
 
-Các thay đổi source chưa có trong bộ cài 0.10.0: bỏ chế độ game và nhận thông báo hệ thống; thêm 12 tư thế tương tác vẽ toàn thân theo dáng mèo cũ. Các tư thế mới dùng một hình mèo hoàn chỉnh, không ghép thêm chân. Bộ đi lại, nhảy và nghe nhạc cũ được giữ nguyên.
+Thay đổi trong 0.11.0: bỏ chế độ game và nhận thông báo hệ thống; thêm 12 tư thế tương tác vẽ toàn thân theo dáng mèo cũ. Các tư thế mới dùng một hình mèo hoàn chỉnh, không ghép thêm chân. Bộ đi lại, nhảy và nghe nhạc cũ được giữ nguyên.
 
 ## Công nghệ sử dụng
 
@@ -198,7 +198,7 @@ Phần này dành cho **người phát triển**. Nếu chỉ muốn dùng app, 
    npm start -- --background
    ```
 
-Mã tương ứng với bộ cài 0.10.0 nằm ở [tag v0.10.0](https://github.com/duytienkaka/meo-desktop/tree/v0.10.0). Dùng `git switch --detach v0.10.0` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
+Mã tương ứng với bộ cài 0.11.0 nằm ở [tag v0.11.0](https://github.com/duytienkaka/meo-desktop/tree/v0.11.0). Dùng `git switch --detach v0.11.0` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
 
 ### Kiểm tra và đóng gói
 
