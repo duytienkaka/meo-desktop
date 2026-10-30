@@ -7,7 +7,7 @@ function createGamePanel({electron,getSnapshot,getAnchor,onAction,onVisibility=(
  async function show(){
   clearTimeout(hideTimer);open=true;
   if(!window||window.isDestroyed()){
-   loaded=false;window=new BrowserWindow({width:350,height:450,show:false,frame:false,transparent:true,backgroundColor:'#00000000',hasShadow:false,focusable:false,resizable:false,skipTaskbar:true,alwaysOnTop:true,title:'Mèo Desktop — Bảng Game',webPreferences:{preload:path.join(__dirname,'game-panel-preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,backgroundThrottling:false}});
+   loaded=false;window=new BrowserWindow({width:350,height:450,show:false,frame:false,transparent:true,backgroundColor:'#00000000',hasShadow:false,focusable:false,acceptFirstMouse:true,resizable:false,skipTaskbar:true,alwaysOnTop:true,title:'Mèo Desktop — Bảng Game',webPreferences:{preload:path.join(__dirname,'game-panel-preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,backgroundThrottling:false}});
    window.setMenu(null);window.setAlwaysOnTop(true,'screen-saver');if(process.platform==='darwin')window.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());window.on('closed',()=>{window=null;loaded=false;open=false;onVisibility(false);});
    await window.loadFile(path.join(__dirname,'game-panel.html'));loaded=true;
   }
