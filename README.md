@@ -31,15 +31,15 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 
 ## Tải xuống và cài ứng dụng
 
-**Bản hiện tại: 0.8.0 — Preview. Người dùng cài app không cần Node.js hay công cụ lập trình.**
+**Bản hiện tại: 0.9.0 — Preview. Người dùng cài app không cần Node.js hay công cụ lập trình.**
 
 | Máy của bạn | Bấm để tải | Yêu cầu |
 | --- | --- | --- |
-| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.8.0/Meo-Desktop-Setup-0.8.0-x64.exe)** | Windows 10/11, x64 |
-| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.8.0/Meo-Desktop-0.8.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
-| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.8.0/Meo-Desktop-0.8.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
+| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.9.0/Meo-Desktop-Setup-0.9.0-x64.exe)** | Windows 10/11, x64 |
+| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.9.0/Meo-Desktop-0.9.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
+| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.9.0/Meo-Desktop-0.9.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
 
-[Xem Release 0.8.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.8.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+[Xem Release 0.9.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.9.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 1. Chọn đúng bộ cài trong bảng. Trên Mac, xem loại chip tại menu Apple → **About This Mac** nếu chưa biết chọn bản nào.
 2. **Windows:** mở `.exe` và làm theo trình cài đặt. **Mac:** mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app từ đó.
@@ -49,6 +49,15 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 
 <a id="features"></a>
 
+<details>
+<summary>Xem bảng tiện ích Game</summary>
+
+<img src="docs/images/game-tools.png" width="350" alt="Bảng Game: thời gian phiên chơi, nhắc nghỉ, điều khiển nhạc và âm lượng">
+
+Ảnh minh họa với game và nhạc giả lập; không phải ảnh chụp một game thật.
+
+</details>
+
 ## Tính năng chính
 
 - **Mèo trên desktop:** đi dạo theo mép, rình/vồ con trỏ, phản ứng khi vuốt ve; giữ và kéo để đặt ở vị trí bạn muốn.
@@ -56,7 +65,7 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 - **Điều khiển âm lượng:** cuộn trên mèo để tăng/giảm âm lượng hệ thống, bấm nút loa để bật/tắt tiếng.
 - **Giữ tối đa 3 ảnh:** chụp vùng màn hình, để mèo cầm xấp ảnh rồi đưa cả bộ vào bản nháp bằng một nút.
 - **File và ứng dụng:** thả file/thư mục để mở, tìm vị trí hoặc sao chép đường dẫn; ghim tối đa 20 ứng dụng để mở nhanh.
-- **Chế độ game:** nhận diện game để thu nhỏ và ngồi gọn ở góc; quét Steam/Epic trên Windows, Steam `.app` trên Mac, hỗ trợ thêm thủ công.
+- **Chế độ game:** đếm thời gian phiên chơi, nhắc nghỉ và bảng điều khiển nhanh âm lượng/nhạc. Chọn góc ngồi, tạm dừng đồng hồ hoặc nghỉ 5 phút. Nhận diện game từ Steam/Epic trên Windows, Steam `.app` trên Mac và danh sách thêm thủ công.
 - **Mở cùng máy tính:** tùy chọn chạy nền khi đăng nhập, mặc định tắt.
 - **Cập nhật phiên bản:** kiểm tra bản mới trên GitHub Releases, thông báo im lặng; Windows tải/cài khi bạn chọn, Mac tải đúng DMG theo chip.
 
@@ -88,7 +97,18 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 | --- | --- | --- |
 | Ẩn/hiện mèo | `Ctrl + Alt + M` | `⌘ + ⌥ + M` |
 | Chụp vùng màn hình | `Ctrl + Alt + S` | `⌘ + ⌥ + S` |
+| Mở/đóng bảng Game | `Ctrl + Alt + G` | `⌘ + ⌥ + G` |
 | Hủy chọn vùng chụp | `Esc` | `Esc` |
+
+### Tiện ích khi chơi game — mới từ 0.9.0
+
+- Mèo hiện đồng hồ phiên chơi nhỏ; thời gian chỉ tăng khi game được nhận diện đang ở phía trước. Alt+Tab sang app khác sẽ ngưng đếm, quay lại game thì tiếp tục. Ẩn mèo hoặc tạm dừng hoạt ảnh không dừng đồng hồ.
+- Dùng **Ctrl + Alt + G** / **⌘ + ⌥ + G** để mở và đóng **Bảng Game** khi game ở phía trước. Phím tắt được nhả khi chuyển app, trừ lúc bảng đang mở, để tránh chiếm phím tắt của ứng dụng khác. Có thể mở từ khay hệ thống khi đang ở chế độ game, hoặc **Cài đặt → Ứng dụng & game → Mở bảng Game**.
+- Bảng có điều khiển nhạc, âm lượng, bật/tắt tiếng, ẩn/hiện mèo, chọn góc trái/phải và tạm dừng/tiếp tục đồng hồ. Bảng không tự bật giữa trận và không nhận focus bàn phím.
+- Chọn nhắc nghỉ sau **30 / 45 / 60 / 90 phút** hoặc tắt, mặc định 45 phút. Khi đến giờ, nhãn nhỏ trên mèo đổi thành “Đến giờ nghỉ”; mở bảng để **Nghỉ 5 phút**, **Để sau 10 phút** hoặc quay lại sớm. App không tự tạm dừng game. Nếu game khóa con trỏ, mở menu tạm dừng của game để dùng chuột với bảng.
+- Trong **Cài đặt → Ứng dụng & game**, có thể tắt đồng hồ trên mèo, đổi thời gian nhắc và góc ngồi. Tắt riêng đồng hồ vẫn giữ nhãn nhắc nghỉ; ẩn hoàn toàn mèo sẽ ẩn cả nhãn này. Thay khoảng nhắc sẽ tính lại lần nhắc tiếp theo từ lúc thay đổi.
+- “Phiên mới” đặt lại bộ đếm. Thời gian phiên và phiên gần nhất chỉ giữ trong RAM khi app chạy, chưa có lịch sử chơi lâu dài. Nếu chọn tâm trạng Chơi game thủ công, đồng hồ hiển thị là đếm thủ công; bạn tự tạm dừng khi cần.
+- Trên Mac, bật **Nghe nhạc cùng bạn** trong mục Tự động để dùng nút nhạc. Bảng Game không tự xin quyền Automation giữa trận khi tùy chọn này đang tắt.
 
 ### Chụp và đưa ảnh
 
@@ -123,7 +143,7 @@ Vào **Cài đặt → Cập nhật** để xem phiên bản và thay đổi. T�
 
 - Cấu hình: `%APPDATA%/MeoDesktop/` trên Windows; `~/Library/Application Support/MeoDesktop/` trên Mac.
 - Ảnh chụp giữ trong RAM và PNG tạm phục vụ đính kèm, được dọn khi app thoát bình thường. Ảnh không tải lên server; app không lưu lịch sử nghe nhạc.
-- Fullscreen độc quyền có thể che mèo. Dùng **Borderless / Windowed Fullscreen** để hiển thị ổn định hơn.
+- Fullscreen độc quyền có thể che mèo và bảng Game. Dùng **Borderless / Windowed Fullscreen** để hiển thị ổn định hơn.
 - Ảnh bìa, thời lượng, khả năng tua và nhận ảnh phụ thuộc ứng dụng đích. Điều khiển Music/Spotify thật và từng phiên bản Messenger/Zalo trên Mac vẫn cần kiểm thử thủ công.
 - Nếu xóa app thủ công trên Mac, nên tắt “Mở cùng máy tính” trước để dọn LaunchAgent `~/Library/LaunchAgents/vn.meo.desktop.plist`.
 
@@ -166,7 +186,7 @@ Phần này dành cho **người phát triển**. Nếu chỉ muốn dùng app, 
    npm start -- --background
    ```
 
-Mã tương ứng với bộ cài 0.8.0 nằm ở [tag v0.8.0](https://github.com/duytienkaka/meo-desktop/tree/v0.8.0). Dùng `git switch --detach v0.8.0` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
+Mã tương ứng với bộ cài 0.9.0 nằm ở [tag v0.9.0](https://github.com/duytienkaka/meo-desktop/tree/v0.9.0). Dùng `git switch --detach v0.9.0` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
 
 ### Kiểm tra và đóng gói
 
@@ -178,7 +198,7 @@ npm test
 | Đầu ra | Lệnh | Vị trí |
 | --- | --- | --- |
 | Bộ cài Windows x64 | `npm run setup:win` | `outputs/setup/` |
-| Portable Windows | `npm run package:win` | `../outputs/Meo-Desktop-0.8-win-x64/` |
+| Portable Windows | `npm run package:win` | `../outputs/Meo-Desktop-0.9-win-x64/` |
 | Bộ cài Mac Apple Silicon | `npm run setup:mac -- arm64` | `outputs/mac/` |
 | Bộ cài Mac Intel | `npm run setup:mac -- x64` | `outputs/mac/` |
 
