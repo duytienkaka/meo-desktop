@@ -40,5 +40,10 @@
     "runAfterFinish": true,
     "include": "scripts/installer.nsh"
   },
-  "publish": null
+  "publish": {
+    "provider": "github",
+    "owner": "duytienkaka",
+    "repo": "meo-desktop",
+    "releaseType": "prerelease"
+  }
 }

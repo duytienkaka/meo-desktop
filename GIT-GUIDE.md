@@ -96,3 +96,31 @@ Tạo nhánh mới cho việc mới, không dùng tiếp nhánh đã squash. Có
 - Sửa C# thì build helper, sửa UI thì mở app kiểm tra ngoài unit test.
 - Hook trong `.githooks/` chỉ chặn nhầm trên máy sau khi cài. CI kiểm tra code, không tự merge.
 - Bảo vệ main trên GitHub phải bật riêng trong Settings và có thể phụ thuộc gói: yêu cầu PR, 1 approval, CI `unit-tests`, nhánh cập nhật, chặn force push. File trong repo không tự bật các cài đặt máy chủ.
+
+
+## Phát hành và tự cập nhật từ 0.8.0
+
+App đã cài không cập nhật theo từng commit. Cần phát hành phiên bản mới qua GitHub Releases.
+
+1. Trên nhánh tính năng sạch, tăng phiên bản (ví dụ từ 0.8.0 lên 0.8.1):
+
+```sh
+npm version patch --no-git-tag-version
+```
+
+2. Cập nhật README nếu cần, chạy kiểm tra, commit `package.json`, `package-lock.json` cùng các thay đổi và tạo PR vào **main**. Chờ CI qua và merge PR.
+3. Lấy main mới nhất, kiểm tra version rồi tạo tag khớp chính xác:
+
+```sh
+git switch main
+git pull --ff-only origin main
+node -p "require('./package.json').version"
+git tag v0.8.1
+git push origin v0.8.1
+```
+
+4. Xem **Actions → Build and publish release**. Workflow build Windows x64, Mac Apple Silicon/Intel; chỉ công bố Release sau khi các build/test và kiểm tra checksum đều qua. Người dùng từ 0.8.0 sẽ nhận thông báo sau lần kiểm tra tiếp theo, hoặc tự bấm Kiểm tra cập nhật.
+
+Windows Release cần bộ cài `.exe`, `.exe.sha256`, `.exe.blockmap` và **latest.yml**. Mac cần hai DMG và hai SHA-256. Workflow đăng đủ các file này; không sửa/xóa metadata hoặc thay bộ cài của phiên bản đã công bố. Có lỗi ở bản đã phát hành thì tăng version và tạo tag mới. Dùng số version `X.Y.Z`; Release hiện đánh dấu preview.
+
+Nếu workflow thất bại, xem log trước. Có thể Re-run jobs khi bản đó chưa được công bố; script chỉ thay file khác checksum trong Release nháp. Không tạo tag mới trỏ vào source khác với cùng một số version. Không commit hoặc chia sẻ token: workflow dùng GITHUB_TOKEN với quyền ghi Release.

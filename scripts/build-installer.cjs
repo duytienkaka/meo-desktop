@@ -10,5 +10,6 @@ if(fs.existsSync(path.join(local,'electron.exe')))config.electronDist=local;
  const installer=artifacts.find(file=>file.endsWith('.exe'));if(!installer)throw new Error('Installer was not produced.');
  const hash=crypto.createHash('sha256');for await(const chunk of fs.createReadStream(installer))hash.update(chunk);
  const digest=hash.digest('hex');fs.writeFileSync(installer+'.sha256',digest+'  '+path.basename(installer)+'\n');
+ await require('./release-assets.cjs').validateWindows(path.dirname(installer),require('../package.json').version);
  console.log(JSON.stringify({installer,sha256:digest,bytes:fs.statSync(installer).size}));
 })().catch(error=>{console.error(error);process.exitCode=1;});

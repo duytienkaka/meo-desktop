@@ -1,0 +1,19 @@
+'use strict';
+const assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs'),{_electron}=require('playwright');
+let desktop;const root=path.resolve(__dirname,'..');
+(async()=>{
+ const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
+ const executable=process.env.MEO_EXECUTABLE||(process.platform==='darwin'?require('electron'):path.join(root,'.cache/electron-dist-45.0.0-win32-x64/electron.exe'));
+ desktop=await _electron.launch({executablePath:executable,args:[...(!process.env.MEO_EXECUTABLE||process.env.MEO_APP_ROOT?[root]:[]),'--meo-test'],env});const pet=await desktop.firstWindow();await pet.waitForFunction(()=>window.meoPet?.snapshot().frame);
+ await desktop.evaluate(()=>{global.__meo.setMode('play');global.updateActions=[];global.updateFixture={supported:true,current:'0.8.0',latest:'0.9.0',status:'available',canDownload:process.platform==='win32',progress:0,notes:'Mèo có trò mới!\n<img src=x onerror="window.injected=true">',message:'Có bản mới dành cho máy này.'};global.__meo.updates.snapshot=()=>({...global.updateFixture});global.__meo.updates.action=async action=>{global.updateActions.push(action);if(action==='download')Object.assign(global.updateFixture,{status:'downloading',progress:42,message:'Đang tải bản cập nhật…'});if(action==='install')Object.assign(global.updateFixture,{status:'installing',message:'Đang đóng Mèo để cài bản mới…'});return global.__meo.updates.snapshot();};});
+ const opened=desktop.waitForEvent('window');await desktop.evaluate(()=>global.__meo.openSettings('updates'));const page=await opened,errors=[];page.on('pageerror',e=>errors.push(e.message));await page.waitForFunction(()=>document.querySelector('#page-updates').classList.contains('active'));
+ assert.match(await page.locator('#update-versions').innerText(),/0\.8\.0.*0\.9\.0/);assert.match(await page.locator('#update-notes').innerText(),/<img src=x/);assert.equal(await page.locator('#update-notes img').count(),0);assert.equal(await page.evaluate(()=>window.injected),undefined);
+ if(process.platform==='win32'){
+  await page.locator('#update-download').click();await page.waitForFunction(()=>document.querySelector('#update-progress').value===42);assert.equal(await page.locator('#update-check').isDisabled(),true);assert.equal(await page.locator('#update-install').isHidden(),true);
+  await desktop.evaluate(()=>{Object.assign(global.updateFixture,{status:'downloaded',progress:100,message:'Đã tải xong. Lưu công việc và ảnh trước khi khởi động lại để cài.'});global.__meo.openSettings('updates');});await page.locator('#update-install').waitFor({state:'visible'});
+  fs.mkdirSync(path.join(__dirname,'screenshots'),{recursive:true});await page.screenshot({path:path.join(__dirname,'screenshots/update-settings.png')});
+  await page.locator('#update-install').click();assert.deepEqual(await desktop.evaluate(()=>global.updateActions),['download','install']);assert.equal(desktop.windows().length,2);
+ }else{assert.equal(await page.locator('#update-download').isHidden(),true);assert.equal(await page.locator('#update-install').isHidden(),true);await page.locator('#update-manual').click();assert.deepEqual(await desktop.evaluate(()=>global.updateActions),['manual']);}
+ await desktop.evaluate(()=>global.__meo.settingsWindow().setSize(760,720));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);await desktop.close();desktop=null;
+ console.log(JSON.stringify({passed:true,checks:['updates tab and direct navigation','version and release notes','notes rendered as text only','explicit download/install buttons on Windows','manual Mac path','progress and busy controls','no actual installation in UI fixture','narrow layout']}));
+})().catch(async error=>{console.error(error);if(desktop)await desktop.close().catch(()=>{});process.exitCode=1;});
