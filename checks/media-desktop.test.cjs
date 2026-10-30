@@ -17,8 +17,8 @@ async function feed(sample){return app.evaluate((_e,value)=>global.__meo.receive
   await feed({available:true,playing:false});await page.waitForTimeout(500);assert.equal((await state()).mode,'music');
   await feed({available:true,playing:true});await page.waitForTimeout(2400);assert.equal((await state()).mode,'music');
   await feed({available:true,playing:false});await page.waitForTimeout(2400);assert.equal((await state()).mode,'focus');
-  await feed({available:true,playing:true});await app.evaluate(()=>global.__meo.setMode('game'));
-  await feed({available:true,playing:true});assert.equal((await state()).mode,'game');assert.equal((await state()).autoMedia,false);
+  await feed({available:true,playing:true});await app.evaluate(()=>global.__meo.setMode('focus'));
+  await feed({available:true,playing:true});assert.equal((await state()).mode,'focus');assert.equal((await state()).autoMedia,false);
   await app.evaluate(()=>{global.__meo.setMode('play');global.__meo.setAutoMedia(true);});
   await feed({available:true,playing:true});await feed({available:false,playing:false});await page.waitForTimeout(2400);assert.equal((await state()).mode,'play');
   await feed({available:true,playing:true});assert.equal((await state()).mode,'music');

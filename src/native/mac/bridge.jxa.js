@@ -30,10 +30,7 @@ function run(args){
   try{
     if(request.kind==='audio')return JSON.stringify(audio());
     if(request.kind==='media')return JSON.stringify(media());
-    if(request.kind==='game'){
-      var front=workspace.frontmostApplication,items=applications();
-      return JSON.stringify({available:true,foreground:{pid:Number(front.processIdentifier),exe:front.bundleURL?String(ObjC.unwrap(front.bundleURL.lastPathComponent)).toLowerCase():'',displayName:ObjC.unwrap(front.localizedName)||'',fullScreen:false,borderless:false,installedGame:false},runningPids:items.map(function(item){return item.pid;}),notificationState:0});
-    }
+
     throw new Error('InvalidRequest');
   }catch(error){return JSON.stringify({available:false,playing:false,hasSession:false,level:0,muted:false,success:false,error:String(error).slice(0,200)});}
 }

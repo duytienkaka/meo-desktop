@@ -1,6 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {createMacBridge,createMacMonitor,createMacAudio,createMacTransport,scanMacLibrary}=require('../src/macos.cjs');
-const {candidate}=require('../src/game.cjs'),{validLibrary}=require('../src/library.cjs');
+const {createMacBridge,createMacMonitor,createMacAudio,createMacTransport}=require('../src/macos.cjs');
 test('mac bridge passes JSON as a separate argument, never interpolates script text',async()=>{
  let call;const bridge=createMacBridge({exec:(file,args,options,callback)=>{call={file,args,options};queueMicrotask(()=>callback(null,'{"success":true}'));return {kill(){}};}});
  await bridge.request({kind:'media',action:'open',source:'com.spotify.client',value:'"; do shell script "x'});
@@ -17,10 +16,5 @@ test('mac audio serializes changes and validates device responses',async()=>{
  const unavailable=createMacAudio({bridge:{request:async()=>({available:false,level:0,muted:false}),stop(){}}});await assert.rejects(unavailable.command('read'));unavailable.stop();
 });
 test('mac monitor stops without emitting stale samples after a pending call finishes',async()=>{
- let resolve;const samples=[],monitor=createMacMonitor({kind:'game',onSample:s=>samples.push(s),bridge:{request:()=>new Promise(r=>resolve=r),stop(){}}});monitor.start();monitor.stop();resolve({available:true});await new Promise(r=>setImmediate(r));assert.deepEqual(samples,[]);assert.equal(monitor.isRunning(),false);
-});
-test('mac Steam scanning finds app bundles and game detection retains explicit app identities',async t=>{
- const root=fs.mkdtempSync(path.join(os.tmpdir(),'meo-mac-library-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));fs.mkdirSync(path.join(root,'steamapps/common/Cozy/Cozy.app/Contents'),{recursive:true});fs.writeFileSync(path.join(root,'steamapps/appmanifest_1.acf'),'"name" "Cozy" "installdir" "Cozy"');
- const result=await scanMacLibrary({roots:[root]});assert.equal(result.games.length,1);assert.deepEqual(result.games[0].exes,['cozy.app']);assert.deepEqual(validLibrary(result.games)[0].exes,['cozy.app']);
- const sample={available:true,foreground:{pid:3,exe:'Cozy.app'}};assert.equal(candidate(sample,{games:['cozy.app']}).exe,'cozy.app');assert.equal(candidate(sample,{games:['cozy.app'],ignored:['cozy.app']}),null);assert.equal(candidate({available:true,foreground:{pid:5,exe:'Safari.app'}}),null);
+ let resolve;const samples=[],monitor=createMacMonitor({kind:'media',onSample:s=>samples.push(s),bridge:{request:()=>new Promise(r=>resolve=r),stop(){}}});monitor.start();monitor.stop();resolve({available:true});await new Promise(r=>setImmediate(r));assert.deepEqual(samples,[]);assert.equal(monitor.isRunning(),false);
 });

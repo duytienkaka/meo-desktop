@@ -1,6 +1,6 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
-const PROFILE_IDS=['work','game','relax'];
+const PROFILE_IDS=['work','relax'];
 function parseReminder(input,now=Date.now()){
  if(typeof input!=='string'||input.length>500)throw new Error('Nhập lời nhắc dưới 500 ký tự.');
  const normalized=input.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
@@ -11,12 +11,12 @@ function parseReminder(input,now=Date.now()){
 }
 function createCompanionStore({directory,downloads,now=()=>Date.now(),onChange=()=>{}}){
  const file=path.join(directory,'companion.json'),uid=()=>crypto.randomUUID();
- const defaults={items:[],reminders:[],activeProfile:null,settings:{battery:true,downloads:true,downloadDirectory:downloads},profiles:PROFILE_IDS.map((id,i)=>({id,name:['Làm việc','Chơi game','Thư giãn'][i],volume:null,appIds:[],mode:['focus','game','music'][i],size:112,visible:true,roam:false,follow:false}))};
+ const defaults={items:[],reminders:[],activeProfile:null,settings:{battery:true,downloads:true,downloadDirectory:downloads},profiles:PROFILE_IDS.map((id,i)=>({id,name:['Làm việc','Thư giãn'][i],volume:null,appIds:[],mode:['focus','music'][i],size:112,visible:true,roam:false,follow:false}))};
  let data=structuredClone(defaults);
  try{const saved=JSON.parse(fs.readFileSync(file,'utf8'));if(saved&&typeof saved==='object'){data.items=(Array.isArray(saved.items)?saved.items:[]).filter(i=>i&&typeof i.id==='string'&&((i.kind==='text'&&typeof i.text==='string'&&i.text.length<=16000)||(i.kind==='file'&&typeof i.location==='string'&&path.isAbsolute(i.location)))).slice(0,20);data.reminders=(Array.isArray(saved.reminders)?saved.reminders:[]).filter(r=>r&&typeof r.id==='string'&&typeof r.text==='string'&&r.text.length<=500&&Number.isFinite(r.dueAt)).slice(0,30);for(const p of saved.profiles||[])if(PROFILE_IDS.includes(p.id))data.profiles[PROFILE_IDS.indexOf(p.id)]={...data.profiles[PROFILE_IDS.indexOf(p.id)],...validateProfile(p)};data.activeProfile=PROFILE_IDS.includes(saved.activeProfile)?saved.activeProfile:null;data.settings.battery=saved.settings?.battery!==false;data.settings.downloads=saved.settings?.downloads!==false;if(typeof saved.settings?.downloadDirectory==='string'&&path.isAbsolute(saved.settings.downloadDirectory))data.settings.downloadDirectory=saved.settings.downloadDirectory;}}catch{}
  function commit(next){fs.mkdirSync(directory,{recursive:true});fs.writeFileSync(file+'.tmp',JSON.stringify(next,null,2),'utf8');fs.renameSync(file+'.tmp',file);data=next;onChange();}
  const mutate=fn=>{const next=structuredClone(data),result=fn(next);commit(next);return result;};
- function validateProfile(p){if(!p||!PROFILE_IDS.includes(p.id)||!['focus','game','music','play','sleep'].includes(p.mode)||![80,112,148].includes(p.size)||!['visible','roam','follow'].every(k=>typeof p[k]==='boolean')||!(p.volume===null||Number.isInteger(p.volume)&&p.volume>=0&&p.volume<=100)||!Array.isArray(p.appIds)||p.appIds.length>20||p.appIds.some(id=>typeof id!=='string'||id.length>100))throw new Error('Chế độ máy không hợp lệ.');return {id:p.id,mode:p.mode,size:p.size,visible:p.visible,roam:p.roam,follow:p.follow,volume:p.volume,appIds:[...new Set(p.appIds)]};}
+ function validateProfile(p){if(!p||!PROFILE_IDS.includes(p.id)||!['focus','music','play','sleep'].includes(p.mode)||![80,112,148].includes(p.size)||!['visible','roam','follow'].every(k=>typeof p[k]==='boolean')||!(p.volume===null||Number.isInteger(p.volume)&&p.volume>=0&&p.volume<=100)||!Array.isArray(p.appIds)||p.appIds.length>20||p.appIds.some(id=>typeof id!=='string'||id.length>100))throw new Error('Chế độ máy không hợp lệ.');return {id:p.id,mode:p.mode,size:p.size,visible:p.visible,roam:p.roam,follow:p.follow,volume:p.volume,appIds:[...new Set(p.appIds)]};}
  function addFiles(values,source='drop'){
   if(!Array.isArray(values)||!values.length||values.length>20)throw new Error('Thả tối đa 20 file một lần.');
   const files=[...new Set(values)].map(location=>{if(typeof location!=='string'||!path.isAbsolute(location)||/[\x00-\x1f]/.test(location))throw new Error('Đường dẫn không hợp lệ.');const stat=fs.statSync(location);if(!stat.isFile()&&!stat.isDirectory())throw new Error('Không thể giữ file này.');return path.normalize(location);});
