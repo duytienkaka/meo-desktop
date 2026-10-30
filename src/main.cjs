@@ -1,5 +1,5 @@
 'use strict';
-const {app,BrowserWindow,ipcMain,screen,Tray,Menu,nativeImage,globalShortcut,powerMonitor,dialog,shell,clipboard}=require('electron');
+const {app,BrowserWindow,ipcMain,screen,Tray,Menu,nativeImage,globalShortcut,powerMonitor,dialog,shell,clipboard,Notification}=require('electron');
 const fs=require('node:fs');
 const path=require('node:path');
 const {makeRoute,wrap,clamp}=require('./route.cjs');
@@ -14,6 +14,7 @@ const {createDesktopActions}=require('./desktop-actions.cjs');
 const {createAudioControl}=require('./audio.cjs');
 const {createScreenshotFeature}=require('./screenshots.cjs');
 const {createStartup,startsInBackground}=require('./startup.cjs');
+const {createUpdates}=require('./updates.cjs');
 const {createMacMonitor,createMacAudio,createMacTransport,scanMacLibrary}=require('./macos.cjs');
 const mac=process.platform==='darwin',desktopSupported=['win32','darwin'].includes(process.platform);
 const testMode=process.argv.includes('--meo-test');
@@ -22,6 +23,7 @@ app.setPath('userData',testMode?path.resolve(__dirname,'../checks/user-data'):pa
 if(!app.requestSingleInstanceLock()){app.quit();}
 else {
   const startup=createStartup({app,testMode});
+  const updates=createUpdates({app,testMode,openExternal:url=>shell.openExternal(url),onChange:()=>publishSettings(),beforeInstall:()=>{if(screenshots?.isBusy())throw new Error('Hãy chờ thao tác ảnh hoàn tất trước khi cài.');if(!saveSettings())throw new Error('Chưa lưu được cài đặt. Hãy thử lại trước khi cập nhật.');},onAvailable:value=>{if(!Notification.isSupported())return;const notification=new Notification({title:'Mèo Desktop có bản mới '+value.latest,body:'Mở Cài đặt → Cập nhật để xem thay đổi và tải bản mới.',silent:true});notification.on('click',()=>openSettings('updates'));notification.show();}});
   const desktopActions=createDesktopActions({directory:app.getPath('userData'),shell,clipboard}),pinIcons=new Map();
   let fileHoverUntil=0,fileMenuOpen=false,screenshots;
   let audioState={available:false,level:0,muted:false},audioFeedbackUntil=0;
@@ -268,7 +270,7 @@ else {
       {label:'Thoát mèo',click:()=>{quitting=true;app.quit();}}
     ]);
   }
-  function settingsSnapshot(){return{startup:startup.snapshot(),pinnedApps:desktopActions.pins().map(pin=>({...pin,icon:pinIcons.get(pin.id)?.toDataURL()||''})),pinSupported:['win32','darwin'].includes(process.platform),version:app.getVersion(),mode:state.mode,baseMode:state.baseMode,visible:state.visible,paused:state.paused,size:state.size,roam:state.roam,follow:state.follow,autoMedia:state.autoMedia,autoGame:state.autoGame,mediaStatus:state.mediaStatus,gameStatus:state.gameStatus,gameActive:state.gameActive,gameName:state.gameExe?(library.find(g=>g.exes.includes(state.gameExe))?.name||appName(state.gameExe,appLabels[state.gameExe])):'',platform:process.platform,shortcut:mac?'⌘ + ⌥ + M':'Ctrl + Alt + M',autoSupported:desktopSupported,displayId:String(display.id),displays:screen.getAllDisplays().map((d,i)=>({id:String(d.id),name:`Màn hình ${i+1} · ${d.size.width} × ${d.size.height}`})),library:library.map(g=>({id:g.id,name:g.name,source:g.source,manual:g.manual})),scanStatus,scanMessage,lastScan};}
+  function settingsSnapshot(){return{updates:updates.snapshot(),startup:startup.snapshot(),pinnedApps:desktopActions.pins().map(pin=>({...pin,icon:pinIcons.get(pin.id)?.toDataURL()||''})),pinSupported:['win32','darwin'].includes(process.platform),version:app.getVersion(),mode:state.mode,baseMode:state.baseMode,visible:state.visible,paused:state.paused,size:state.size,roam:state.roam,follow:state.follow,autoMedia:state.autoMedia,autoGame:state.autoGame,mediaStatus:state.mediaStatus,gameStatus:state.gameStatus,gameActive:state.gameActive,gameName:state.gameExe?(library.find(g=>g.exes.includes(state.gameExe))?.name||appName(state.gameExe,appLabels[state.gameExe])):'',platform:process.platform,shortcut:mac?'⌘ + ⌥ + M':'Ctrl + Alt + M',autoSupported:desktopSupported,displayId:String(display.id),displays:screen.getAllDisplays().map((d,i)=>({id:String(d.id),name:`Màn hình ${i+1} · ${d.size.width} × ${d.size.height}`})),library:library.map(g=>({id:g.id,name:g.name,source:g.source,manual:g.manual})),scanStatus,scanMessage,lastScan};}
   let lastSettingsKey='';
   function publishSettings(){
     if(!settingsWindow||settingsWindow.isDestroyed()||!settingsWindow.isVisible())return;
@@ -276,7 +278,7 @@ else {
   }
   function catIcon(size=64){return nativeImage.createFromPath(path.join(__dirname,'../assets/core.png')).crop({x:53,y:50,width:280,height:292}).resize({width:size,height:size});}
   function openSettings(tab){
-    const navigate=()=>{if(tab==='apps')settingsWindow.webContents.send('meo:settings:navigate','apps');};
+    const navigate=()=>{if(['apps','updates'].includes(tab))settingsWindow.webContents.send('meo:settings:navigate',tab);};
     if(settingsWindow&&!settingsWindow.isDestroyed()){if(settingsWindow.isMinimized())settingsWindow.restore();settingsWindow.show();settingsWindow.focus();lastSettingsKey='';publishSettings();if(settingsWindow.webContents.isLoading())settingsWindow.webContents.once('did-finish-load',navigate);else navigate();return;}
     const area=screen.getPrimaryDisplay().workArea;
     settingsWindow=new BrowserWindow({width:Math.min(980,area.width-40),height:Math.min(760,area.height-40),minWidth:Math.min(760,area.width-40),minHeight:Math.min(570,area.height-40),show:false,autoHideMenuBar:true,title:'Mèo Desktop — Cài đặt',icon:catIcon(),backgroundColor:'#f7f5ef',webPreferences:{preload:path.join(__dirname,'settings-preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,spellcheck:false}});
@@ -291,6 +293,7 @@ else {
   function validSettings(event){return settingsWindow&&!settingsWindow.isDestroyed()&&event.sender.id===settingsWindow.webContents.id;}
   function requireSettings(event){if(!validSettings(event))throw new Error('Cửa sổ không hợp lệ.');}
   ipcMain.handle('meo:settings:get',event=>{requireSettings(event);startup.refresh();return settingsSnapshot();});
+  ipcMain.handle('meo:settings:updates',(event,action)=>{requireSettings(event);return updates.action(action).then(()=>settingsSnapshot());});
   ipcMain.handle('meo:settings:update',async(event,patch)=>{
     requireSettings(event);if(!patch||typeof patch!=='object'||Array.isArray(patch)||Object.keys(patch).length!==1)throw new Error('Thiết lập không hợp lệ.');
     const [key,value]=Object.entries(patch)[0];
@@ -470,16 +473,17 @@ else {
     powerMonitor.on('suspend',sleep);powerMonitor.on('resume',wake);
     powerMonitor.on('lock-screen',sleep);powerMonitor.on('unlock-screen',wake);
     if(testMode)global.__meo={cursor:null,window:()=>win,setMode,setSize,setVisible,setPaused,setAutoMedia,receiveMedia,setAutoGame,receiveGame,setGameRule,gamePid:()=>gameMonitor.pid(),mediaPid:()=>mediaMonitor.pid(),route:()=>route,state:()=>({...state,ready,display:{id:display.id,workArea:display.workArea},bounds:win.getBounds(),visible:win.isVisible(),alwaysOnTop:win.isAlwaysOnTop(),focusable:win.isFocusable()}),move:s=>{state.freePosition=null;state.distance=wrap(s,route.total);state.target=null;state.jump=null;state.action='idle';tickFrame();},menu:()=>buildMenu().items.map(i=>i.label),drag:value=>{state.dragging=value;state.dragAt=Date.now();},shutdown:()=>{quitting=true;app.quit();}};
-    if(testMode)Object.assign(global.__meo,{screenshots,audioControl,receiveAudio,desktopActions,acceptDroppedFiles,fileMenuTemplate,pinnedMenu,refreshPinIcons,openSettings,settingsSnapshot,settingsWindow:()=>settingsWindow});
+    if(testMode)Object.assign(global.__meo,{updates,screenshots,audioControl,receiveAudio,desktopActions,acceptDroppedFiles,fileMenuTemplate,pinnedMenu,refreshPinIcons,openSettings,settingsSnapshot,settingsWindow:()=>settingsWindow});
     if(testMode)Object.assign(global.__meo,{overlay:()=>({raises:overlayRaises}),advancePlay:seconds=>{for(let t=0;t<seconds;t+=.05)advance(.05,{x:-10000,y:-10000});tickFrame();}});
     if(testMode)Object.assign(global.__meo,{placeFree:point=>{state.freePosition={...constrainPosition(display.workArea,point,state.size),displayId:display.id};state.target=null;state.jump=null;tickFrame();},openPlayer,togglePlayer,playerWindow:()=>playerWindow,playerState:()=>({open:playerOpen,loaded:playerLoaded}),playerSnapshot,mediaTransport});
     startMedia();startGame();if(!testMode)audioControl.start();
     if(!testMode)scanGames();
+    updates.start();
     loop();
     if(!testMode&&!startsInBackground(process.argv))openSettings();
   }).catch(error=>{log(error.stack||error.message);app.quit();});
   app.on('second-instance',(_event,argv)=>{if(argv.includes('--meo-quit')){quitting=true;app.quit();return;}if(!startsInBackground(argv))openSettings();});
   app.on('activate',()=>{if(app.isReady())openSettings();});
   app.on('window-all-closed',()=>{});
-  app.on('before-quit',()=>{quitting=true;screenshots?.dispose();clearTimeout(timer);clearTimeout(persistTimer);clearTimeout(playerHideTimer);clearTimeout(playerBlurTimer);mediaTransport.stop();mediaMonitor.stop();mediaDecision.reset();gameMonitor.stop();gameDecision.reset();audioControl.stop();if(display)saveSettings();globalShortcut.unregisterAll();tray?.destroy();});
+  app.on('before-quit',()=>{quitting=true;updates.dispose();screenshots?.dispose();clearTimeout(timer);clearTimeout(persistTimer);clearTimeout(playerHideTimer);clearTimeout(playerBlurTimer);mediaTransport.stop();mediaMonitor.stop();mediaDecision.reset();gameMonitor.stop();gameDecision.reset();audioControl.stop();if(display)saveSettings();globalShortcut.unregisterAll();tray?.destroy();});
 }

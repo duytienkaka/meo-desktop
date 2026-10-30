@@ -2,23 +2,32 @@
 
 Một chú mèo hoạt hình 2D nhỏ sống trên màn hình: đi dạo, chơi với con trỏ, nghe nhạc cùng bạn và giữ hộ ảnh chụp. Hoàn toàn im lặng, hỗ trợ **Windows và macOS**.
 
-## Tải và cài đặt — 0.7.2
+## Tải và cài đặt — 0.8.0
 
-**[Release 0.7.2](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.7.2)** · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+**[Release 0.8.0](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.8.0)** · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 Người dùng cài ứng dụng **không cần Node.js**. Các bộ cài được phân phối trực tiếp qua GitHub Releases.
 
 | Máy của bạn | Bộ cài |
 | --- | --- |
-| Windows 64-bit | [Meo-Desktop-Setup-0.7.2-x64.exe](https://github.com/duytienkaka/meo-desktop/releases/download/v0.7.2/Meo-Desktop-Setup-0.7.2-x64.exe) |
-| Mac Apple Silicon — M1 trở lên | [Meo-Desktop-0.7.2-mac-arm64.dmg](https://github.com/duytienkaka/meo-desktop/releases/download/v0.7.2/Meo-Desktop-0.7.2-mac-arm64.dmg) |
-| Mac Intel | [Meo-Desktop-0.7.2-mac-x64.dmg](https://github.com/duytienkaka/meo-desktop/releases/download/v0.7.2/Meo-Desktop-0.7.2-mac-x64.dmg) |
+| Windows 64-bit | [Meo-Desktop-Setup-0.8.0-x64.exe](https://github.com/duytienkaka/meo-desktop/releases/download/v0.8.0/Meo-Desktop-Setup-0.8.0-x64.exe) |
+| Mac Apple Silicon — M1 trở lên | [Meo-Desktop-0.8.0-mac-arm64.dmg](https://github.com/duytienkaka/meo-desktop/releases/download/v0.8.0/Meo-Desktop-0.8.0-mac-arm64.dmg) |
+| Mac Intel | [Meo-Desktop-0.8.0-mac-x64.dmg](https://github.com/duytienkaka/meo-desktop/releases/download/v0.8.0/Meo-Desktop-0.8.0-mac-x64.dmg) |
 
 - **Windows:** mở file `.exe` và làm theo trình cài đặt.
 - **Mac:** cần **macOS 13 Ventura trở lên**. Mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app. Xem chip tại menu Apple → About This Mac nếu chưa biết chọn bản nào.
 - Mỗi bộ cài có file `.sha256` đi kèm trong Assets của Release.
 
 Đây là bản thử nghiệm. Windows chưa ký số; Mac ký ad-hoc, **chưa Developer ID / Apple notarization**, nên hệ điều hành có thể cảnh báo hoặc chặn mở. Xem lưu ý Mac bên dưới.
+
+## Cập nhật ứng dụng
+
+Từ **0.8.0**, vào **Cài đặt → Cập nhật** để kiểm tra phiên bản, xem thay đổi và tải bản mới. App tự kiểm tra sau khi mở và mỗi 6 giờ, thông báo hoàn toàn im lặng. Các bản preview đã công bố của repo cũng được kiểm tra.
+
+- **Windows:** bấm **Tải cập nhật**, chờ tải và xác minh checksum, rồi chọn **Khởi động lại để cài**. Không tự tải/cài khi chỉ kiểm tra; không tự cài khi bạn đóng app. Lưu công việc và ảnh mèo đang giữ trước khi khởi động lại. Cài đè giữ cấu hình và lựa chọn mở cùng máy.
+- **Mac:** thông báo phiên bản mới và nút **Tải bản Mac** mở đúng DMG cho Apple Silicon/Intel. Tải rồi thay Meo.app trong Applications. Chưa tự cài trên Mac vì bản hiện tại chưa Developer ID / notarization.
+- **Bản 0.7.2 trở xuống:** cần tải và cài bản mới **một lần** để có chức năng này.
+- Mất mạng hoặc tải lỗi: app tiếp tục hoạt động, có thể thử lại hoặc mở Trang phát hành. Không nhúng token GitHub trong app.
 
 ## Tính năng
 
@@ -47,7 +56,7 @@ macOS 13 Ventura trở lên. Có hai bản: **Apple Silicon (arm64, M1 trở lê
 - Âm lượng không điều chỉnh được trên một số thiết bị xuất âm thanh có mức cố định; app sẽ báo không hỗ trợ.
 - Bản thử nghiệm có chữ ký ad-hoc, **chưa Developer ID / notarization**. macOS có thể chặn mở; xem hướng dẫn của Apple tại System Settings → Privacy & Security và chỉ quyết định cho phép nếu tin tưởng nguồn tải. Không cần tắt Gatekeeper.
 
-Build trên Mac: `npm ci`, `npm run setup:mac -- arm64` hoặc `npm run setup:mac -- x64`. GitHub Actions trong `.github/workflows/macos-release.yml` tạo DMG/ZIP, kiểm chữ ký và chạy smoke test trên cả hai kiến trúc. Chưa kiểm thử thủ công bằng Apple Music/Spotify thật.
+Build trên Mac: `npm ci`, `npm run setup:mac -- arm64` hoặc `npm run setup:mac -- x64`. GitHub Actions trong `.github/workflows/release.yml` tạo DMG/ZIP, kiểm chữ ký và chạy smoke test trên cả hai kiến trúc. Chưa kiểm thử thủ công bằng Apple Music/Spotify thật.
 
 ## Phím tắt
 
@@ -59,7 +68,7 @@ Build trên Mac: `npm ci`, `npm run setup:mac -- arm64` hoặc `npm run setup:ma
 
 ## Phát triển từ mã nguồn
 
-Cần **Node.js 24** có npm. [Tag v0.7.2](https://github.com/duytienkaka/meo-desktop/tree/v0.7.2) chứa mã nguồn tương ứng với bộ cài đã phát hành; các thay đổi trên nhánh phát triển có thể chưa được merge vào `main`.
+Cần **Node.js 24** có npm. [Tag v0.8.0](https://github.com/duytienkaka/meo-desktop/tree/v0.8.0) chứa mã nguồn tương ứng với bộ cài đã phát hành; các thay đổi trên nhánh phát triển có thể chưa được merge vào `main`.
 
 Clone dự án rồi mở terminal trong thư mục source:
 
@@ -70,7 +79,7 @@ npm ci
 npm start
 ```
 
-Muốn xem đúng mã của bản phát hành, dùng `git switch --detach v0.7.2` sau khi clone. Khi phát triển tính năng mới, tạo nhánh theo **[GIT-GUIDE.md](GIT-GUIDE.md)**.
+Muốn xem đúng mã của bản phát hành, dùng `git switch --detach v0.8.0` sau khi clone. Khi phát triển tính năng mới, tạo nhánh theo **[GIT-GUIDE.md](GIT-GUIDE.md)**.
 
 Mở app sẽ hiện Cài đặt. Đóng Cài đặt thì mèo vẫn chạy trong khay hệ thống. Dùng `npm start -- --background` để chỉ hiện mèo khi khởi động.
 
@@ -83,7 +92,9 @@ npm run package:win
 npm run setup:win
 ```
 
-File cài đặt nằm ở `outputs/setup/Meo-Desktop-Setup-0.7.2-x64.exe`, kèm SHA-256. Trình cài tạo shortcut, hỗ trợ gỡ cài đặt và giữ cấu hình khi gỡ. Bản chưa ký số.
+Bộ cài Windows đi kèm **latest.yml** và **.exe.blockmap** phục vụ cập nhật tự động; giữ các file này khi phát hành. Script build kiểm tra metadata và SHA-512 phải khớp bộ cài.
+
+File cài đặt nằm ở `outputs/setup/Meo-Desktop-Setup-0.8.0-x64.exe`, kèm SHA-256. Trình cài tạo shortcut, hỗ trợ gỡ cài đặt và giữ cấu hình khi gỡ. Bản chưa ký số.
 
 Bản portable Windows tạo bằng `npm run package:win` nằm ở `../outputs/Meo-Desktop-0.7-win-x64/Meo.exe`. Giữ cả thư mục đi kèm. Script tải Electron chính thức và kiểm tra SHA-256; không đóng gói đè vào thư mục đã có `Meo.exe`.
 
@@ -98,7 +109,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-audio.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-screenshot.ps1
 ```
 
-Unit test chạy bằng `npm test`; `npm run check` kiểm tra cú pháp và dấu conflict. Bản 0.7.2 đã qua **48 unit test**, kiểm tra Windows dán đủ 3 PNG vào receiver riêng mà không nhấn Enter, và kiểm tra Mac khởi chạy/card nhạc/giao diện ba ảnh/chuẩn bị clipboard PNG native trên cả hai kiến trúc. Quyền chụp và thao tác dán trong ứng dụng Mac bên ngoài vẫn cần kiểm thử thủ công trên máy thực tế.
+Unit test chạy bằng `npm test`; `npm run check` kiểm tra cú pháp và dấu conflict. Bản 0.8.0 đã qua các unit test về tính năng và cập nhật, kiểm tra Windows dán đủ 3 PNG vào receiver riêng mà không nhấn Enter, và kiểm tra Mac khởi chạy/card nhạc/giao diện ba ảnh/chuẩn bị clipboard PNG native trên cả hai kiến trúc. Quyền chụp và thao tác dán trong ứng dụng Mac bên ngoài vẫn cần kiểm thử thủ công trên máy thực tế.
 
 Các bài kiểm tra giao diện/native trong `checks/` cần bản đóng gói tương ứng. Thử điều khiển nhạc Windows bằng fixture im lặng:
 
@@ -106,6 +117,10 @@ Các bài kiểm tra giao diện/native trong `checks/` cần bản đóng gói 
 powershell -NoProfile -ExecutionPolicy Bypass -File checks/build-native-media-fixture.ps1
 node checks/native-player.test.cjs
 ```
+
+## Phát hành bản mới
+
+Chỉ push code chưa tạo cập nhật cho người dùng. Sau khi tăng version, merge PR vào main rồi push tag `vX.Y.Z` khớp `package.json`. Workflow **Build and publish release** sẽ build/test cả Windows và hai bản Mac, kiểm tra checksum/metadata, tạo Release nháp, đăng đủ 8 file cần thiết rồi mới công bố. Xem các lệnh cụ thể trong **[GIT-GUIDE.md](GIT-GUIDE.md)**. Dùng phiên bản dạng `X.Y.Z`; trạng thái preview được đặt trên GitHub Release.
 
 ## Cấu trúc
 

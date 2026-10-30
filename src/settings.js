@@ -7,8 +7,8 @@
   function request(work){saved.textContent='Đang lưu…';error.hidden=true;queue=queue.then(async()=>{const value=await work();render(value);saved.textContent='✓ Đã lưu';}).catch(showError);return queue;}
   function update(patch){return request(()=>api.update(patch));}
   function changeTab(name){
-    const titles={friend:'Ở bên bạn, theo cách bạn thích.',auto:'Bạn làm gì, mèo làm nấy.',apps:'Mọi thứ quen thuộc, trong tầm tay.'};
-    const descriptions={friend:'Một góc nhỏ để chỉnh dáng vẻ và thói quen của mèo.',auto:'Những phản ứng nhỏ khiến mỗi ngày thú vị hơn.',apps:'Ghim ứng dụng để mở nhanh, quản lý game để mèo cùng chơi.'};
+    const titles={friend:'Ở bên bạn, theo cách bạn thích.',auto:'Bạn làm gì, mèo làm nấy.',apps:'Mọi thứ quen thuộc, trong tầm tay.',updates:'Những điều mới, đến với mèo của bạn.'};
+    const descriptions={friend:'Một góc nhỏ để chỉnh dáng vẻ và thói quen của mèo.',auto:'Những phản ứng nhỏ khiến mỗi ngày thú vị hơn.',apps:'Ghim ứng dụng để mở nhanh, quản lý game để mèo cùng chơi.',updates:'Kiểm tra, xem thay đổi và chọn lúc cập nhật ứng dụng.'};
     document.querySelector('#page-description').textContent=descriptions[name];
     document.querySelectorAll('.nav').forEach(button=>{const active=button.dataset.tab===name;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
     document.querySelectorAll('.page').forEach(page=>page.classList.toggle('active',page.id==='page-'+name));document.querySelector('#page-title').textContent=titles[name];document.querySelector('main').scrollTo({top:0});
@@ -22,6 +22,7 @@
   document.querySelector('#open-player').addEventListener('click',()=>request(()=>api.action('music')));
   document.querySelector('#home').addEventListener('click',()=>request(()=>api.action('home')));
   document.querySelector('#done').addEventListener('click',()=>request(()=>api.action('close')));
+  for(const action of ['check','download','install','manual','release'])document.querySelector('#update-'+action).addEventListener('click',()=>request(()=>api.updates(action)));
 
   const make=(tag,className,text)=>{const element=document.createElement(tag);if(className)element.className=className;if(text!==undefined)element.textContent=text;return element;};
   function renderLibrary(games){
@@ -52,6 +53,18 @@
     }
   }
   function render(value){
+    const updates=value.updates||{status:'unavailable',supported:false,message:'Cập nhật chưa sẵn sàng.'},busy=['checking','downloading','installing'].includes(updates.status);
+    document.querySelector('#update-versions').textContent='Đang dùng '+(updates.current||value.version)+(updates.latest?' · Bản mới '+updates.latest:'');
+    document.querySelector('#update-status').textContent=updates.message;
+    document.querySelector('#update-check').disabled=!updates.supported||busy||updates.status==='downloaded';
+    document.querySelector('#update-download').hidden=updates.status!=='available'||!updates.canDownload;
+    document.querySelector('#update-install').hidden=updates.status!=='downloaded';
+    document.querySelector('#update-manual').hidden=!updates.latest||!['available','error'].includes(updates.status)||(updates.status==='available'&&updates.canDownload);
+    document.querySelector('#update-manual').textContent=value.platform==='darwin'?'Tải bản Mac':'Tải bộ cài';
+    document.querySelector('#update-progress').hidden=!['downloading','downloaded'].includes(updates.status);
+    document.querySelector('#update-progress').value=updates.progress||0;
+    document.querySelector('#update-notes-wrap').hidden=!updates.notes;
+    document.querySelector('#update-notes').textContent=updates.notes||'';
     const startup=value.startup||{supported:false,enabled:false,message:'Tính năng mở cùng máy chưa sẵn sàng.'};
     document.querySelector('#startAtLogin').checked=startup.enabled;
     document.querySelector('#startAtLogin').disabled=!startup.supported;
@@ -93,7 +106,7 @@
     const lk=JSON.stringify(games);if(lk!==libraryKey){const focused=document.activeElement,focusId=focused?.dataset?.game;libraryKey=lk;renderLibrary(games);if(focusId&&!document.contains(focused))document.querySelector('#add-game').focus({preventScroll:true});}
 
   }
-  api.onNavigate(tab=>{if(tab==='apps')changeTab(tab);});
+  api.onNavigate(tab=>{if(['apps','updates'].includes(tab))changeTab(tab);});
   api.onChange(render);api.get().then(render).catch(showError);
 
   const canvas=document.querySelector('#preview'),ctx=canvas.getContext('2d'),images={},reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');let ready=false,raf=0,last=0,time=0,previewSize=112,petAt=-Infinity;

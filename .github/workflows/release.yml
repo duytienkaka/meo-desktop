@@ -1,0 +1,96 @@
+name: Build and publish release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            arch: x64
+          - os: macos-15
+            platform: macos
+            arch: arm64
+          - os: macos-15-intel
+            platform: macos
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Validate tag and code
+        run: |
+          node -e "if(process.env.GITHUB_REF_NAME!=='v'+require('./package.json').version)process.exit(1)"
+          npm run check
+          npm test
+      - name: Build Windows installer and validate update metadata
+        if: matrix.platform == 'windows'
+        run: npm run setup:win
+      - name: Build macOS installer
+        if: matrix.platform == 'macos'
+        run: npm run setup:mac -- ${{ matrix.arch }}
+      - name: Verify Mac app and native integration
+        if: matrix.platform == 'macos'
+        shell: bash
+        run: |
+          bundle=$(find outputs/mac -maxdepth 2 -name '*.app' -type d -print -quit)
+          test -n "$bundle"
+          codesign --verify --deep --strict "$bundle"
+          MEO_EXECUTABLE="$PWD/$bundle/Contents/MacOS/Meo" node checks/macos-smoke.test.cjs
+          node checks/startup-macos-native.test.cjs
+          MEO_EXECUTABLE="$PWD/$bundle/Contents/MacOS/Meo" node checks/updates-ui.test.cjs
+      - uses: actions/upload-artifact@v6
+        if: matrix.platform == 'windows'
+        with:
+          name: windows-x64
+          path: |
+            outputs/setup/*.exe
+            outputs/setup/*.exe.sha256
+            outputs/setup/*.exe.blockmap
+            outputs/setup/latest.yml
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v6
+        if: matrix.platform == 'macos'
+        with:
+          name: macos-${{ matrix.arch }}
+          path: |
+            outputs/mac/*.dmg
+            outputs/mac/*.dmg.sha256
+          if-no-files-found: error
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Download verified build artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh run download "$GITHUB_RUN_ID" --dir release-artifacts
+      - name: Validate all files and publish atomically
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node scripts/publish-release.cjs release-artifacts
