@@ -82,12 +82,10 @@ else {
     // Only request forwarding while passing through. Re-enabling real input must
     // remove the forwarding hook as well as WS_EX_TRANSPARENT on Windows.
     if(enabled)win.setIgnoreMouseEvents(false);else win.setIgnoreMouseEvents(true,{forward:true});
-    win.setAlwaysOnTop(true,'floating');
     nativeMouseState=enabled;nextMouseRepair=now+400;
   }
   function currentPlacement(){return state.freePosition?freePlacement(display.workArea,state.freePosition,state.size):route.windowAt(state.distance);}
   const playBehavior=createPlayBehavior();
-  function maintainOverlay(){if(win&&!win.isDestroyed())win.setAlwaysOnTop(true,'floating');}
   function saveSettings(){try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.writeFileSync(path.join(app.getPath('userData'),'settings.json'),JSON.stringify({mode:state.baseMode,size:state.size,roam:state.roam,follow:state.follow,visible:state.visible,paused:state.paused,freePosition:state.freePosition,displayId:display.id,autoMedia:state.autoMedia},null,2));return true;}catch(error){log(error.message);return false;}}
   function persist(){clearTimeout(persistTimer);persistTimer=setTimeout(saveSettings,300);}
   function applyAutomaticMode(){const mode=state.autoMedia&&state.mediaPlaying?'music':state.baseMode;if(mode!==state.mode)setMode(mode,{automatic:true});}
@@ -183,7 +181,7 @@ else {
       state.distance=clamp(p.x-(route.area.x+12+route.radius),0,route.bottomLength);
       state.direction=1;
     }
-    state.nextWander=state.time+4;note(modeLabels[mode]);persist();refreshMenu();tickFrame();maintainOverlay(true);
+    state.nextWander=state.time+4;note(modeLabels[mode]);persist();refreshMenu();tickFrame();
   }
   function setVisible(visible){
     state.visible=!!visible;state.interactive=false;state.dragging=false;
@@ -342,7 +340,6 @@ else {
 
     if(ready&&state.visible&&!suspended){
       const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint();advance(dt,cursor);tickFrame();
-      maintainOverlay();
       if(playerWindow?.isVisible())updatePlayerMouse();
       syncMouseInput(state.interactive||state.dragging);
       if(state.interactive&&!state.dragging&&Date.now()-lastHitAt>700)syncMouseInput(false,true);
@@ -352,7 +349,7 @@ else {
   function createWindow(){
     ready=false;lastBounds='';nativeMouseState=null;state.interactive=false;
     win=new BrowserWindow({width:320,height:320,show:false,frame:false,transparent:true,backgroundColor:'#00000000',hasShadow:false,resizable:false,movable:false,minimizable:false,maximizable:false,fullscreenable:false,skipTaskbar:true,focusable:true,alwaysOnTop:true,title:'Mèo Desktop',webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false,spellcheck:false}});
-    win.setMenu(null);syncMouseInput(false,true);win.setAlwaysOnTop(true,'floating');win.on('focus',()=>maintainOverlay(true));
+    win.setMenu(null);syncMouseInput(false,true);win.setAlwaysOnTop(true,'floating');
     if(process.platform==='darwin')win.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});
     win.webContents.setWindowOpenHandler(()=>({action:'deny'}));
     win.webContents.on('will-navigate',event=>event.preventDefault());
@@ -364,7 +361,7 @@ else {
   function valid(event){return win&&!win.isDestroyed()&&event.sender.id===win.webContents.id;}
   ipcMain.on('meo:files:hover',(event,active)=>{if(!valid(event))return;fileHoverUntil=active===true?Date.now()+1200:0;if(fileHoverUntil){state.target=null;state.jump=null;syncMouseInput(true,true);}tickFrame();});
   ipcMain.handle('meo:files:drop',(event,paths)=>{if(!valid(event))throw new Error('Cửa sổ không hợp lệ.');try{return acceptDroppedFiles(paths);}catch(error){fileHoverUntil=0;note(error.message);throw error;}});
-  ipcMain.on('meo:ready',event=>{if(!valid(event))return;ready=true;tickFrame();if(state.visible&&!suspended){win.showInactive();}maintainOverlay(true);});
+  ipcMain.on('meo:ready',event=>{if(!valid(event))return;ready=true;tickFrame();if(state.visible&&!suspended){win.showInactive();}});
   ipcMain.on('meo:hit',(event,hit)=>{
     if(!valid(event)||typeof hit!=='boolean')return;lastHitAt=Date.now();
     syncMouseInput(hit||state.dragging);
@@ -398,7 +395,7 @@ else {
     powerMonitor.on('lock-screen',sleep);powerMonitor.on('unlock-screen',wake);
     if(testMode)global.__meo={cursor:null,window:()=>win,setMode,setSize,setVisible,setPaused,setAutoMedia,receiveMedia,mediaPid:()=>mediaMonitor.pid(),route:()=>route,state:()=>({...state,ready,display:{id:display.id,workArea:display.workArea},bounds:win.getBounds(),visible:win.isVisible(),alwaysOnTop:win.isAlwaysOnTop(),focusable:win.isFocusable()}),move:s=>{state.freePosition=null;state.distance=wrap(s,route.total);state.target=null;state.jump=null;state.action='idle';tickFrame();},menu:()=>buildMenu().items.map(i=>i.label),drag:value=>{state.dragging=value;state.dragAt=Date.now();},shutdown:()=>{quitting=true;app.quit();}};
     if(testMode)Object.assign(global.__meo,{utilities,updates,screenshots,audioControl,receiveAudio,desktopActions,acceptDroppedFiles,fileMenuTemplate,pinnedMenu,refreshPinIcons,openSettings,settingsSnapshot,settingsWindow:()=>settingsWindow});
-    if(testMode)Object.assign(global.__meo,{overlay:()=>({raises:unusedRaises}),advancePlay:seconds=>{for(let t=0;t<seconds;t+=.05)advance(.05,{x:-10000,y:-10000});tickFrame();}});
+    if(testMode)Object.assign(global.__meo,{advancePlay:seconds=>{for(let t=0;t<seconds;t+=.05)advance(.05,{x:-10000,y:-10000});tickFrame();}});
     if(testMode)Object.assign(global.__meo,{placeFree:point=>{state.freePosition={...constrainPosition(display.workArea,point,state.size),displayId:display.id};state.target=null;state.jump=null;tickFrame();},openPlayer,togglePlayer,playerWindow:()=>playerWindow,playerState:()=>({open:playerOpen,loaded:playerLoaded}),playerSnapshot,mediaTransport});
     startMedia();if(!testMode)audioControl.start();
     updates.start();
