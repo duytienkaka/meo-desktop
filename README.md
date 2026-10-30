@@ -1,106 +1,191 @@
+<p align="center">
+  <img src="assets/meo-mac.png" width="112" alt="Nhân vật Mèo Desktop">
+</p>
+
 # Mèo Desktop
 
-Một chú mèo hoạt hình 2D nhỏ sống trên màn hình: đi dạo, chơi với con trỏ, nghe nhạc cùng bạn và giữ hộ ảnh chụp. Hoàn toàn im lặng, hỗ trợ **Windows và macOS**.
+Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **Windows và macOS**: đi dạo, nghe nhạc cùng bạn và giữ hộ ảnh chụp. App hoàn toàn im lặng, giúp những thao tác nhỏ hằng ngày trở nên thú vị hơn.
 
-## Tải và cài đặt — 0.8.0
+[![Phiên bản](https://img.shields.io/github/v/release/duytienkaka/meo-desktop?include_prereleases&label=release)](https://github.com/duytienkaka/meo-desktop/releases)
+[![CI](https://github.com/duytienkaka/meo-desktop/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/duytienkaka/meo-desktop/actions/workflows/ci.yml)
+[![Nền tảng](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-536c50)](#downloads)
 
-**[Release 0.8.0](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.8.0)** · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+**[Tải xuống](#downloads)** · [Xem trước](#preview) · [Tính năng](#features) · [Cài đặt từ source](#development) · [Đóng góp](#contributing)
 
-Người dùng cài ứng dụng **không cần Node.js**. Các bộ cài được phân phối trực tiếp qua GitHub Releases.
+<a id="preview"></a>
 
-| Máy của bạn | Bộ cài |
+## Xem trước
+
+![Giao diện Cài đặt Mèo Desktop 0.8.0 trên Windows](docs/images/settings.png)
+
+<details>
+<summary>Xem card điều khiển nhạc</summary>
+
+<img src="docs/images/music-player.png" width="480" alt="Card nhạc với ảnh bìa, tiến trình và nút phát/dừng/chuyển bài">
+
+Ảnh chụp từ giao diện Windows; tên bài, ảnh bìa và trình phát trong hình là dữ liệu demo.
+
+</details>
+
+<a id="downloads"></a>
+
+## Tải xuống và cài ứng dụng
+
+**Bản hiện tại: 0.8.0 — Preview. Người dùng cài app không cần Node.js hay công cụ lập trình.**
+
+| Máy của bạn | Bấm để tải | Yêu cầu |
+| --- | --- | --- |
+| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.8.0/Meo-Desktop-Setup-0.8.0-x64.exe)** | Windows 10/11, x64 |
+| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.8.0/Meo-Desktop-0.8.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
+| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.8.0/Meo-Desktop-0.8.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
+
+[Xem Release 0.8.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.8.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+
+1. Chọn đúng bộ cài trong bảng. Trên Mac, xem loại chip tại menu Apple → **About This Mac** nếu chưa biết chọn bản nào.
+2. **Windows:** mở `.exe` và làm theo trình cài đặt. **Mac:** mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app từ đó.
+3. Chỉnh mèo trong cửa sổ **Cài đặt**. Khi đóng cửa sổ này, mèo vẫn hoạt động trong khay hệ thống/thanh menu.
+
+> Bản Windows chưa ký số; bản Mac ký ad-hoc, **chưa Developer ID / Apple notarization**. Hệ điều hành có thể cảnh báo hoặc chặn mở. Trên Mac, kiểm tra nguồn tải và mục **System Settings → Privacy & Security** trước khi quyết định cho phép mở; không cần tắt Gatekeeper.
+
+<a id="features"></a>
+
+## Tính năng chính
+
+- **Mèo trên desktop:** đi dạo theo mép, rình/vồ con trỏ, phản ứng khi vuốt ve; giữ và kéo để đặt ở vị trí bạn muốn.
+- **Nghe nhạc cùng bạn:** nhấp mèo để mở/đóng card nhạc, phát/dừng/chuyển bài, tua khi được hỗ trợ và mở trình phát.
+- **Điều khiển âm lượng:** cuộn trên mèo để tăng/giảm âm lượng hệ thống, bấm nút loa để bật/tắt tiếng.
+- **Giữ tối đa 3 ảnh:** chụp vùng màn hình, để mèo cầm xấp ảnh rồi đưa cả bộ vào bản nháp bằng một nút.
+- **File và ứng dụng:** thả file/thư mục để mở, tìm vị trí hoặc sao chép đường dẫn; ghim tối đa 20 ứng dụng để mở nhanh.
+- **Chế độ game:** nhận diện game để thu nhỏ và ngồi gọn ở góc; quét Steam/Epic trên Windows, Steam `.app` trên Mac, hỗ trợ thêm thủ công.
+- **Mở cùng máy tính:** tùy chọn chạy nền khi đăng nhập, mặc định tắt.
+- **Cập nhật phiên bản:** kiểm tra bản mới trên GitHub Releases, thông báo im lặng; Windows tải/cài khi bạn chọn, Mac tải đúng DMG theo chip.
+
+## Công nghệ sử dụng
+
+| Thành phần | Công nghệ |
 | --- | --- |
-| Windows 64-bit | [Meo-Desktop-Setup-0.8.0-x64.exe](https://github.com/duytienkaka/meo-desktop/releases/download/v0.8.0/Meo-Desktop-Setup-0.8.0-x64.exe) |
-| Mac Apple Silicon — M1 trở lên | [Meo-Desktop-0.8.0-mac-arm64.dmg](https://github.com/duytienkaka/meo-desktop/releases/download/v0.8.0/Meo-Desktop-0.8.0-mac-arm64.dmg) |
-| Mac Intel | [Meo-Desktop-0.8.0-mac-x64.dmg](https://github.com/duytienkaka/meo-desktop/releases/download/v0.8.0/Meo-Desktop-0.8.0-mac-x64.dmg) |
+| Ứng dụng desktop | Electron 45, JavaScript/Node.js |
+| Giao diện và hoạt ảnh | HTML, CSS, Canvas 2D |
+| Tích hợp Windows | C#/.NET Framework, API hệ thống Windows |
+| Tích hợp macOS | Swift, JXA, AppKit |
+| Cập nhật và đóng gói | electron-updater, electron-builder, GitHub Releases |
+| Kiểm thử và CI | node:test, Playwright, GitHub Actions |
+| Lưu cấu hình | JSON trên máy; không cần server/database riêng |
 
-- **Windows:** mở file `.exe` và làm theo trình cài đặt.
-- **Mac:** cần **macOS 13 Ventura trở lên**. Mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app. Xem chip tại menu Apple → About This Mac nếu chưa biết chọn bản nào.
-- Mỗi bộ cài có file `.sha256` đi kèm trong Assets của Release.
+<a id="usage"></a>
 
-Đây là bản thử nghiệm. Windows chưa ký số; Mac ký ad-hoc, **chưa Developer ID / Apple notarization**, nên hệ điều hành có thể cảnh báo hoặc chặn mở. Xem lưu ý Mac bên dưới.
+## Cách sử dụng
 
-## Cập nhật ứng dụng
+### Thao tác thường ngày
 
-Từ **0.8.0**, vào **Cài đặt → Cập nhật** để kiểm tra phiên bản, xem thay đổi và tải bản mới. App tự kiểm tra sau khi mở và mỗi 6 giờ, thông báo hoàn toàn im lặng. Các bản preview đã công bố của repo cũng được kiểm tra.
+- **Nhấp mèo:** tương tác với mèo hoặc mở/đóng card nhạc khi có phiên nhạc.
+- **Giữ và kéo:** đổi vị trí; mèo ghi nhớ vị trí đã chọn.
+- **Chuột phải:** mở menu Cài đặt, chụp màn hình, ứng dụng đã ghim và các thao tác nhanh.
+- **Cuộn chuột trên mèo:** chỉnh âm lượng, mỗi nấc 2%; chức năng này tạm nghỉ trong chế độ game.
+- **Cài đặt → Tự động → Mở cùng máy tính:** bật/tắt chạy nền khi đăng nhập. Trên Mac, cài app vào Applications trước khi bật.
 
-- **Windows:** bấm **Tải cập nhật**, chờ tải và xác minh checksum, rồi chọn **Khởi động lại để cài**. Không tự tải/cài khi chỉ kiểm tra; không tự cài khi bạn đóng app. Lưu công việc và ảnh mèo đang giữ trước khi khởi động lại. Cài đè giữ cấu hình và lựa chọn mở cùng máy.
-- **Mac:** thông báo phiên bản mới và nút **Tải bản Mac** mở đúng DMG cho Apple Silicon/Intel. Tải rồi thay Meo.app trong Applications. Chưa tự cài trên Mac vì bản hiện tại chưa Developer ID / notarization.
-- **Bản 0.7.2 trở xuống:** cần tải và cài bản mới **một lần** để có chức năng này.
-- Mất mạng hoặc tải lỗi: app tiếp tục hoạt động, có thể thử lại hoặc mở Trang phát hành. Không nhúng token GitHub trong app.
-
-## Tính năng
-
-- **Mở cùng máy tính:** vào **Cài đặt → Tự động → Mở cùng máy tính**. Mặc định tắt; khi bật, mèo chạy nền sau khi đăng nhập Windows/Mac, không mở Cài đặt và không tạo thêm mèo nếu app đã chạy. Tắt công tắc để gỡ đăng ký. Mac cần mở ứng dụng từ Applications, không bật trực tiếp trong DMG.
-
-
-- **Chụp ảnh gọn (Windows và Mac):** chuột phải mèo → **Chụp vùng màn hình…** hoặc `Ctrl + Alt + S` (Mac: `⌘ + ⌥ + S`). Kéo chọn vùng, Esc để hủy. Mèo tạm ẩn khi chụp và giữ tối đa **3 ảnh gần nhất**; ảnh thứ 4 thay ảnh cũ nhất.
-- Mèo cầm một xấp ảnh nhỏ và chỉ hiện **một nút “Đưa N ảnh ↗”**. Bấm vào ô nhận ảnh trong app đích trước, rồi bấm nút để ném và dán cả bộ 1–3 ảnh vào bản nháp. Bạn tự bỏ ảnh không muốn trong app chat và tự bấm gửi; mèo không bấm Enter. Dùng menu chuột phải **Bỏ ảnh mèo đang giữ** để dọn xấp ảnh. Ảnh ở RAM và các PNG tạm phục vụ đính kèm được giữ đến khi thoát app để bản nháp còn đọc được file. Không tải ảnh lên server.
-- Đi dạo theo mép màn hình, rình/vồ con trỏ, phản ứng khi vuốt ve và cuộn tròn nghỉ.
-- Tự nghe nhạc cùng bạn. Nhấp mèo để bật/tắt bảng có ảnh bìa, tên bài, tiến trình và nút phát/dừng/chuyển bài. Bấm ảnh bìa hoặc nút ↗ để mở trình phát, kéo thanh tiến trình để tua khi được hỗ trợ. Rê chuột lên tên bài dài để đọc hết; mèo gật đầu và thả vài nốt nhạc khi chuyển bài.
-- Cuộn lên/xuống trên mèo để tăng/giảm âm lượng hệ thống, mỗi nấc 2%. Bấm nút loa trong ô âm lượng, card nhạc hoặc menu chuột phải để bật/tắt tiếng. Điều khiển âm lượng hỗ trợ Windows và Mac, tạm nghỉ trong chế độ game.
-- Thả file hoặc thư mục vào mèo để mở, mở thư mục chứa hoặc sao chép đường dẫn (tối đa 20 mục/lần). Thả ứng dụng .exe / lối tắt .lnk để ghim nhanh.
-- Ghim tối đa 20 ứng dụng trong **Cài đặt → Ứng dụng & game**, mở từ đó hoặc **chuột phải mèo → Ứng dụng đã ghim**. Bỏ ghim không gỡ ứng dụng; danh sách lưu ở `pinned-apps.json` trong thư mục cấu hình.
-- Nhận diện game để thu nhỏ và ngồi ở góc; Windows quét Steam/Epic, Mac quét game `.app` từ Steam. Hỗ trợ thêm game thủ công.
-- Cài đặt kích thước, màn hình, chuyển động, chế độ tự động và tâm trạng.
-- Giữ và kéo để đặt mèo ở vị trí bất kỳ; vị trí được lưu. Thả giữa màn hình thì mèo ở lại đó; kéo về mép hoặc chọn **Đưa mèo về mép dưới** trong Cài đặt để đi dạo tiếp. Chuột phải mở menu; `Ctrl + Alt + M` ẩn/hiện trên Windows.
-
-## macOS
-
-macOS 13 Ventura trở lên. Có hai bản: **Apple Silicon (arm64, M1 trở lên)** và **Intel (x64)**. Mở DMG rồi kéo **Meo.app** vào Applications. App nằm ở thanh menu; phím ẩn/hiện là **⌘ + ⌥ + M**.
-
-- Kéo/thả file, ghim ứng dụng .app, di chuyển mèo và chỉnh âm lượng hệ thống.
-- Chụp vùng màn hình bằng **⌘ + ⌥ + S**, giữ tối đa 3 ảnh và đưa vào bản nháp. Cho phép **Screen Recording** khi chụp và **Accessibility** khi đưa ảnh; có thể phải mở lại app sau khi cấp quyền. Chỉ dán bằng ⌘ + V, không tự gửi tin nhắn. Nếu app đích không nhận nhiều file từ clipboard, dùng ⌘ + V thủ công hoặc đính kèm theo cách của app đó.
-- Apple Music / Spotify: bật “Nghe nhạc cùng bạn” và cấp quyền **Automation** khi macOS hỏi. Nhạc trong trình duyệt và ảnh bìa trên Mac chưa hỗ trợ; vẫn có tên bài, điều khiển phát/chuyển bài/tua. Mèo không tự mở trình phát đang đóng.
-- Quét game .app từ Steam; thêm game .app thủ công nếu còn thiếu. Nhận diện game theo ứng dụng, không đọc bàn phím hoặc màn hình.
-- Âm lượng không điều chỉnh được trên một số thiết bị xuất âm thanh có mức cố định; app sẽ báo không hỗ trợ.
-- Bản thử nghiệm có chữ ký ad-hoc, **chưa Developer ID / notarization**. macOS có thể chặn mở; xem hướng dẫn của Apple tại System Settings → Privacy & Security và chỉ quyết định cho phép nếu tin tưởng nguồn tải. Không cần tắt Gatekeeper.
-
-Build trên Mac: `npm ci`, `npm run setup:mac -- arm64` hoặc `npm run setup:mac -- x64`. GitHub Actions trong `.github/workflows/release.yml` tạo DMG/ZIP, kiểm chữ ký và chạy smoke test trên cả hai kiến trúc. Chưa kiểm thử thủ công bằng Apple Music/Spotify thật.
-
-## Phím tắt
-
-| Thao tác | Windows | Mac |
+| Phím tắt | Windows | Mac |
 | --- | --- | --- |
 | Ẩn/hiện mèo | `Ctrl + Alt + M` | `⌘ + ⌥ + M` |
 | Chụp vùng màn hình | `Ctrl + Alt + S` | `⌘ + ⌥ + S` |
 | Hủy chọn vùng chụp | `Esc` | `Esc` |
 
-## Phát triển từ mã nguồn
+### Chụp và đưa ảnh
 
-Cần **Node.js 24** có npm. [Tag v0.8.0](https://github.com/duytienkaka/meo-desktop/tree/v0.8.0) chứa mã nguồn tương ứng với bộ cài đã phát hành; các thay đổi trên nhánh phát triển có thể chưa được merge vào `main`.
+1. Dùng phím tắt hoặc **chuột phải mèo → Chụp vùng màn hình…**. Kéo chọn vùng; mèo tạm ẩn khi chụp.
+2. Mèo giữ tối đa **3 ảnh gần nhất**. Ảnh thứ 4 thay ảnh cũ nhất.
+3. Bấm vào ô nhận ảnh trong ứng dụng đích, rồi bấm **Đưa N ảnh ↗** bên cạnh mèo.
+4. Mèo có hoạt ảnh ném ảnh và dán cả bộ vào bản nháp. Bạn tự bỏ ảnh không muốn và tự bấm gửi; app **không tự nhấn Enter**.
 
-Clone dự án rồi mở terminal trong thư mục source:
+Chuột phải → **Bỏ ảnh mèo đang giữ** để dọn xấp ảnh. Khả năng nhận nhiều file từ clipboard tùy ứng dụng; nếu cần, dán thủ công bằng `Ctrl + V` / `⌘ + V` hoặc đính kèm trong app đích.
+
+### Quyền và khác biệt trên Mac
+
+| Tính năng | Quyền cần cấp |
+| --- | --- |
+| Chụp màn hình | **Screen Recording** |
+| Đưa ảnh vào ứng dụng | **Accessibility** |
+| Điều khiển Apple Music/Spotify | **Automation** khi bật “Nghe nhạc cùng bạn” |
+
+Cấp quyền trong **System Settings → Privacy & Security**; có thể cần mở lại app sau khi cấp quyền.
+
+Trên Mac, điều khiển nhạc hiện hỗ trợ **Apple Music và Spotify**; nhạc trong trình duyệt và ảnh bìa chưa hỗ trợ. Mèo không tự mở trình phát đang đóng. Một số thiết bị âm thanh có mức âm lượng cố định không cho phép điều chỉnh.
+
+### Cập nhật ứng dụng
+
+Vào **Cài đặt → Cập nhật** để xem phiên bản và thay đổi. Từ 0.8.0, app tự kiểm tra sau khi mở và mỗi 6 giờ, gồm cả các bản preview đã công bố.
+
+- **Windows:** chọn **Tải cập nhật**, đợi xác minh checksum rồi bấm **Khởi động lại để cài**. App không tự tải/cài khi chỉ kiểm tra và không tự cài lúc thoát. Lưu công việc và ảnh mèo đang giữ trước khi khởi động lại; cài đè giữ cấu hình.
+- **Mac:** chọn **Tải bản Mac**, mở DMG rồi thay Meo.app trong Applications. Hiện chưa tự cài trên Mac.
+- **Bản 0.7.2 trở xuống:** cần tải và cài bản mới một lần để có chức năng cập nhật này.
+
+### Dữ liệu và giới hạn
+
+- Cấu hình: `%APPDATA%/MeoDesktop/` trên Windows; `~/Library/Application Support/MeoDesktop/` trên Mac.
+- Ảnh chụp giữ trong RAM và PNG tạm phục vụ đính kèm, được dọn khi app thoát bình thường. Ảnh không tải lên server; app không lưu lịch sử nghe nhạc.
+- Fullscreen độc quyền có thể che mèo. Dùng **Borderless / Windowed Fullscreen** để hiển thị ổn định hơn.
+- Ảnh bìa, thời lượng, khả năng tua và nhận ảnh phụ thuộc ứng dụng đích. Điều khiển Music/Spotify thật và từng phiên bản Messenger/Zalo trên Mac vẫn cần kiểm thử thủ công.
+- Nếu xóa app thủ công trên Mac, nên tắt “Mở cùng máy tính” trước để dọn LaunchAgent `~/Library/LaunchAgents/vn.meo.desktop.plist`.
+
+<a id="development"></a>
+
+## Điều kiện tiên quyết và cài đặt từ source
+
+Phần này dành cho **người phát triển**. Nếu chỉ muốn dùng app, hãy dùng [bộ cài ở trên](#downloads).
+
+### Điều kiện tiên quyết
+
+- **Git**, **Node.js 24.x** và **npm**.
+- Dùng đúng hệ điều hành khi đóng gói: Windows để build bộ cài Windows, Mac để build bộ cài Mac.
+- Trên Mac, cần **Xcode Command Line Tools** để biên dịch helper Swift. Helper Windows đã có sẵn trong `src/native/`; nếu sửa C#, cần build lại helper tương ứng.
+
+### Cài đặt và chạy
+
+1. Clone repository:
+
+   ```sh
+   git clone https://github.com/duytienkaka/meo-desktop.git
+   cd meo-desktop
+   ```
+
+2. Cài dependencies:
+
+   ```sh
+   npm ci
+   ```
+
+3. Chạy app:
+
+   ```sh
+   npm start
+   ```
+
+   Mèo và cửa sổ Cài đặt sẽ xuất hiện. Để chỉ chạy nền:
+
+   ```sh
+   npm start -- --background
+   ```
+
+Mã tương ứng với bộ cài 0.8.0 nằm ở [tag v0.8.0](https://github.com/duytienkaka/meo-desktop/tree/v0.8.0). Dùng `git switch --detach v0.8.0` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
+
+### Kiểm tra và đóng gói
 
 ```sh
-git clone https://github.com/duytienkaka/meo-desktop.git
-cd meo-desktop
-npm ci
-npm start
-```
-
-Muốn xem đúng mã của bản phát hành, dùng `git switch --detach v0.8.0` sau khi clone. Khi phát triển tính năng mới, tạo nhánh theo **[GIT-GUIDE.md](GIT-GUIDE.md)**.
-
-Mở app sẽ hiện Cài đặt. Đóng Cài đặt thì mèo vẫn chạy trong khay hệ thống. Dùng `npm start -- --background` để chỉ hiện mèo khi khởi động.
-
-## Kiểm tra và đóng gói
-
-```powershell
 npm run check
 npm test
-npm run package:win
-npm run setup:win
 ```
 
-Bộ cài Windows đi kèm **latest.yml** và **.exe.blockmap** phục vụ cập nhật tự động; giữ các file này khi phát hành. Script build kiểm tra metadata và SHA-512 phải khớp bộ cài.
+| Đầu ra | Lệnh | Vị trí |
+| --- | --- | --- |
+| Bộ cài Windows x64 | `npm run setup:win` | `outputs/setup/` |
+| Portable Windows | `npm run package:win` | `../outputs/Meo-Desktop-0.8-win-x64/` |
+| Bộ cài Mac Apple Silicon | `npm run setup:mac -- arm64` | `outputs/mac/` |
+| Bộ cài Mac Intel | `npm run setup:mac -- x64` | `outputs/mac/` |
 
-File cài đặt nằm ở `outputs/setup/Meo-Desktop-Setup-0.8.0-x64.exe`, kèm SHA-256. Trình cài tạo shortcut, hỗ trợ gỡ cài đặt và giữ cấu hình khi gỡ. Bản chưa ký số.
+Giữ cả thư mục khi dùng bản portable. Build Mac tự biên dịch helper Swift. Windows cần giữ bộ cài `.exe`, `.exe.sha256`, `.exe.blockmap` và `latest.yml` khi phát hành; script build kiểm tra metadata và SHA-512 phải khớp bộ cài.
 
-Bản portable Windows tạo bằng `npm run package:win` nằm ở `../outputs/Meo-Desktop-0.7-win-x64/Meo.exe`. Giữ cả thư mục đi kèm. Script tải Electron chính thức và kiểm tra SHA-256; không đóng gói đè vào thư mục đã có `Meo.exe`.
-
-Build bộ cài Mac trên Mac bằng `npm run setup:mac -- arm64` hoặc `npm run setup:mac -- x64`; DMG/ZIP và SHA-256 nằm trong `outputs/mac/`. Script tự biên dịch helper Swift.
-
-Các helper Windows đã có trong `src/native/` để chạy ngay. Sau khi sửa C#, build lại helper tương ứng và commit cả source/helper:
+<details>
+<summary>Build lại helper Windows sau khi sửa C#</summary>
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-media.ps1
@@ -109,39 +194,46 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-audio.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-screenshot.ps1
 ```
 
-Unit test chạy bằng `npm test`; `npm run check` kiểm tra cú pháp và dấu conflict. Bản 0.8.0 đã qua các unit test về tính năng và cập nhật, kiểm tra Windows dán đủ 3 PNG vào receiver riêng mà không nhấn Enter, và kiểm tra Mac khởi chạy/card nhạc/giao diện ba ảnh/chuẩn bị clipboard PNG native trên cả hai kiến trúc. Quyền chụp và thao tác dán trong ứng dụng Mac bên ngoài vẫn cần kiểm thử thủ công trên máy thực tế.
+</details>
 
-Các bài kiểm tra giao diện/native trong `checks/` cần bản đóng gói tương ứng. Thử điều khiển nhạc Windows bằng fixture im lặng:
+### Cấu trúc dự án
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File checks/build-native-media-fixture.ps1
-node checks/native-player.test.cjs
+```text
+assets/              Ảnh mèo và biểu tượng
+src/                 Logic app, giao diện, hoạt ảnh
+  native/            Helper Windows và tích hợp Mac
+scripts/             Kiểm tra source, build và phát hành
+checks/              Unit test, kiểm tra giao diện và native
+docs/images/         Ảnh minh họa README
+.github/workflows/   CI và quy trình phát hành
+README.md            Giới thiệu, tải xuống và sử dụng
+GIT-GUIDE.md         Hướng dẫn Git, PR, merge và phát hành
 ```
 
-## Phát hành bản mới
+### Phát hành phiên bản mới
 
-Chỉ push code chưa tạo cập nhật cho người dùng. Sau khi tăng version, merge PR vào main rồi push tag `vX.Y.Z` khớp `package.json`. Workflow **Build and publish release** sẽ build/test cả Windows và hai bản Mac, kiểm tra checksum/metadata, tạo Release nháp, đăng đủ 8 file cần thiết rồi mới công bố. Xem các lệnh cụ thể trong **[GIT-GUIDE.md](GIT-GUIDE.md)**. Dùng phiên bản dạng `X.Y.Z`; trạng thái preview được đặt trên GitHub Release.
+Chỉ push code chưa tạo bản cập nhật cho người dùng. Tăng version, merge PR vào **main**, rồi push tag `vX.Y.Z` khớp `package.json`. Workflow **Build and publish release** sẽ build/test Windows và hai bản Mac, kiểm tra checksum/metadata và chỉ công bố Release khi đủ file.
 
-## Cấu trúc
+Các lệnh và lưu ý cụ thể nằm trong [GIT-GUIDE.md — Phát hành và tự cập nhật](GIT-GUIDE.md#phát-hành-và-tự-cập-nhật-từ-080).
 
-| Thư mục | Nội dung |
-| --- | --- |
-| `src/` | Logic app, giao diện, hoạt ảnh |
-| `src/native/` | Helper C# cho Windows, tích hợp JXA/Swift cho Mac trong `mac/` |
-| `assets/` | Ảnh mèo và biểu tượng |
-| `scripts/` | Kiểm tra source, build helper và đóng gói |
-| `checks/` | Unit test, kiểm tra giao diện và native |
-| `.github/workflows/` | CI, build Mac và đính kèm bộ cài vào Release |
-| `.githooks/` | Chốt chặn push nhầm vào main |
+<a id="contributing"></a>
 
-App dùng **Electron 45, JavaScript/Node.js, HTML/CSS và Canvas 2D**. Windows dùng **C#/.NET Framework**; Mac dùng **JXA/AppKit và Swift**. Dữ liệu cấu hình lưu bằng JSON tại `%APPDATA%/MeoDesktop/` trên Windows và `~/Library/Application Support/MeoDesktop/` trên Mac. Không cần server/database; thông tin bài hát dùng trong bộ nhớ, không lưu lịch sử nghe nhạc.
+## Đóng góp
 
-## Giới hạn
+1. [Báo lỗi hoặc đề xuất tính năng](https://github.com/duytienkaka/meo-desktop/issues/new), ghi rõ phiên bản app, hệ điều hành và cách tái hiện.
+2. Tạo nhánh riêng như `feat/ten-tinh-nang` hoặc `fix/ten-loi`; thống nhất phạm vi và file cần sửa với người cùng làm.
+3. Chạy `npm run check` và `npm test`, rồi push nhánh của bạn.
+4. Mở **Pull Request với base là `main`**, mô tả thay đổi và cách kiểm tra; thêm ảnh nếu sửa giao diện. Chờ review/CI trước khi merge, không push trực tiếp vào `main`.
 
-- Mac đăng ký mở khi đăng nhập bằng LaunchAgent của tài khoản tại `~/Library/LaunchAgents/vn.meo.desktop.plist`, không cần quyền quản trị. Nếu xóa app thủ công trên Mac, nên tắt công tắc này trước để dọn đăng ký.
-- Windows dùng các helper C#; macOS dùng các API/script hệ thống, không chạy file .exe. `npm run setup:mac` chỉ chạy trên Mac.
-- Fullscreen độc quyền có thể che pet; dùng **Borderless / Windowed Fullscreen**. Trong chế độ game, mèo không chặn chuột.
-- Ảnh bìa, thời lượng và nút nhạc phụ thuộc trình phát. Chỉ tua được khi trình phát cung cấp thời lượng và cho phép đổi vị trí; nếu không, thanh tiến trình chỉ để xem.
-- Game không có trong nguồn quét cần thêm thủ công. Nhận diện theo tên file chạy có thể nhầm nếu tên trùng nhau.
+Xem đầy đủ các bước clone, tạo nhánh, xử lý conflict, push và merge trong **[GIT-GUIDE.md](GIT-GUIDE.md)**.
 
-Hướng dẫn cộng tác và push code: **[GIT-GUIDE.md](GIT-GUIDE.md)**.
+## Giấy phép
+
+Repository hiện **chưa có tệp `LICENSE`**; giấy phép cho mã nguồn và tài nguyên của dự án chưa được công bố. Các thư viện phụ thuộc có giấy phép riêng, xem thông tin trong từng gói.
+
+## Tác giả và ghi nhận
+
+- Phát triển và duy trì: **[duytienkaka](https://github.com/duytienkaka)**.
+- [Các thành viên đóng góp](https://github.com/duytienkaka/meo-desktop/graphs/contributors).
+- Nền tảng và công cụ: [Electron](https://www.electronjs.org/), [electron-builder / electron-updater](https://github.com/electron-userland/electron-builder), [Playwright](https://github.com/microsoft/playwright) và [Node.js](https://nodejs.org/).
+- Nhân vật và biểu tượng được đóng gói trong thư mục `assets/` của dự án.
