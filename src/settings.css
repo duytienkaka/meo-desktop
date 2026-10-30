@@ -18,3 +18,7 @@ html,body{height:100%;overflow:hidden}.app-shell{height:100vh;min-height:0;overf
 .update-actions button{width:auto;margin:0}
 
 .game-tools{padding:18px 20px;margin-bottom:24px}.game-tools-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.game-eyebrow{font-size:9px;letter-spacing:1.3px;color:var(--muted)}.game-tools-heading h3{margin:8px 0 4px;font-size:15px}.game-tools-heading .hint{margin:0}.game-tools-heading>strong{font-size:27px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}.game-tools-actions{display:flex;align-items:center;gap:12px;margin:14px 0}.game-tools select{max-width:160px}.game-tools .row{padding-left:0;padding-right:0}.game-tools .row:last-child{border-bottom:0}
+
+.utility-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.utility-card{padding:20px;display:flex;flex-direction:column;align-items:flex-start;gap:12px}.utility-card h2{font-size:17px;margin:0}.utility-card p{margin:0;color:var(--muted);line-height:1.7;flex:1}.utility-card small{font-size:10px;line-height:1.6;color:var(--muted)}.utility-folder{min-width:0}.utility-folder small{overflow-wrap:anywhere}.tabs{gap:21px}@media(max-width:800px){.utility-cards{grid-template-columns:1fr}.utility-card{gap:9px}}
+
+.row:has(.utility-folder){gap:18px}.row .utility-folder{flex:1;min-width:0}.row #utility-folder{flex:0 0 auto;width:auto;white-space:nowrap}

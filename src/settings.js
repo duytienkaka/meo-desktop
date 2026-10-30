@@ -7,8 +7,8 @@
   function request(work){saved.textContent='Đang lưu…';error.hidden=true;queue=queue.then(async()=>{const value=await work();render(value);saved.textContent='✓ Đã lưu';}).catch(showError);return queue;}
   function update(patch){return request(()=>api.update(patch));}
   function changeTab(name){
-    const titles={friend:'Ở bên bạn, theo cách bạn thích.',auto:'Bạn làm gì, mèo làm nấy.',apps:'Mọi thứ quen thuộc, trong tầm tay.',updates:'Những điều mới, đến với mèo của bạn.'};
-    const descriptions={friend:'Một góc nhỏ để chỉnh dáng vẻ và thói quen của mèo.',auto:'Những phản ứng nhỏ khiến mỗi ngày thú vị hơn.',apps:'Ghim ứng dụng để mở nhanh, quản lý game để mèo cùng chơi.',updates:'Kiểm tra, xem thay đổi và chọn lúc cập nhật ứng dụng.'};
+    const titles={friend:'Ở bên bạn, theo cách bạn thích.',auto:'Bạn làm gì, mèo làm nấy.',apps:'Mọi thứ quen thuộc, trong tầm tay.',utilities:'Những việc nhỏ, có mèo lo.',updates:'Những điều mới, đến với mèo của bạn.'};
+    const descriptions={friend:'Một góc nhỏ để chỉnh dáng vẻ và thói quen của mèo.',auto:'Những phản ứng nhỏ khiến mỗi ngày thú vị hơn.',apps:'Ghim ứng dụng để mở nhanh, quản lý game để mèo cùng chơi.',utilities:'Túi đồ, lời nhắc và chế độ máy trong một góc nhỏ.',updates:'Kiểm tra, xem thay đổi và chọn lúc cập nhật ứng dụng.'};
     document.querySelector('#page-description').textContent=descriptions[name];
     document.querySelectorAll('.nav').forEach(button=>{const active=button.dataset.tab===name;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
     document.querySelectorAll('.page').forEach(page=>page.classList.toggle('active',page.id==='page-'+name));document.querySelector('#page-title').textContent=titles[name];document.querySelector('main').scrollTo({top:0});
@@ -55,7 +55,13 @@
       card.append(open,remove);list.append(card);
     }
   }
+  document.querySelectorAll('[data-utility-tab]').forEach(button=>button.onclick=()=>api.utilities(button.dataset.utilityTab).catch(showError));
+  document.querySelector('#utility-battery').onchange=e=>request(()=>api.utilityConfigure({battery:e.target.checked}));
+  document.querySelector('#utility-downloads').onchange=e=>request(()=>api.utilityConfigure({downloads:e.target.checked}));
+  document.querySelector('#utility-folder').onclick=()=>request(()=>api.utilityFolder());
   function render(value){
+    const utility=value.utilities;if(utility){document.querySelector('#utility-count').textContent=utility.count+'/20 món · Ctrl / ⌘ + Alt + B để mở túi';document.querySelector('#utility-battery').checked=utility.settings.battery;document.querySelector('#utility-downloads').checked=utility.settings.downloads;document.querySelector('#utility-battery-status').textContent=utility.batteryStatus;document.querySelector('#utility-download-path').textContent=utility.settings.downloadDirectory;document.querySelector('#utility-download-status').textContent=utility.downloadStatus;document.querySelector('#utility-profile').textContent='Đang chọn: '+({work:'Làm việc',game:'Chơi game',relax:'Thư giãn'}[utility.activeProfile]||'Chưa chọn');}
+
     const game=value.gameSession||{hasSession:false,elapsed:'00:00',status:'idle'},status={playing:'Đang đếm thời gian chơi',away:'Tạm ngưng đếm vì game không ở phía trước',paused:'Đồng hồ đang tạm dừng',break:'Đang nghỉ mắt',idle:'Mở game hoặc chọn tâm trạng Chơi game để dùng thử.'};
     document.querySelector('#game-session-title').textContent=game.name||'Đang chờ game';document.querySelector('#game-session-time').textContent=game.elapsed;document.querySelector('#game-session-status').textContent=game.status==='idle'&&game.lastSession?'Phiên gần nhất: '+game.lastSession.name+' · '+game.lastSession.elapsed:status[game.status];document.querySelector('#game-open').disabled=value.mode!=='game';document.querySelector('#game-shortcut').textContent=value.gameShortcutAvailable?value.gameShortcut+' · đóng/mở bảng, không lấy focus game':'Phím tắt dùng khi game ở phía trước; cũng có thể mở bằng nút trên.';document.querySelector('#gameTimer').checked=value.gameTimer!==false;document.querySelector('#break-minutes').value=String(value.breakMinutes??45);document.querySelectorAll('[data-game-corner]').forEach(button=>{const selected=button.dataset.gameCorner===value.gameCorner;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected));});
     const updates=value.updates||{status:'unavailable',supported:false,message:'Cập nhật chưa sẵn sàng.'},busy=['checking','downloading','installing'].includes(updates.status);
@@ -79,7 +85,7 @@
     document.querySelector('#platform-note').textContent=mac?'macOS: nhạc hỗ trợ Apple Music và Spotify. Cho phép Automation khi được hỏi; nhạc trong trình duyệt chưa hỗ trợ.':'Nhận diện nhạc và game tự động hiện hỗ trợ Windows và macOS.';
     document.querySelector('#platform-note').hidden=!mac&&value.autoSupported;
     document.querySelector('.library-help').textContent=mac?'Thiếu game? Chọn “Thêm game” và chọn ứng dụng .app. Mèo tự quét game từ thư viện Steam.':'Thiếu game? Chọn “Thêm game” và tìm file .exe dùng để mở game. Mèo chỉ nhận diện game, không khởi chạy hay can thiệp vào trò chơi.';
-    document.querySelector('.pinned-section>.hint').textContent=mac?'Thả file hoặc thư mục vào mèo để mở, tìm vị trí hoặc sao chép đường dẫn. Có thể ghim ứng dụng bằng cách thả gói .app vào mèo.':'Thả file hoặc thư mục vào mèo để mở, tìm vị trí hoặc sao chép đường dẫn. Có thể ghim ứng dụng bằng cách thả file .exe / lối tắt .lnk vào mèo.';
+    document.querySelector('.pinned-section>.hint').textContent='Thả file, ảnh hoặc đoạn chữ vào mèo để giữ trong túi. Ghim ứng dụng bằng nút + Ghim ứng dụng phía trên.';
     const pk=JSON.stringify(value.pinnedApps||[]);if(pk!==pinsKey){pinsKey=pk;renderPins(value.pinnedApps||[]);}
     document.querySelector('#pin-count').textContent=(value.pinnedApps||[]).length;document.querySelector('#add-pin').disabled=!value.pinSupported||(value.pinnedApps||[]).length>=20;
     snapshot=value;document.querySelector('#version').textContent='Mèo Desktop · '+value.version;document.querySelector('#current-mood').textContent=labels[value.mode]||'Mèo đang ở đây';
@@ -111,7 +117,7 @@
     const lk=JSON.stringify(games);if(lk!==libraryKey){const focused=document.activeElement,focusId=focused?.dataset?.game;libraryKey=lk;renderLibrary(games);if(focusId&&!document.contains(focused))document.querySelector('#add-game').focus({preventScroll:true});}
 
   }
-  api.onNavigate(tab=>{if(['apps','updates'].includes(tab))changeTab(tab);});
+  api.onNavigate(tab=>{if(['apps','updates','utilities'].includes(tab))changeTab(tab);});
   api.onChange(render);api.get().then(render).catch(showError);
 
   const canvas=document.querySelector('#preview'),ctx=canvas.getContext('2d'),images={},reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');let ready=false,raf=0,last=0,time=0,previewSize=112,petAt=-Infinity;

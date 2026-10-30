@@ -16,7 +16,7 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 
 ## Xem trước
 
-![Giao diện Cài đặt Mèo Desktop 0.8.0 trên Windows](docs/images/settings.png)
+![Giao diện Tiện ích Mèo Desktop 0.10.0 trên Windows](docs/images/settings.png)
 
 <details>
 <summary>Xem card điều khiển nhạc</summary>
@@ -27,19 +27,28 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 
 </details>
 
+<details>
+<summary>Xem Túi & việc</summary>
+
+<img src="docs/images/companion-bag.png" width="380" alt="Túi giữ file và chữ bên mèo">
+
+Ảnh giao diện với file, chữ và trạng thái pin giả lập dùng để kiểm tra; không phải dữ liệu người dùng thật.
+
+</details>
+
 <a id="downloads"></a>
 
 ## Tải xuống và cài ứng dụng
 
-**Bản hiện tại: 0.9.0 — Preview. Người dùng cài app không cần Node.js hay công cụ lập trình.**
+**Bản hiện tại: 0.10.0 — Preview. Người dùng cài app không cần Node.js hay công cụ lập trình.**
 
 | Máy của bạn | Bấm để tải | Yêu cầu |
 | --- | --- | --- |
-| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.9.0/Meo-Desktop-Setup-0.9.0-x64.exe)** | Windows 10/11, x64 |
-| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.9.0/Meo-Desktop-0.9.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
-| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.9.0/Meo-Desktop-0.9.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
+| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.10.0/Meo-Desktop-Setup-0.10.0-x64.exe)** | Windows 10/11, x64 |
+| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.10.0/Meo-Desktop-0.10.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
+| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.10.0/Meo-Desktop-0.10.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
 
-[Xem Release 0.9.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.9.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+[Xem Release 0.10.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.10.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 1. Chọn đúng bộ cài trong bảng. Trên Mac, xem loại chip tại menu Apple → **About This Mac** nếu chưa biết chọn bản nào.
 2. **Windows:** mở `.exe` và làm theo trình cài đặt. **Mac:** mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app từ đó.
@@ -64,7 +73,11 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 - **Nghe nhạc cùng bạn:** nhấp mèo để mở/đóng card nhạc, phát/dừng/chuyển bài, tua khi được hỗ trợ và mở trình phát.
 - **Điều khiển âm lượng:** cuộn trên mèo để tăng/giảm âm lượng hệ thống, bấm nút loa để bật/tắt tiếng.
 - **Giữ tối đa 3 ảnh:** chụp vùng màn hình, để mèo cầm xấp ảnh rồi đưa cả bộ vào bản nháp bằng một nút.
-- **File và ứng dụng:** thả file/thư mục để mở, tìm vị trí hoặc sao chép đường dẫn; ghim tối đa 20 ứng dụng để mở nhanh.
+- **Túi đồ:** giữ tối đa 20 file, thư mục, ảnh và đoạn chữ; kéo tên / ảnh ra app khác, sao chép chữ, mở file hoặc tìm vị trí. Không di chuyển file gốc.
+- **Nhắc việc:** nhập thời gian bằng tiếng Việt, mèo cầm biển khi đến giờ; hoàn thành hoặc nhắc lại sau 10 phút. Lưu qua lần mở app.
+- **Chế độ máy:** Làm việc, Chơi game, Thư giãn; lưu âm lượng, app đã ghim cần mở, tâm trạng, kích thước và thói quen của mèo.
+- **Pin và file mới:** mèo ôm pin khi còn 20% hoặc thấp hơn, phản ứng khi cắm sạc; nhận file mới ổn định trong Downloads vào túi. Có thể tắt hoặc chọn thư mục khác.
+- **Ứng dụng đã ghim:** ghim tối đa 20 ứng dụng để mở nhanh hoặc gắn vào chế độ máy.
 - **Chế độ game:** đếm thời gian phiên chơi, nhắc nghỉ và bảng điều khiển nhanh âm lượng/nhạc. Chọn góc ngồi, tạm dừng đồng hồ hoặc nghỉ 5 phút. Nhận diện game từ Steam/Epic trên Windows, Steam `.app` trên Mac và danh sách thêm thủ công.
 - **Mở cùng máy tính:** tùy chọn chạy nền khi đăng nhập, mặc định tắt.
 - **Cập nhật phiên bản:** kiểm tra bản mới trên GitHub Releases, thông báo im lặng; Windows tải/cài khi bạn chọn, Mac tải đúng DMG theo chip.
@@ -98,7 +111,18 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 | Ẩn/hiện mèo | `Ctrl + Alt + M` | `⌘ + ⌥ + M` |
 | Chụp vùng màn hình | `Ctrl + Alt + S` | `⌘ + ⌥ + S` |
 | Mở/đóng bảng Game | `Ctrl + Alt + G` | `⌘ + ⌥ + G` |
+| Mở/đóng Túi & việc | `Ctrl + Alt + B` | `⌘ + ⌥ + B` |
 | Hủy chọn vùng chụp | `Esc` | `Esc` |
+
+### Túi & việc — mới từ 0.10.0
+
+- Bấm nút **Túi** nhỏ bên mèo hoặc vào **Cài đặt → Tiện ích**. Bảng chỉ mở khi bạn yêu cầu; đến giờ nhắc, mèo chỉ cầm biển, không mở cửa sổ hay phát âm thanh.
+- Thả file / ảnh / chữ vào mèo hoặc bảng túi. Kéo tên file hoặc ảnh thu nhỏ sang app nhận file; kéo dòng chữ vào ô nhập. Có nút sao chép để dùng với app không nhận kéo thả. File bị di chuyển sẽ được đánh dấu, không tự tìm hay xóa file gốc.
+- Ảnh chụp tối đa 3 ảnh vẫn có nút đưa nhanh; có thể chọn **Giữ vào túi** để giữ lâu hơn và kéo ảnh ra. Ảnh từ trình duyệt được nhận khi nguồn cho kéo dữ liệu ảnh PNG/JPEG/WebP (tối đa 8 MB); các nguồn khác có thể chỉ đưa vào đường link / chữ.
+- Nhắc việc: **15 phút nữa kiểm tra đồ ăn**, **2 giờ nữa uống nước**, **18:30 tưới cây**. Giờ đã qua tính vào ngày mai; hỗ trợ tối đa 30 lời nhắc. App tắt hoặc máy ngủ thì hiển thị lời nhắc khi chạy lại. Nếu mèo đang ẩn, biển nhắc hiện khi bạn bật lại mèo.
+- **Chế độ máy → Chỉnh:** chọn app đã ghim, âm lượng (mặc định giữ nguyên) và cách mèo xuất hiện. **Lấy thiết lập máy hiện tại** lưu âm lượng/dáng vẻ đang dùng. Bấm **Bật** để áp dụng; app chỉ mở ứng dụng được chọn, không đóng app khác. Chế độ được chọn thủ công, không tự thay đổi âm lượng khi khởi động app.
+- Theo dõi Downloads bỏ qua file có sẵn khi bắt đầu, thư mục con và đuôi tải dở; đợi ít nhất 4 giây ổn định trước khi nhận. Đây là nhận file mới theo thư mục, không đọc lịch sử tải của trình duyệt; file được chép vào thư mục cũng có thể được nhận. Khi túi đầy, file gốc vẫn ở nguyên thư mục và app báo chưa nhận được.
+- Cấu hình, túi đồ và nhắc việc lưu cục bộ trong thư mục dữ liệu app. Ảnh kéo từ web / chụp giữ lâu được lưu bản PNG riêng; xóa khỏi túi sẽ dọn bản lưu thừa ở lần chạy sau.
 
 ### Tiện ích khi chơi game — mới từ 0.9.0
 
@@ -186,7 +210,7 @@ Phần này dành cho **người phát triển**. Nếu chỉ muốn dùng app, 
    npm start -- --background
    ```
 
-Mã tương ứng với bộ cài 0.9.0 nằm ở [tag v0.9.0](https://github.com/duytienkaka/meo-desktop/tree/v0.9.0). Dùng `git switch --detach v0.9.0` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
+Mã tương ứng với bộ cài 0.10.0 nằm ở [tag v0.10.0](https://github.com/duytienkaka/meo-desktop/tree/v0.10.0). Dùng `git switch --detach v0.10.0` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
 
 ### Kiểm tra và đóng gói
 

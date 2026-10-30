@@ -4,6 +4,10 @@
   const images={},pixels={},atlas=window.CAT_SPRITES;
   let width=320,height=320,dpr=1,frame=null,previousTime=null,displaySize=112,previousMode=null,lastPounce=false,held=null,hit=false,transform=null;
   const particles=[],seen=new Set();let fileHover=false,fileHoverTimer;
+  const utilityButton=document.querySelector('#utility-bag');
+  function onUtility(point){if(utilityButton.hidden)return false;const r=utilityButton.getBoundingClientRect();return point.x>=r.left&&point.x<=r.right&&point.y>=r.top&&point.y<=r.bottom;}
+  utilityButton.addEventListener('click',()=>window.meo.utilities.open(frame?.utilityBadge?.due?'reminders':'shelf').catch(()=>{}));
+  utilityButton.addEventListener('pointerenter',()=>window.meo.hit(true));
   const pocket=document.querySelector('#photo-pocket'),sendPhotos=document.querySelector('#send-photos');let photoState={photos:[]},carried=[],pocketKey='';
   function onPocket(point){if(pocket.hidden)return false;const r=pocket.getBoundingClientRect();return point.x>=r.left&&point.x<=r.right&&point.y>=r.top&&point.y<=r.bottom;}
   function receivePhotos(value){photoState=value;sendPhotos.disabled=value.busy||!value.target;sendPhotos.textContent=value.busy?'Đang đưa…':'Đưa '+value.photos.length+' ảnh ↗';sendPhotos.title=value.target?'Đưa toàn bộ ảnh vào ô vừa chọn trong '+value.target.name+'; bạn tự bấm gửi.':'Bấm vào ô nhận ảnh trong ứng dụng trước.';const key=JSON.stringify(value.photos.map(p=>p.id));if(key===pocketKey)return;pocketKey=key;carried=[];value.photos.forEach((photo,index)=>{const image=new Image();image.onload=()=>{if(pocketKey===key)carried[index]=image;};image.src=photo.thumb;});}
@@ -86,6 +90,17 @@
     ctx.fillStyle=session.breakDue?'#3c3229ed':'#18271fe8';ctx.strokeStyle=session.breakDue?'#d2b577aa':'#8ba37877';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(x,y,w,h,7);ctx.fill();ctx.stroke();
     ctx.fillStyle=session.active?'#a4c58a':session.breakDue?'#e3be7e':'#b7b9aa';ctx.beginPath();ctx.arc(x+10,y+10.5,2.5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#edf0de';ctx.fillText(label,x+18,y+14);ctx.restore();
   }
+  function drawUtility(f){
+    const badge=f.utilityBadge||{};utilityButton.hidden=f.mode==='game'||f.fileHover||f.audioFeedback;
+    utilityButton.textContent=badge.due?'Nhắc '+badge.due:badge.count?'Túi '+badge.count:'Túi';utilityButton.classList.toggle('due',!!badge.due);utilityButton.title=badge.due?badge.text:'Túi đồ, nhắc việc & chế độ máy';
+    utilityButton.style.left=clamp(f.anchorX+displaySize*.37,4,width-60)+'px';utilityButton.style.top=clamp(f.anchorY-displaySize-27,4,height-30)+'px';
+    if(f.mode==='game'||!['bag','download','reminder','battery','charging'].includes(badge.kind)||carried.length&&!['reminder','battery','charging'].includes(badge.kind))return;
+    ctx.save();ctx.translate(f.anchorX,f.anchorY);ctx.rotate(f.rotation);const bounce=badge.pulse&&!matchMedia('(prefers-reduced-motion:reduce)').matches?Math.sin(performance.now()/140)*2:0;ctx.translate(displaySize*.10,-displaySize*.30+bounce);const w=displaySize*.40,h=displaySize*.24;
+    ctx.fillStyle=['battery','charging'].includes(badge.kind)?'#516b42':'#fbf1d9';ctx.strokeStyle='#a99573';ctx.lineWidth=1.1;ctx.beginPath();ctx.roundRect(-w/2,-h/2,w,h,4);ctx.fill();ctx.stroke();ctx.fillStyle='#75664d';ctx.font=Math.max(8,displaySize*.075)+'px "Segoe UI",system-ui,sans-serif';ctx.textAlign='center';
+    if(['battery','charging'].includes(badge.kind)){ctx.strokeStyle='#d5e5ae';ctx.strokeRect(-w*.30,-h*.25,w*.55,h*.5);ctx.fillStyle=badge.kind==='charging'?'#d7e9a5':'#e4b48c';ctx.fillRect(-w*.26,-h*.18,w*.45*(badge.kind==='charging'?1:(badge.percent||20)/100),h*.36);ctx.fillRect(w*.29,-h*.1,2,h*.2);}
+    else{ctx.fillText(badge.kind==='reminder'?'Đến giờ':'Giữ hộ',0,3);if(badge.kind==='reminder'){ctx.fillStyle='#b67b53';ctx.beginPath();ctx.arc(w*.38,-h*.34,2,0,Math.PI*2);ctx.fill();}}
+    ctx.fillStyle='#dfc39b';ctx.beginPath();ctx.ellipse(w*.40,h*.30,4,5,.2,0,Math.PI*2);ctx.fill();ctx.restore();
+  }
   function render(f){
     const dt=previousTime===null?0:clamp(f.time-previousTime,0,.12);previousTime=f.time;
     displaySize+= (f.size-displaySize)*(1-Math.exp(-Math.max(dt,.016)*6));
@@ -108,16 +123,17 @@
     if(lastPounce&&f.jumpPhase===null)emit(clamp(x,25,width-25),clamp(y-5,25,height-25),'spark',3);lastPounce=f.jumpPhase!==null;
     drawParticles(dt);
     drawGameHUD(f);
+    drawUtility(f);
     renderAudio(f);
     if(f.fileHover)textBubble('Thả file ở đây');else if(f.toast&&!f.audioFeedback&&!photoState.photos.length)textBubble(f.toast);
-    hit=f.mode!=='game'&&(sampleHit(f.cursor)||onAudioHud(f.cursor)||onPocket(f.cursor));canvas.style.cursor=f.dragging?'grabbing':hit?'grab':'default';window.meo.hit(hit||!!held||fileHover);
+    hit=f.mode!=='game'&&(sampleHit(f.cursor)||onAudioHud(f.cursor)||onPocket(f.cursor)||onUtility(f.cursor));canvas.style.cursor=f.dragging?'grabbing':hit?'grab':'default';window.meo.hit(hit||!!held||fileHover);
   }
   function nearPet(event){if(!frame||frame.mode==='game'||!transform)return false;const angle=frame.rotation,cx=transform.x+Math.sin(angle)*displaySize*.55,cy=transform.y-Math.cos(angle)*displaySize*.55;return sampleHit({x:event.clientX,y:event.clientY})||Math.hypot(event.clientX-cx,event.clientY-cy)<displaySize*.8;}
   function setFileHover(active){clearTimeout(fileHoverTimer);fileHover=active;window.meo.fileHover(active);if(active)fileHoverTimer=setTimeout(()=>setFileHover(false),1100);}
-  for(const type of ['dragenter','dragover'])canvas.addEventListener(type,event=>{if(!Array.from(event.dataTransfer?.types||[]).includes('Files'))return;event.preventDefault();const near=nearPet(event);event.dataTransfer.dropEffect=near?'copy':'none';setFileHover(near);});
+  for(const type of ['dragenter','dragover'])canvas.addEventListener(type,event=>{if(!Array.from(event.dataTransfer?.types||[]).some(t=>t==='Files'||t==='text/plain'||t==='text/uri-list'))return;event.preventDefault();const near=nearPet(event);event.dataTransfer.dropEffect=near?'copy':'none';setFileHover(near);});
   canvas.addEventListener('dragleave',()=>setFileHover(false));
   addEventListener('dragend',()=>setFileHover(false));
-  canvas.addEventListener('drop',event=>{event.preventDefault();const accept=nearPet(event);setFileHover(false);if(accept)window.meo.dropFiles([...event.dataTransfer.files]).catch(()=>{});});
+  canvas.addEventListener('drop',event=>{event.preventDefault();const accept=nearPet(event);setFileHover(false);if(accept)window.meo.utilities.drop([...event.dataTransfer.files],(event.dataTransfer.getData('text/plain')||event.dataTransfer.getData('text/uri-list'))).catch(error=>window.meo.utilities.error(error.message));});
   canvas.addEventListener('contextmenu',event=>{event.preventDefault();if(hit)window.meo.action('menu');});
   canvas.addEventListener('pointerdown',event=>{
     if(event.button!==0||frame?.mode==='game'||!sampleHit({x:event.clientX,y:event.clientY}))return;event.preventDefault();
