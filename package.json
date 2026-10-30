@@ -1,13 +1,13 @@
 {
   "name": "meo-desktop",
   "productName": "Meo Desktop",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "description": "A quiet, mischievous cat along the edges of your desktop.",
   "main": "src/main.cjs",
   "scripts": {
     "start": "electron .",
-    "test": "node --test checks/route.test.cjs checks/media.test.cjs checks/game.test.cjs checks/app-names.test.cjs checks/library.test.cjs checks/play.test.cjs checks/media-controls.test.cjs checks/placement.test.cjs checks/player-layout.test.cjs checks/desktop-actions.test.cjs checks/audio.test.cjs checks/macos.test.cjs checks/screenshot.test.cjs checks/startup.test.cjs checks/updates.test.cjs checks/updater-download.test.cjs checks/game-session.test.cjs",
+    "test": "node --test checks/route.test.cjs checks/media.test.cjs checks/game.test.cjs checks/app-names.test.cjs checks/library.test.cjs checks/play.test.cjs checks/media-controls.test.cjs checks/placement.test.cjs checks/player-layout.test.cjs checks/desktop-actions.test.cjs checks/audio.test.cjs checks/macos.test.cjs checks/screenshot.test.cjs checks/startup.test.cjs checks/updates.test.cjs checks/updater-download.test.cjs checks/game-session.test.cjs checks/companion.test.cjs",
     "package:win": "node scripts/package.cjs win32 x64",
     "package:mac": "node scripts/package.cjs darwin arm64",
     "check": "node scripts/check-source.cjs",

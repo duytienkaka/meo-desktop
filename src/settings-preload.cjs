@@ -1,5 +1,8 @@
 const {contextBridge,ipcRenderer}=require('electron');
 contextBridge.exposeInMainWorld('settings',{
+  utilities:tab=>ipcRenderer.invoke('meo:utilities:open',tab),
+  utilityConfigure:patch=>ipcRenderer.invoke('meo:utilities:configure',patch),
+  utilityFolder:()=>ipcRenderer.invoke('meo:utilities:folder'),
   get:()=>ipcRenderer.invoke('meo:settings:get'),
   update:patch=>ipcRenderer.invoke('meo:settings:update',patch),
   library:(action,id)=>ipcRenderer.invoke('meo:settings:library',{action,id}),
