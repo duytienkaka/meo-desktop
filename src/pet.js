@@ -43,7 +43,7 @@
     else if(f.action==='rest'){sheet='moods';index=9;sy=1+Math.sin(f.time*1.7)*.015;}
     else if(f.action==='walk'){index=4+Math.floor(f.actionElapsed*7)%4;altitude=Math.abs(Math.sin(f.actionElapsed*Math.PI*7))*1.1;}
     else if(f.mode==='music'){sheet='moods';index=Math.floor(f.time*3.3)%4;rotation=Math.sin(f.time*5.2)*.035;sy=1+Math.sin(f.time*5.2)*.012;altitude=(Math.sin(f.time*5.2)+1)*.8;}
-    else if(f.mode==='game'){sheet='moods';index=4+blink(f.time*.76);sy=1+Math.sin(f.time*1.5)*.004;}
+    else if(f.mode==='game'){sheet='moods';index=f.gameSession?.onBreak?9:f.gameSession?.paused?5:4+blink(f.time*.76);sy=1+Math.sin(f.time*1.5)*(f.gameSession?.onBreak ? .014 : .004);}
     else if(f.mode==='sleep'){sheet='moods';index=f.time%12>10.6&&f.time%12<11.6?10:9;sy=1+Math.sin(f.time*1.7)*.018;sx=1-Math.sin(f.time*1.7)*.006;}
     else {index=blink(f.time);sy=1+Math.sin(f.time*2)*.008;if(f.mode==='play'&&index===0&&f.time%13>11.3)index=3;}
     if(f.musicReactionElapsed!==null&&f.musicReactionElapsed!==undefined&&f.mode==='music'&&!f.paused&&!f.dragging){
@@ -79,6 +79,13 @@
     const data=pixels[t.sheet],px=Math.floor(t.source.x+u),py=Math.floor(t.source.y+v);
     return data.data[(py*data.width+px)*4+3]>48;
   }
+  function drawGameHUD(f){
+    const session=f.gameSession;if(f.mode!=='game'||!session?.hasSession||(f.gameHudVisible===false&&!session.breakDue&&!session.onBreak))return;
+    const label=session.onBreak?'Nghỉ '+session.breakLabel:session.breakDue?'Đến giờ nghỉ':session.elapsed;
+    ctx.save();ctx.font='10px "Segoe UI",system-ui,sans-serif';const w=Math.max(60,ctx.measureText(label).width+28),h=21,x=clamp(f.anchorX-w/2,5,width-w-5),y=clamp(f.anchorY-displaySize-30,5,height-h-5);
+    ctx.fillStyle=session.breakDue?'#3c3229ed':'#18271fe8';ctx.strokeStyle=session.breakDue?'#d2b577aa':'#8ba37877';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(x,y,w,h,7);ctx.fill();ctx.stroke();
+    ctx.fillStyle=session.active?'#a4c58a':session.breakDue?'#e3be7e':'#b7b9aa';ctx.beginPath();ctx.arc(x+10,y+10.5,2.5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#edf0de';ctx.fillText(label,x+18,y+14);ctx.restore();
+  }
   function render(f){
     const dt=previousTime===null?0:clamp(f.time-previousTime,0,.12);previousTime=f.time;
     displaySize+= (f.size-displaySize)*(1-Math.exp(-Math.max(dt,.016)*6));
@@ -100,6 +107,7 @@
     window.__wasMusicReaction=reaction;window.__lastMusicReaction=f.musicReactionElapsed;
     if(lastPounce&&f.jumpPhase===null)emit(clamp(x,25,width-25),clamp(y-5,25,height-25),'spark',3);lastPounce=f.jumpPhase!==null;
     drawParticles(dt);
+    drawGameHUD(f);
     renderAudio(f);
     if(f.fileHover)textBubble('Thả file ở đây');else if(f.toast&&!f.audioFeedback&&!photoState.photos.length)textBubble(f.toast);
     hit=f.mode!=='game'&&(sampleHit(f.cursor)||onAudioHud(f.cursor)||onPocket(f.cursor));canvas.style.cursor=f.dragging?'grabbing':hit?'grab':'default';window.meo.hit(hit||!!held||fileHover);

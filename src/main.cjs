@@ -15,6 +15,8 @@ const {createAudioControl}=require('./audio.cjs');
 const {createScreenshotFeature}=require('./screenshots.cjs');
 const {createStartup,startsInBackground}=require('./startup.cjs');
 const {createUpdates}=require('./updates.cjs');
+const {createGameSession,BREAK_MINUTES}=require('./game-session.cjs');
+const {createGamePanel}=require('./game-panel.cjs');
 const {createMacMonitor,createMacAudio,createMacTransport,scanMacLibrary}=require('./macos.cjs');
 const mac=process.platform==='darwin',desktopSupported=['win32','darwin'].includes(process.platform);
 const testMode=process.argv.includes('--meo-test');
@@ -25,13 +27,13 @@ else {
   const startup=createStartup({app,testMode});
   const updates=createUpdates({app,testMode,openExternal:url=>shell.openExternal(url),onChange:()=>publishSettings(),beforeInstall:()=>{if(screenshots?.isBusy())throw new Error('Hãy chờ thao tác ảnh hoàn tất trước khi cài.');if(!saveSettings())throw new Error('Chưa lưu được cài đặt. Hãy thử lại trước khi cập nhật.');},onAvailable:value=>{if(!Notification.isSupported())return;const notification=new Notification({title:'Mèo Desktop có bản mới '+value.latest,body:'Mở Cài đặt → Cập nhật để xem thay đổi và tải bản mới.',silent:true});notification.on('click',()=>openSettings('updates'));notification.show();}});
   const desktopActions=createDesktopActions({directory:app.getPath('userData'),shell,clipboard}),pinIcons=new Map();
-  let fileHoverUntil=0,fileMenuOpen=false,screenshots;
+  let fileHoverUntil=0,fileMenuOpen=false,screenshots,gamePanel,gameShortcutAvailable=false,gameClockOffset=0,lastGameSessionKey='',lastGameFocused=false,nextGameShortcutTry=0;
   let audioState={available:false,level:0,muted:false},audioFeedbackUntil=0;
-  function receiveAudio(value){const changed=audioState.muted!==value.muted;audioState=value;if(changed)refreshMenu();if(playerWindow&&!playerWindow.isDestroyed())playerWindow.webContents.send('meo:audio:state',value);}
+  function receiveAudio(value){const changed=audioState.muted!==value.muted;audioState=value;gamePanel?.publish();if(changed)refreshMenu();if(playerWindow&&!playerWindow.isDestroyed())playerWindow.webContents.send('meo:audio:state',value);}
   const audioControl=(mac?createMacAudio:createAudioControl)({onSample:receiveAudio});
-  async function controlAudio(action,value){
-    if(suspended||state.mode==='game')throw new Error('Âm lượng qua mèo đang tạm nghỉ khi chơi game.');
-    if(!['step','toggle'].includes(action)||(action==='step'&&(!Number.isInteger(value)||!value||Math.abs(value)>10)))throw new Error('Lệnh âm lượng không hợp lệ.');
+  async function controlAudio(action,value,{gameControl=false}={}){
+    if(suspended||(state.mode==='game'&&!gameControl))throw new Error('Hãy dùng bảng Game để điều khiển âm thanh khi chơi.');
+    if(!['step','toggle',...(gameControl?['set']:[])].includes(action)||(action==='step'&&(!Number.isInteger(value)||!value||Math.abs(value)>10))||(action==='set'&&(!Number.isInteger(value)||value<0||value>100)))throw new Error('Lệnh âm lượng không hợp lệ.');
     const result=await audioControl.command(action,value);receiveAudio(result);audioFeedbackUntil=Date.now()+2400;return result;
   }
   function validAudio(event){return valid(event)||(playerWindow&&!playerWindow.isDestroyed()&&event.sender.id===playerWindow.webContents.id);}
@@ -66,13 +68,15 @@ else {
   let lastHitAt=0,lastBounds='',persistTimer,lastMenuKey='';
   const modes=['play','music','game','focus','sleep'];
   const modeLabels={play:'Tinh nghịch',music:'Nghe nhạc',game:'Chơi game',focus:'Tập trung',sleep:'Buồn ngủ'};
-  const defaults={mode:'play',size:112,roam:true,follow:true,displayId:null,autoMedia:!mac,autoGame:true,customGames:[],ignoredGames:[],visible:true,paused:false};
+  const defaults={gameTimer:true,breakMinutes:45,gameCorner:'right',mode:'play',size:112,roam:true,follow:true,displayId:null,autoMedia:!mac,autoGame:true,customGames:[],ignoredGames:[],visible:true,paused:false};
   let preferences={...defaults};
   try {preferences={...defaults,...JSON.parse(fs.readFileSync(path.join(app.getPath('userData'),'settings.json'),'utf8'))};} catch {}
   if(!modes.includes(preferences.mode))preferences.mode='play';
   if(![80,112,148].includes(preferences.size))preferences.size=112;
   preferences.roam=preferences.roam!==false;preferences.follow=preferences.follow!==false;
   const state={...preferences,baseMode:preferences.mode,autoMedia:desktopSupported&&(mac?preferences.autoMedia===true:preferences.autoMedia!==false),autoGame:desktopSupported&&preferences.autoGame!==false,customGames:ruleList(preferences.customGames),ignoredGames:ruleList(preferences.ignoredGames),gameActive:false,gameExe:'',gameStatus:'connecting',lastApp:null,mediaStatus:'connecting',mediaPlaying:false,visible:preferences.visible!==false,paused:preferences.paused===true,time:0,distance:0,target:null,direction:1,action:'idle',actionStart:0,jump:null,petUntil:0,nextWander:3,nextPounce:2,interactive:false,dragging:false,dragAt:0,toast:'Chuột phải lên mèo để mở menu',toastUntil:5,closeEnough:false};
+  state.gameTimer=preferences.gameTimer!==false;state.breakMinutes=BREAK_MINUTES.includes(preferences.breakMinutes)?preferences.breakMinutes:45;state.gameCorner=preferences.gameCorner==='left'?'left':'right';
+  const gameSession=createGameSession({breakMinutes:state.breakMinutes});
   const log=message=>{try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.appendFileSync(path.join(app.getPath('userData'),'app.log'),new Date().toISOString()+' '+message+'\n');}catch{}};
   const appLabels={};
   let nativeMouseState=null,nextMouseRepair=0,dragOffset={x:0,y:0};
@@ -125,7 +129,7 @@ else {
     })();return scanTask;
   }
   for(const [id,label]of Object.entries(preferences.appLabels||{}).slice(0,400)){const exe=exeName(id);if(exe&&typeof label==='string')appLabels[exe]=appName(exe,label);}
-  function saveSettings(){try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.writeFileSync(path.join(app.getPath('userData'),'settings.json'),JSON.stringify({mode:state.baseMode,size:state.size,roam:state.roam,follow:state.follow,visible:state.visible,paused:state.paused,freePosition:state.freePosition,displayId:display.id,autoMedia:state.autoMedia,autoGame:state.autoGame,customGames:state.customGames,ignoredGames:state.ignoredGames,appLabels:Object.fromEntries([...state.customGames,...state.ignoredGames].map(id=>[id,appName(id,appLabels[id])]))},null,2));return true;}catch(error){log(error.message);return false;}}
+  function saveSettings(){try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.writeFileSync(path.join(app.getPath('userData'),'settings.json'),JSON.stringify({mode:state.baseMode,size:state.size,roam:state.roam,follow:state.follow,visible:state.visible,paused:state.paused,freePosition:state.freePosition,displayId:display.id,autoMedia:state.autoMedia,autoGame:state.autoGame,gameTimer:state.gameTimer,breakMinutes:state.breakMinutes,gameCorner:state.gameCorner,customGames:state.customGames,ignoredGames:state.ignoredGames,appLabels:Object.fromEntries([...state.customGames,...state.ignoredGames].map(id=>[id,appName(id,appLabels[id])]))},null,2));return true;}catch(error){log(error.message);return false;}}
   function persist(){clearTimeout(persistTimer);persistTimer=setTimeout(saveSettings,300);}
   function applyAutomaticMode(){const mode=resolveMood(state);if(mode!==state.mode)setMode(mode,{automatic:true});}
   let mediaData=decodeMedia({available:false,playing:false}),lastPlayerKey='',playerOpen=false,playerLoaded=false,playerHideTimer,playerBlurTimer,petPressedAt=0,playerPresentation=null,playerMouseIgnored=null,playerScrubbing=false;
@@ -134,7 +138,7 @@ else {
   function publishPlayer(){if(!playerWindow||playerWindow.isDestroyed()||!playerWindow.isVisible())return;const value=playerSnapshot(),key=JSON.stringify(value);if(key!==lastPlayerKey){lastPlayerKey=key;playerWindow.webContents.send('meo:player:state',value);}}
   function hidePlayer(immediate=false){
     playerOpen=false;playerScrubbing=false;clearTimeout(playerHideTimer);clearTimeout(playerBlurTimer);
-    const finish=()=>{if(playerOpen)return;if(playerWindow&&!playerWindow.isDestroyed())playerWindow.hide();if(!state.autoMedia){mediaMonitor.stop();mediaData=decodeMedia({available:false,playing:false});}};
+    const finish=()=>{if(playerOpen)return;if(playerWindow&&!playerWindow.isDestroyed())playerWindow.hide();if(!state.autoMedia&&!gamePanel?.isOpen()){mediaMonitor.stop();mediaData=decodeMedia({available:false,playing:false});}};
     if(immediate||!playerLoaded||!playerWindow?.isVisible()){finish();return;}
     playerWindow.webContents.send('meo:player:motion',{open:false,presentation:playerPresentation});playerHideTimer=setTimeout(finish,300);
   }
@@ -188,33 +192,60 @@ else {
   const mediaDecision=createMediaDecision({onChange:playing=>{state.mediaPlaying=playing;if(state.autoMedia)applyAutomaticMode();}});
   let lastTrackKey='',musicReactionAt=-10;
   function receiveMedia(sample){
-    mediaData=decodeMedia(sample);publishPlayer();
+    mediaData=decodeMedia(sample);publishPlayer();gamePanel?.publish();
     if(mediaData.hasSession&&mediaData.title){const key=JSON.stringify([mediaData.sourceAppId,mediaData.title,mediaData.artist]);if(lastTrackKey&&key!==lastTrackKey&&mediaData.playing&&state.mode==='music'&&!state.paused&&!state.dragging&&state.time-musicReactionAt>1.4)musicReactionAt=state.time;lastTrackKey=key;}
     if(!state.autoMedia)return;
     state.mediaStatus=sample.available?(sample.playing?'playing':'paused'):'unavailable';
     mediaDecision.update(sample);refreshMenu();
   }
   const mediaMonitor=mac?createMacMonitor({kind:'media',onSample:receiveMedia,onError:log}):createMediaMonitor({onSample:receiveMedia,onError:log});
-  function startMedia(){if((!state.autoMedia&&!playerWindow?.isVisible())||suspended)return;if(state.autoMedia&&!mediaMonitor.isRunning())state.mediaStatus='connecting';if(!testMode||process.argv.includes('--meo-live-media-test'))mediaMonitor.start();}
+  function startMedia(){if((!state.autoMedia&&!playerWindow?.isVisible()&&!gamePanel?.isOpen())||suspended)return;if(state.autoMedia&&!mediaMonitor.isRunning())state.mediaStatus='connecting';if(!testMode||process.argv.includes('--meo-live-media-test'))mediaMonitor.start();}
   function setAutoMedia(enabled){
     state.autoMedia=!!enabled&&desktopSupported;mediaDecision.reset();state.mediaPlaying=false;
     mediaMonitor.stop();state.mediaStatus=state.autoMedia?'connecting':'off';
     applyAutomaticMode();startMedia();persist();refreshMenu();
   }
-  let lastGameSample=null,recentApps=[];
+  let lastGameSample=null,recentApps=[],lastGameSampleAt=0;
   const gameRules=()=>({games:[...state.customGames,...library.flatMap(g=>g.exes)],ignored:state.ignoredGames});
   const gameDecision=createGameDecision({onChange:game=>{state.gameActive=!!game;state.gameExe=game?.exe||'';if(state.autoGame)applyAutomaticMode();refreshMenu();}});
   function receiveGame(sample){
-    lastGameSample=sample;state.gameStatus=sample.available?'ready':'unavailable';
+    lastGameSample=sample;lastGameSampleAt=performance.now();state.gameStatus=sample.available?'ready':'unavailable';
     if(sample.available){
       if(state.lastApp&&Array.isArray(sample.runningPids)&&!sample.runningPids.includes(state.lastApp.pid))state.lastApp=null;
       if(isApp(sample.foreground?.exe)){state.lastApp={exe:exeName(sample.foreground.exe),pid:sample.foreground.pid};appLabels[state.lastApp.exe]=appName(state.lastApp.exe,sample.foreground.displayName||appLabels[state.lastApp.exe]);}
       if(state.lastApp){recentApps=[state.lastApp,...recentApps.filter(a=>a.exe!==state.lastApp.exe)].slice(0,12);}
     }
-    if(state.autoGame)gameDecision.update(sample,gameRules());refreshMenu();
+    if(state.autoGame)gameDecision.update(sample,gameRules());syncGameSession();refreshMenu();
   }
   const gameMonitor=mac?createMacMonitor({kind:'game',onSample:receiveGame,onError:log,interval:1500}):createGameMonitor({onSample:receiveGame,onError:log});
   function startGame(){if(suspended||!desktopSupported)return;state.gameStatus='connecting';if(!testMode||process.argv.includes('--meo-live-game-test'))gameMonitor.start();}
+  function gameDistance(){return state.gameCorner==='left'?24:Math.max(0,route.bottomLength-24);}
+  function syncGameShortcut(){
+    const enabled=state.mode==='game'&&!suspended&&!quitting&&(lastGameFocused||gamePanel?.isOpen()),previous=gameShortcutAvailable;
+    if(enabled&&!gameShortcutAvailable&&Date.now()>=nextGameShortcutTry){nextGameShortcutTry=Date.now()+5000;gameShortcutAvailable=globalShortcut.register('CommandOrControl+Alt+G',()=>runDesktopAction(()=>gamePanel.toggle()));}
+    else if(!enabled){if(gameShortcutAvailable)globalShortcut.unregister('CommandOrControl+Alt+G');gameShortcutAvailable=false;nextGameShortcutTry=0;}
+    if(previous!==gameShortcutAvailable){publishSettings();gamePanel?.publish();}
+  }
+  function syncGameSession(){
+    const game=gameDecision.current(),manual=!state.autoGame||!game,now=performance.now()+gameClockOffset;
+    const key=state.mode==='game'?(manual?'manual':game?game.pid+':'+game.exe:null):null;
+    const focused=manual||!!(lastGameSample?.available&&performance.now()-lastGameSampleAt<5000&&game&&lastGameSample.foreground?.pid===game.pid&&exeName(lastGameSample.foreground.exe)===game.exe);
+    const name=manual?'Chế độ game (thủ công)':state.gameExe?(library.find(g=>g.exes.includes(state.gameExe))?.name||appName(state.gameExe,appLabels[state.gameExe])):'';
+    lastGameFocused=focused&&state.mode==='game'&&!suspended;syncGameShortcut();const value=gameSession.tick({now,key,name,active:focused&&!suspended});const serialized=JSON.stringify(value);if(serialized!==lastGameSessionKey){lastGameSessionKey=serialized;publishSettings();gamePanel?.publish();}return value;
+  }
+  function gamePanelSnapshot(){return {enabled:state.mode==='game'&&!suspended,manual:!state.autoGame||!gameDecision.current(),session:gameSession.snapshot(),visible:state.visible,corner:state.gameCorner,shortcut:mac?'⌘ + ⌥ + G':'Ctrl + Alt + G',shortcutAvailable:gameShortcutAvailable,audio:audioState,media:{title:mediaData.title||(mac&&!state.autoMedia?'Bật nghe nhạc trong Cài đặt':''),artist:mediaData.artist||(mac&&!state.autoMedia?'Tự động → Nghe nhạc cùng bạn':''),playing:mediaData.playing,canPlay:!!mediaData.hasSession&&mediaData.canPlay,canPause:!!mediaData.hasSession&&mediaData.canPause,canPrevious:!!mediaData.hasSession&&mediaData.canPrevious,canNext:!!mediaData.hasSession&&mediaData.canNext}};}
+  async function gamePanelAction(value){
+    if(state.mode!=='game'||suspended)throw new Error('Chế độ game đã kết thúc.');const action=value?.action;
+    if(['pause','resume','break','snooze','reset'].includes(action)){syncGameSession();gameSession.action(action,performance.now()+gameClockOffset);syncGameSession();tickFrame();return;}
+    if(action==='corner'&&['left','right'].includes(value.value)){state.gameCorner=value.value;state.distance=gameDistance();persist();publishSettings();tickFrame();return;}
+    if(action==='visibility'){setVisible(!state.visible);return;}
+    if(action==='mute'){await controlAudio('toggle',undefined,{gameControl:true});return;}
+    if(action==='volume'){await controlAudio('set',value.value,{gameControl:true});return;}
+    const command=action==='toggle-media'?(mediaData.playing?'pause':'play'):action;
+    const capability={pause:'canPause',play:'canPlay',previous:'canPrevious',next:'canNext'}[command];
+    if(!capability||!mediaData.hasSession||!mediaData[capability])throw new Error('Trình phát chưa hỗ trợ thao tác này.');
+    await mediaTransport.command(command,mediaData.sourceAppId);
+  }
   function setAutoGame(enabled){
     state.autoGame=!!enabled&&desktopSupported;gameDecision.reset();state.gameActive=false;state.gameExe='';
     if(state.autoGame&&lastGameSample)gameDecision.update(lastGameSample,gameRules());applyAutomaticMode();persist();refreshMenu();
@@ -232,26 +263,26 @@ else {
     route=makeRoute(display.workArea);state.displayId=display.id;
     if(state.freePosition){if(String(state.freePosition.displayId)!==String(display.id))state.freePosition=null;else state.freePosition={...constrainPosition(display.workArea,state.freePosition,state.size),displayId:display.id};}
     state.distance=route.bottomLength*.76;state.target=null;state.jump=null;state.dragging=false;lastBounds='';
-    if(state.mode==='game')state.distance=Math.max(0,route.bottomLength-24);
+    if(state.mode==='game')state.distance=gameDistance();
     refreshMenu();
   }
   function setMode(mode,{automatic=false}={}){
     if(!modes.includes(mode))return;
     if(!automatic){state.baseMode=mode;state.autoMedia=false;state.mediaStatus='off';state.mediaPlaying=false;mediaDecision.reset();mediaMonitor.stop();state.autoGame=false;state.gameActive=false;state.gameExe='';gameDecision.reset();if(playerWindow?.isVisible())startMedia();}
     const keepDragging=automatic&&state.dragging&&mode!=='game';state.mode=mode;state.jump=null;state.dragging=keepDragging;state.petUntil=0;state.target=null;state.action='idle';
-    if(mode==='game'){hidePlayer(true);screenshots?.hide();}
+    if(mode==='game'){hidePlayer(true);screenshots?.hide();}else gamePanel?.hide(true);
     playBehavior.reset(state.time);
     // Quiet modes rest on the lower edge, with the same screen-safe routing.
     if(mode!=='play'){
       const p=route.point(state.distance);
-      state.distance=mode==='game'?Math.max(0,route.bottomLength-24):clamp(p.x-(route.area.x+12+route.radius),0,route.bottomLength);
+      state.distance=mode==='game'?gameDistance():clamp(p.x-(route.area.x+12+route.radius),0,route.bottomLength);
       state.direction=1;
     }
-    state.nextWander=state.time+4;note(modeLabels[mode]);persist();refreshMenu();tickFrame();maintainOverlay(true);
+    syncGameSession();state.nextWander=state.time+4;note(modeLabels[mode]);persist();refreshMenu();tickFrame();maintainOverlay(true);
   }
   function setVisible(visible){
     state.visible=!!visible;state.interactive=false;state.dragging=false;
-    if(!visible){hidePlayer(true);screenshots?.hide();}
+    if(!visible){hidePlayer(true);screenshots?.hide();gamePanel?.hide(true);}
     if(win&&!win.isDestroyed()){syncMouseInput(false,true);if(state.visible&&!suspended&&ready){win.showInactive();}else win.hide();}
     lastTick=0;persist();refreshMenu();
   }
@@ -260,6 +291,7 @@ else {
   function buildMenu(){
     return Menu.buildFromTemplate([
       {label:'Cài đặt…',click:()=>openSettings()},
+      ...(state.mode==='game'?[{label:'Bảng Game…',click:()=>runDesktopAction(()=>gamePanel.toggle())}]:[]),
       {label:'Ứng dụng đã ghim',submenu:pinnedMenu()},
       {label:'Chụp vùng màn hình…',accelerator:'CommandOrControl+Alt+S',enabled:desktopSupported&&state.mode!=='game',click:()=>runDesktopAction(()=>screenshots.capture())},
       {label:'Bỏ ảnh mèo đang giữ',enabled:desktopSupported&&!!screenshots?.snapshot().photos.length,click:()=>screenshots?.clear()},
@@ -270,7 +302,7 @@ else {
       {label:'Thoát mèo',click:()=>{quitting=true;app.quit();}}
     ]);
   }
-  function settingsSnapshot(){return{updates:updates.snapshot(),startup:startup.snapshot(),pinnedApps:desktopActions.pins().map(pin=>({...pin,icon:pinIcons.get(pin.id)?.toDataURL()||''})),pinSupported:['win32','darwin'].includes(process.platform),version:app.getVersion(),mode:state.mode,baseMode:state.baseMode,visible:state.visible,paused:state.paused,size:state.size,roam:state.roam,follow:state.follow,autoMedia:state.autoMedia,autoGame:state.autoGame,mediaStatus:state.mediaStatus,gameStatus:state.gameStatus,gameActive:state.gameActive,gameName:state.gameExe?(library.find(g=>g.exes.includes(state.gameExe))?.name||appName(state.gameExe,appLabels[state.gameExe])):'',platform:process.platform,shortcut:mac?'⌘ + ⌥ + M':'Ctrl + Alt + M',autoSupported:desktopSupported,displayId:String(display.id),displays:screen.getAllDisplays().map((d,i)=>({id:String(d.id),name:`Màn hình ${i+1} · ${d.size.width} × ${d.size.height}`})),library:library.map(g=>({id:g.id,name:g.name,source:g.source,manual:g.manual})),scanStatus,scanMessage,lastScan};}
+  function settingsSnapshot(){return{gameSession:gameSession.snapshot(),gameTimer:state.gameTimer,breakMinutes:state.breakMinutes,gameCorner:state.gameCorner,gameShortcut:mac?'⌘ + ⌥ + G':'Ctrl + Alt + G',gameShortcutAvailable,updates:updates.snapshot(),startup:startup.snapshot(),pinnedApps:desktopActions.pins().map(pin=>({...pin,icon:pinIcons.get(pin.id)?.toDataURL()||''})),pinSupported:['win32','darwin'].includes(process.platform),version:app.getVersion(),mode:state.mode,baseMode:state.baseMode,visible:state.visible,paused:state.paused,size:state.size,roam:state.roam,follow:state.follow,autoMedia:state.autoMedia,autoGame:state.autoGame,mediaStatus:state.mediaStatus,gameStatus:state.gameStatus,gameActive:state.gameActive,gameName:state.gameExe?(library.find(g=>g.exes.includes(state.gameExe))?.name||appName(state.gameExe,appLabels[state.gameExe])):'',platform:process.platform,shortcut:mac?'⌘ + ⌥ + M':'Ctrl + Alt + M',autoSupported:desktopSupported,displayId:String(display.id),displays:screen.getAllDisplays().map((d,i)=>({id:String(d.id),name:`Màn hình ${i+1} · ${d.size.width} × ${d.size.height}`})),library:library.map(g=>({id:g.id,name:g.name,source:g.source,manual:g.manual})),scanStatus,scanMessage,lastScan};}
   let lastSettingsKey='';
   function publishSettings(){
     if(!settingsWindow||settingsWindow.isDestroyed()||!settingsWindow.isVisible())return;
@@ -278,6 +310,7 @@ else {
   }
   function catIcon(size=64){return nativeImage.createFromPath(path.join(__dirname,'../assets/core.png')).crop({x:53,y:50,width:280,height:292}).resize({width:size,height:size});}
   function openSettings(tab){
+    gamePanel?.hide(true);
     const navigate=()=>{if(['apps','updates'].includes(tab))settingsWindow.webContents.send('meo:settings:navigate',tab);};
     if(settingsWindow&&!settingsWindow.isDestroyed()){if(settingsWindow.isMinimized())settingsWindow.restore();settingsWindow.show();settingsWindow.focus();lastSettingsKey='';publishSettings();if(settingsWindow.webContents.isLoading())settingsWindow.webContents.once('did-finish-load',navigate);else navigate();return;}
     const area=screen.getPrimaryDisplay().workArea;
@@ -293,10 +326,14 @@ else {
   function validSettings(event){return settingsWindow&&!settingsWindow.isDestroyed()&&event.sender.id===settingsWindow.webContents.id;}
   function requireSettings(event){if(!validSettings(event))throw new Error('Cửa sổ không hợp lệ.');}
   ipcMain.handle('meo:settings:get',event=>{requireSettings(event);startup.refresh();return settingsSnapshot();});
+  ipcMain.handle('meo:settings:game',async(event)=>{requireSettings(event);if(state.mode!=='game'||suspended)throw new Error('Hãy mở game hoặc chọn tâm trạng Chơi game trước.');await gamePanel.show();return settingsSnapshot();});
   ipcMain.handle('meo:settings:updates',(event,action)=>{requireSettings(event);return updates.action(action).then(()=>settingsSnapshot());});
   ipcMain.handle('meo:settings:update',async(event,patch)=>{
     requireSettings(event);if(!patch||typeof patch!=='object'||Array.isArray(patch)||Object.keys(patch).length!==1)throw new Error('Thiết lập không hợp lệ.');
     const [key,value]=Object.entries(patch)[0];
+    if(key==='gameTimer'&&typeof value==='boolean'){state.gameTimer=value;persist();publishSettings();tickFrame();return settingsSnapshot();}
+    if(key==='breakMinutes'&&BREAK_MINUTES.includes(value)){state.breakMinutes=value;gameSession.configure(value);persist();syncGameSession();publishSettings();gamePanel?.publish();return settingsSnapshot();}
+    if(key==='gameCorner'&&['left','right'].includes(value)){state.gameCorner=value;if(state.mode==='game')state.distance=gameDistance();persist();publishSettings();gamePanel?.publish();tickFrame();return settingsSnapshot();}
     if(key==='startAtLogin'){await startup.set(value);publishSettings();return settingsSnapshot();}
     if(['visible','paused','roam','follow','autoMedia','autoGame'].includes(key)){
       if(typeof value!=='boolean')throw new Error('Giá trị không hợp lệ.');
@@ -349,7 +386,7 @@ else {
   function refreshMenu(){
     publishSettings();
     if(!tray||tray.isDestroyed())return;
-    const key=JSON.stringify([state.visible,state.paused,audioState.muted,screenshots?.snapshot().photos.length,desktopActions.pins()]);
+    const key=JSON.stringify([state.mode,state.visible,state.paused,audioState.muted,screenshots?.snapshot().photos.length,desktopActions.pins()]);
     if(key===lastMenuKey)return;lastMenuKey=key;
     tray.setContextMenu(buildMenu());tray.setToolTip('Mèo Desktop');
   }
@@ -408,7 +445,7 @@ else {
   }
   function frameData(cursor){
     const placement=currentPlacement();
-    return {audio:audioState,audioFeedback:Date.now()<audioFeedbackUntil,fileHover:Date.now()<fileHoverUntil,musicReactionElapsed:state.mode==='music'&&!state.paused&&!state.dragging&&state.time-musicReactionAt<1.15?state.time-musicReactionAt:null,time:state.time,mode:state.mode,size:state.mode==='game'?70:state.size,direction:state.direction,action:state.action,actionElapsed:state.time-state.actionStart,jumpPhase:state.jump?(state.time-state.jump.start)/state.jump.duration:null,pet:state.time<state.petUntil,paused:state.paused,dragging:state.dragging,toast:state.mode!=='game'&&state.time<state.toastUntil?state.toast:'',...placement,cursor:{x:cursor.x-placement.x,y:cursor.y-placement.y}};
+    return {gameHudVisible:state.gameTimer,gameSession:state.mode==='game'?gameSession.snapshot():null,audio:audioState,audioFeedback:Date.now()<audioFeedbackUntil,fileHover:Date.now()<fileHoverUntil,musicReactionElapsed:state.mode==='music'&&!state.paused&&!state.dragging&&state.time-musicReactionAt<1.15?state.time-musicReactionAt:null,time:state.time,mode:state.mode,size:state.mode==='game'?70:state.size,direction:state.direction,action:state.action,actionElapsed:state.time-state.actionStart,jumpPhase:state.jump?(state.time-state.jump.start)/state.jump.duration:null,pet:state.time<state.petUntil,paused:state.paused,dragging:state.dragging,toast:state.mode!=='game'&&state.time<state.toastUntil?state.toast:'',...placement,cursor:{x:cursor.x-placement.x,y:cursor.y-placement.y}};
   }
   function tickFrame(){
     if(!win||win.isDestroyed()||!ready||!state.visible||suspended||screenshots?.isCapturing())return;
@@ -419,6 +456,8 @@ else {
   }
   function loop(){
     const now=performance.now()/1000,dt=lastTick?Math.min(.1,now-lastTick):0;lastTick=now;
+    syncGameSession();
+    if(!suspended)gamePanel?.maintain();
     if(ready&&state.visible&&!suspended){
       const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint();advance(dt,cursor);tickFrame();
       maintainOverlay();
@@ -463,17 +502,18 @@ else {
     if(mac){app.dock?.hide();Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'Mèo Desktop',submenu:[{role:'about'},{type:'separator'},{label:'Cài đặt…',accelerator:'Command+,',click:()=>openSettings()},{type:'separator'},{role:'quit'}]},{role:'editMenu'}]));}
     refreshRoute();createWindow();
     screenshots=createScreenshotFeature({electron:require('electron'),getPet:()=>win,getPlacement:currentPlacement,getWindows:()=>[win,playerWindow,settingsWindow],canUse:()=>state.visible&&!suspended&&state.mode!=='game'&&!quitting,onStatus:text=>{note(text);lastMenuKey='';refreshMenu();},onCapture:()=>{hidePlayer(true);state.target=null;state.jump=null;state.action='idle';},testMode});
+    gamePanel=createGamePanel({electron:require('electron'),getSnapshot:gamePanelSnapshot,getAnchor:()=>{const p=currentPlacement();return{x:p.x+p.anchorX,y:p.y+p.anchorY};},onAction:gamePanelAction,onVisibility:open=>{if(open&&(!mac||state.autoMedia))startMedia();else if(!state.autoMedia&&!playerOpen)mediaMonitor.stop();syncGameShortcut();}});
     const icon=nativeImage.createFromPath(path.join(__dirname,'../assets/core.png')).crop({x:53,y:50,width:280,height:292}).resize({height:24});
     tray=new Tray(icon);refreshMenu();refreshPinIcons();tray.on('double-click',()=>openSettings());
     globalShortcut.register('CommandOrControl+Alt+M',()=>setVisible(!state.visible));
     if(desktopSupported)globalShortcut.register('CommandOrControl+Alt+S',()=>runDesktopAction(()=>screenshots.capture()));
     for(const event of ['display-added','display-removed','display-metrics-changed'])screen.on(event,()=>{refreshRoute(display.id);tickFrame();});
-    const sleep=()=>{suspended=true;screenshots?.hide();hidePlayer(true);audioControl.stop();mediaTransport.stop();mediaMonitor.stop();gameMonitor.stop();win?.hide();};
+    const sleep=()=>{suspended=true;syncGameSession();gamePanel?.hide(true);screenshots?.hide();hidePlayer(true);audioControl.stop();mediaTransport.stop();mediaMonitor.stop();gameMonitor.stop();win?.hide();};
     const wake=()=>{suspended=false;if(!testMode)audioControl.start();lastTick=0;startMedia();startGame();if(state.visible&&ready)win.showInactive();};
     powerMonitor.on('suspend',sleep);powerMonitor.on('resume',wake);
     powerMonitor.on('lock-screen',sleep);powerMonitor.on('unlock-screen',wake);
     if(testMode)global.__meo={cursor:null,window:()=>win,setMode,setSize,setVisible,setPaused,setAutoMedia,receiveMedia,setAutoGame,receiveGame,setGameRule,gamePid:()=>gameMonitor.pid(),mediaPid:()=>mediaMonitor.pid(),route:()=>route,state:()=>({...state,ready,display:{id:display.id,workArea:display.workArea},bounds:win.getBounds(),visible:win.isVisible(),alwaysOnTop:win.isAlwaysOnTop(),focusable:win.isFocusable()}),move:s=>{state.freePosition=null;state.distance=wrap(s,route.total);state.target=null;state.jump=null;state.action='idle';tickFrame();},menu:()=>buildMenu().items.map(i=>i.label),drag:value=>{state.dragging=value;state.dragAt=Date.now();},shutdown:()=>{quitting=true;app.quit();}};
-    if(testMode)Object.assign(global.__meo,{updates,screenshots,audioControl,receiveAudio,desktopActions,acceptDroppedFiles,fileMenuTemplate,pinnedMenu,refreshPinIcons,openSettings,settingsSnapshot,settingsWindow:()=>settingsWindow});
+    if(testMode)Object.assign(global.__meo,{gameSession,gamePanel,advanceGameTime:ms=>{if(!Number.isFinite(ms)||ms<0)throw new Error("Invalid test clock");gameClockOffset+=ms;syncGameSession();tickFrame();},updates,screenshots,audioControl,receiveAudio,desktopActions,acceptDroppedFiles,fileMenuTemplate,pinnedMenu,refreshPinIcons,openSettings,settingsSnapshot,settingsWindow:()=>settingsWindow});
     if(testMode)Object.assign(global.__meo,{overlay:()=>({raises:overlayRaises}),advancePlay:seconds=>{for(let t=0;t<seconds;t+=.05)advance(.05,{x:-10000,y:-10000});tickFrame();}});
     if(testMode)Object.assign(global.__meo,{placeFree:point=>{state.freePosition={...constrainPosition(display.workArea,point,state.size),displayId:display.id};state.target=null;state.jump=null;tickFrame();},openPlayer,togglePlayer,playerWindow:()=>playerWindow,playerState:()=>({open:playerOpen,loaded:playerLoaded}),playerSnapshot,mediaTransport});
     startMedia();startGame();if(!testMode)audioControl.start();
@@ -485,5 +525,5 @@ else {
   app.on('second-instance',(_event,argv)=>{if(argv.includes('--meo-quit')){quitting=true;app.quit();return;}if(!startsInBackground(argv))openSettings();});
   app.on('activate',()=>{if(app.isReady())openSettings();});
   app.on('window-all-closed',()=>{});
-  app.on('before-quit',()=>{quitting=true;updates.dispose();screenshots?.dispose();clearTimeout(timer);clearTimeout(persistTimer);clearTimeout(playerHideTimer);clearTimeout(playerBlurTimer);mediaTransport.stop();mediaMonitor.stop();mediaDecision.reset();gameMonitor.stop();gameDecision.reset();audioControl.stop();if(display)saveSettings();globalShortcut.unregisterAll();tray?.destroy();});
+  app.on('before-quit',()=>{quitting=true;gamePanel?.dispose();updates.dispose();screenshots?.dispose();clearTimeout(timer);clearTimeout(persistTimer);clearTimeout(playerHideTimer);clearTimeout(playerBlurTimer);mediaTransport.stop();mediaMonitor.stop();mediaDecision.reset();gameMonitor.stop();gameDecision.reset();audioControl.stop();if(display)saveSettings();globalShortcut.unregisterAll();tray?.destroy();});
 }

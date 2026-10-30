@@ -21,6 +21,9 @@
   document.querySelector('#display').addEventListener('change',event=>update({displayId:event.target.value}));
   document.querySelector('#open-player').addEventListener('click',()=>request(()=>api.action('music')));
   document.querySelector('#home').addEventListener('click',()=>request(()=>api.action('home')));
+  document.querySelector('#game-open').addEventListener('click',()=>request(()=>api.game()));
+  document.querySelector('#break-minutes').addEventListener('change',event=>update({breakMinutes:Number(event.target.value)}));
+  document.querySelectorAll('[data-game-corner]').forEach(button=>button.addEventListener('click',()=>update({gameCorner:button.dataset.gameCorner})));
   document.querySelector('#done').addEventListener('click',()=>request(()=>api.action('close')));
   for(const action of ['check','download','install','manual','release'])document.querySelector('#update-'+action).addEventListener('click',()=>request(()=>api.updates(action)));
 
@@ -53,6 +56,8 @@
     }
   }
   function render(value){
+    const game=value.gameSession||{hasSession:false,elapsed:'00:00',status:'idle'},status={playing:'Đang đếm thời gian chơi',away:'Tạm ngưng đếm vì game không ở phía trước',paused:'Đồng hồ đang tạm dừng',break:'Đang nghỉ mắt',idle:'Mở game hoặc chọn tâm trạng Chơi game để dùng thử.'};
+    document.querySelector('#game-session-title').textContent=game.name||'Đang chờ game';document.querySelector('#game-session-time').textContent=game.elapsed;document.querySelector('#game-session-status').textContent=game.status==='idle'&&game.lastSession?'Phiên gần nhất: '+game.lastSession.name+' · '+game.lastSession.elapsed:status[game.status];document.querySelector('#game-open').disabled=value.mode!=='game';document.querySelector('#game-shortcut').textContent=value.gameShortcutAvailable?value.gameShortcut+' · đóng/mở bảng, không lấy focus game':'Phím tắt dùng khi game ở phía trước; cũng có thể mở bằng nút trên.';document.querySelector('#gameTimer').checked=value.gameTimer!==false;document.querySelector('#break-minutes').value=String(value.breakMinutes??45);document.querySelectorAll('[data-game-corner]').forEach(button=>{const selected=button.dataset.gameCorner===value.gameCorner;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected));});
     const updates=value.updates||{status:'unavailable',supported:false,message:'Cập nhật chưa sẵn sàng.'},busy=['checking','downloading','installing'].includes(updates.status);
     document.querySelector('#update-versions').textContent='Đang dùng '+(updates.current||value.version)+(updates.latest?' · Bản mới '+updates.latest:'');
     document.querySelector('#update-status').textContent=updates.message;

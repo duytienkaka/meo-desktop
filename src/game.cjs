@@ -21,7 +21,7 @@ function createGameDecision({onChange,enterDelay=800,exitDelay=2500,setTimer=set
   function update(sample,rules){
     const next=candidate(sample,rules);
     const ignored=ruleList(rules?.ignored);
-    if(active&&sample.available&&!ignored.includes(active.exe)&&active.sticky&&(KNOWN.has(active.exe)||ruleList(rules?.games).includes(active.exe))&&Array.isArray(sample.runningPids)&&sample.runningPids.includes(active.pid)){
+    if(active&&(!next||(next.pid===active.pid&&next.exe===active.exe))&&sample.available&&!ignored.includes(active.exe)&&active.sticky&&(KNOWN.has(active.exe)||ruleList(rules?.games).includes(active.exe))&&Array.isArray(sample.runningPids)&&sample.runningPids.includes(active.pid)){
       cancelEntry();cancelExit();return;
     }
     if(active&&next&&next.pid===active.pid&&next.exe===active.exe){cancelEntry();cancelExit();return;}
