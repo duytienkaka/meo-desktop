@@ -9,7 +9,7 @@ function createMacBridge({exec=execFile,timeout=7000}={}){
 }
 function createMacMonitor({kind,onSample,onError=()=>{},bridge=createMacBridge(),interval=2000}){
  let stopped=true,timer,generation=0,lastError='';
- const unavailable=()=>kind==='game'?{available:false,foreground:{},runningPids:[]}:{available:false,playing:false,hasSession:false};
+ const unavailable=()=>({available:false,playing:false,hasSession:false});
  function start(){if(!stopped)return;stopped=false;const current=++generation;
   async function poll(){try{const sample=await bridge.request({kind,action:'read'});if(current===generation&&!stopped){lastError='';onSample(sample);}}catch(error){if(current===generation&&!stopped){if(lastError!==error.message){lastError=error.message;onError(error.message);}onSample(unavailable());}}finally{if(current===generation&&!stopped)timer=setTimeout(poll,interval);}}
   poll();
@@ -32,21 +32,4 @@ function createMacTransport({bridge=createMacBridge()}={}){
  }
  return {command,stop:()=>bridge.stop()};
 }
-async function scanMacLibrary({home=os.homedir(),roots}={}){
- const {parseVdf,idFor}=require('./library.cjs');let steamRoots=roots||[path.join(home,'Library/Application Support/Steam')];
- for(const root of [...steamRoots])try{for(const [key,value]of parseVdf(await fs.readFile(path.join(root,'steamapps/libraryfolders.vdf'),'utf8')))if(key==='path'&&!steamRoots.includes(value))steamRoots.push(value);}catch{}
- const games=[],seen=new Set();let visited=0,partial=false;
- for(const root of steamRoots){let manifests=[];try{manifests=await fs.readdir(path.join(root,'steamapps'));}catch{continue;}
-  for(const manifest of manifests.filter(name=>/^appmanifest_\d+\.acf$/.test(name))){
-   let fields;try{fields=Object.fromEntries(parseVdf(await fs.readFile(path.join(root,'steamapps',manifest),'utf8')));}catch{continue;}
-   if(!fields.name||!fields.installdir||/[\\/]|^\.{1,2}$/.test(fields.installdir))continue;
-   const location=path.join(root,'steamapps/common',fields.installdir),queue=[{location,depth:0}],apps=[];
-   while(queue.length&&visited<2000){const current=queue.shift();visited++;let entries=[];try{entries=await fs.readdir(current.location,{withFileTypes:true});}catch{continue;}
-    for(const entry of entries){if(entry.isSymbolicLink()||!entry.isDirectory())continue;if(/\.app$/i.test(entry.name)){apps.push(entry.name.toLowerCase());continue;}if(current.depth<4)queue.push({location:path.join(current.location,entry.name),depth:current.depth+1});}
-   }
-   partial ||= queue.length>0;const id=idFor(location);if(apps.length&&!seen.has(id)){seen.add(id);games.push({id,name:fields.name,source:'Steam',location,exes:[...new Set(apps)],manual:false});}
-  }
- }
- return {games:games.slice(0,300),partial:partial||games.length>300};
-}
-module.exports={createMacBridge,createMacMonitor,createMacAudio,createMacTransport,scanMacLibrary};
+module.exports={createMacBridge,createMacMonitor,createMacAudio,createMacTransport};

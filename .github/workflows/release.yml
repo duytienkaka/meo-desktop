@@ -52,7 +52,6 @@ jobs:
           MEO_EXECUTABLE="$PWD/$bundle/Contents/MacOS/Meo" node checks/macos-smoke.test.cjs
           node checks/startup-macos-native.test.cjs
           MEO_EXECUTABLE="$PWD/$bundle/Contents/MacOS/Meo" node checks/updates-ui.test.cjs
-          MEO_EXECUTABLE="$PWD/$bundle/Contents/MacOS/Meo" node checks/game-tools-ui.test.cjs
           MEO_EXECUTABLE="$PWD/$bundle/Contents/MacOS/Meo" node checks/companion-ui.test.cjs
       - uses: actions/upload-artifact@v6
         if: matrix.platform == 'windows'

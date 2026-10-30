@@ -59,11 +59,8 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 <a id="features"></a>
 
 <details>
-<summary>Xem bảng tiện ích Game</summary>
 
-<img src="docs/images/game-tools.png" width="350" alt="Bảng Game: thời gian phiên chơi, nhắc nghỉ, điều khiển nhạc và âm lượng">
 
-Ảnh minh họa với game và nhạc giả lập; không phải ảnh chụp một game thật.
 
 </details>
 
@@ -75,12 +72,13 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 - **Giữ tối đa 3 ảnh:** chụp vùng màn hình, để mèo cầm xấp ảnh rồi đưa cả bộ vào bản nháp bằng một nút.
 - **Túi đồ:** giữ tối đa 20 file, thư mục, ảnh và đoạn chữ; kéo tên / ảnh ra app khác, sao chép chữ, mở file hoặc tìm vị trí. Không di chuyển file gốc.
 - **Nhắc việc:** nhập thời gian bằng tiếng Việt, mèo cầm biển khi đến giờ; hoàn thành hoặc nhắc lại sau 10 phút. Lưu qua lần mở app.
-- **Chế độ máy:** Làm việc, Chơi game, Thư giãn; lưu âm lượng, app đã ghim cần mở, tâm trạng, kích thước và thói quen của mèo.
 - **Pin và file mới:** mèo ôm pin khi còn 20% hoặc thấp hơn, phản ứng khi cắm sạc; nhận file mới ổn định trong Downloads vào túi. Có thể tắt hoặc chọn thư mục khác.
+- **Chế độ máy:** Làm việc và Thư giãn; mỗi chế độ nhớ âm lượng, app cần mở và cách mèo xuất hiện.
 - **Ứng dụng đã ghim:** ghim tối đa 20 ứng dụng để mở nhanh hoặc gắn vào chế độ máy.
-- **Chế độ game:** đếm thời gian phiên chơi, nhắc nghỉ và bảng điều khiển nhanh âm lượng/nhạc. Chọn góc ngồi, tạm dừng đồng hồ hoặc nghỉ 5 phút. Nhận diện game từ Steam/Epic trên Windows, Steam `.app` trên Mac và danh sách thêm thủ công.
 - **Mở cùng máy tính:** tùy chọn chạy nền khi đăng nhập, mặc định tắt.
-- **Cập nhật phiên bản:** kiểm tra bản mới trên GitHub Releases, thông báo im lặng; Windows tải/cài khi bạn chọn, Mac tải đúng DMG theo chip.
+- **Cập nhật phiên bản:** kiểm tra bản mới trên GitHub Releases, hiển thị trạng thái trong Cài đặt → Cập nhật; Windows tải/cài khi bạn chọn, Mac tải đúng DMG theo chip.
+
+Các thay đổi source chưa có trong bộ cài 0.10.0: bỏ chế độ game và nhận thông báo hệ thống; thêm 12 tư thế tương tác vẽ toàn thân theo dáng mèo cũ. Các tư thế mới dùng một hình mèo hoàn chỉnh, không ghép thêm chân. Bộ đi lại, nhảy và nghe nhạc cũ được giữ nguyên.
 
 ## Công nghệ sử dụng
 
@@ -103,14 +101,12 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 - **Nhấp mèo:** tương tác với mèo hoặc mở/đóng card nhạc khi có phiên nhạc.
 - **Giữ và kéo:** đổi vị trí; mèo ghi nhớ vị trí đã chọn.
 - **Chuột phải:** mở menu Cài đặt, chụp màn hình, ứng dụng đã ghim và các thao tác nhanh.
-- **Cuộn chuột trên mèo:** chỉnh âm lượng, mỗi nấc 2%; chức năng này tạm nghỉ trong chế độ game.
 - **Cài đặt → Tự động → Mở cùng máy tính:** bật/tắt chạy nền khi đăng nhập. Trên Mac, cài app vào Applications trước khi bật.
 
 | Phím tắt | Windows | Mac |
 | --- | --- | --- |
 | Ẩn/hiện mèo | `Ctrl + Alt + M` | `⌘ + ⌥ + M` |
 | Chụp vùng màn hình | `Ctrl + Alt + S` | `⌘ + ⌥ + S` |
-| Mở/đóng bảng Game | `Ctrl + Alt + G` | `⌘ + ⌥ + G` |
 | Mở/đóng Túi & việc | `Ctrl + Alt + B` | `⌘ + ⌥ + B` |
 | Hủy chọn vùng chụp | `Esc` | `Esc` |
 
@@ -124,15 +120,8 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 - Theo dõi Downloads bỏ qua file có sẵn khi bắt đầu, thư mục con và đuôi tải dở; đợi ít nhất 4 giây ổn định trước khi nhận. Đây là nhận file mới theo thư mục, không đọc lịch sử tải của trình duyệt; file được chép vào thư mục cũng có thể được nhận. Khi túi đầy, file gốc vẫn ở nguyên thư mục và app báo chưa nhận được.
 - Cấu hình, túi đồ và nhắc việc lưu cục bộ trong thư mục dữ liệu app. Ảnh kéo từ web / chụp giữ lâu được lưu bản PNG riêng; xóa khỏi túi sẽ dọn bản lưu thừa ở lần chạy sau.
 
-### Tiện ích khi chơi game — mới từ 0.9.0
 
-- Mèo hiện đồng hồ phiên chơi nhỏ; thời gian chỉ tăng khi game được nhận diện đang ở phía trước. Alt+Tab sang app khác sẽ ngưng đếm, quay lại game thì tiếp tục. Ẩn mèo hoặc tạm dừng hoạt ảnh không dừng đồng hồ.
-- Dùng **Ctrl + Alt + G** / **⌘ + ⌥ + G** để mở và đóng **Bảng Game** khi game ở phía trước. Phím tắt được nhả khi chuyển app, trừ lúc bảng đang mở, để tránh chiếm phím tắt của ứng dụng khác. Có thể mở từ khay hệ thống khi đang ở chế độ game, hoặc **Cài đặt → Ứng dụng & game → Mở bảng Game**.
 - Bảng có điều khiển nhạc, âm lượng, bật/tắt tiếng, ẩn/hiện mèo, chọn góc trái/phải và tạm dừng/tiếp tục đồng hồ. Bảng không tự bật giữa trận và không nhận focus bàn phím.
-- Chọn nhắc nghỉ sau **30 / 45 / 60 / 90 phút** hoặc tắt, mặc định 45 phút. Khi đến giờ, nhãn nhỏ trên mèo đổi thành “Đến giờ nghỉ”; mở bảng để **Nghỉ 5 phút**, **Để sau 10 phút** hoặc quay lại sớm. App không tự tạm dừng game. Nếu game khóa con trỏ, mở menu tạm dừng của game để dùng chuột với bảng.
-- Trong **Cài đặt → Ứng dụng & game**, có thể tắt đồng hồ trên mèo, đổi thời gian nhắc và góc ngồi. Tắt riêng đồng hồ vẫn giữ nhãn nhắc nghỉ; ẩn hoàn toàn mèo sẽ ẩn cả nhãn này. Thay khoảng nhắc sẽ tính lại lần nhắc tiếp theo từ lúc thay đổi.
-- “Phiên mới” đặt lại bộ đếm. Thời gian phiên và phiên gần nhất chỉ giữ trong RAM khi app chạy, chưa có lịch sử chơi lâu dài. Nếu chọn tâm trạng Chơi game thủ công, đồng hồ hiển thị là đếm thủ công; bạn tự tạm dừng khi cần.
-- Trên Mac, bật **Nghe nhạc cùng bạn** trong mục Tự động để dùng nút nhạc. Bảng Game không tự xin quyền Automation giữa trận khi tùy chọn này đang tắt.
 
 ### Chụp và đưa ảnh
 
@@ -167,7 +156,6 @@ Vào **Cài đặt → Cập nhật** để xem phiên bản và thay đổi. T�
 
 - Cấu hình: `%APPDATA%/MeoDesktop/` trên Windows; `~/Library/Application Support/MeoDesktop/` trên Mac.
 - Ảnh chụp giữ trong RAM và PNG tạm phục vụ đính kèm, được dọn khi app thoát bình thường. Ảnh không tải lên server; app không lưu lịch sử nghe nhạc.
-- Fullscreen độc quyền có thể che mèo và bảng Game. Dùng **Borderless / Windowed Fullscreen** để hiển thị ổn định hơn.
 - Ảnh bìa, thời lượng, khả năng tua và nhận ảnh phụ thuộc ứng dụng đích. Điều khiển Music/Spotify thật và từng phiên bản Messenger/Zalo trên Mac vẫn cần kiểm thử thủ công.
 - Nếu xóa app thủ công trên Mac, nên tắt “Mở cùng máy tính” trước để dọn LaunchAgent `~/Library/LaunchAgents/vn.meo.desktop.plist`.
 
@@ -233,7 +221,6 @@ Giữ cả thư mục khi dùng bản portable. Build Mac tự biên dịch help
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-media.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-game.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-audio.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-screenshot.ps1
 ```

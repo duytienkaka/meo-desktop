@@ -1,0 +1,19 @@
+{
+  "tool": "built-in image_gen",
+  "reference": "assets/core.png",
+  "prompt": "Use case: identity-preserve. Asset: production action sprite atlas. Input image is the ONLY character reference: preserve EXACTLY this existing cream kitten with muted taupe/brown patches (NOT orange calico), brown amber eyes, pink ears, short fluffy tail, compact body, same soft 2D linework and proportions. Redraw complete new poses for this same kitten, not accessory overlays. Exactly 12 full-body sprites in uniform 4 columns x 3 rows, transparent alpha background, no text or cell borders. Each sprite centered in its cell with generous empty padding, common baseline, full ears and tail inside cell. Landscape 1536x1024. ROW1 left to right: 0 sitting upright, two forepaws hold stack of three blank cream photo cards at chest, two hindfeet on ground; 1 upright seated, both forelegs reaching forward in a small throwing follow-through, paws empty, two hindfeet on ground; 2 seated with small cloth satchel at left hip, both forepaws at ground, two hindfeet; 3 seated leaning down to open satchel with one forepaw and place a card with other forepaw, only two hindfeet on ground. ROW2: 4 upright seated lifting blank small wooden reminder board from low belly with two forepaws, two hindfeet on ground; 5 upright seated holding blank board at chest with both forepaws, two hindfeet on ground; 6 same holding-board pose but eyes happily closed, nodding slightly, two forepaws on board and two hindfeet only; 7 seated lowering board toward side with both forepaws, only two hindfeet on ground. ROW3: 8 seated upright embracing small rectangular low battery, mildly concerned, both forepaws holding battery and two hindfeet on ground; 9 identical pose battery green full, ears perked and happy eyes, exactly same four limbs; 10 grooming, one forepaw raised naturally to mouth, other forepaw grounded plus two hindfeet grounded; 11 seated yawning, one forepaw near mouth, other forepaw grounded plus two hindfeet grounded. CRITICAL: exactly FOUR legs TOTAL in every cat, two anatomically attached forelegs plus two hindlegs. For holding poses REMOVE the grounded forelegs and redraw them as the two raised forelegs. No extra paws, no floating hands, no extra arm drawn over an unchanged four-legged sitting body. The front paws must connect through visible forearms to the shoulders. Hold poses must show clear seated belly below held object with NO front paws on ground. One tail and two ears each. Match input identity and muted colors meticulously. Background genuinely transparent; no gradient or ground shadow.",
+  "poses": [
+    "hold-photos",
+    "release-photos",
+    "satchel-rest",
+    "satchel-store",
+    "raise-board",
+    "hold-board",
+    "acknowledge-board",
+    "lower-board",
+    "battery-low",
+    "battery-charged",
+    "groom",
+    "yawn"
+  ]
+}
