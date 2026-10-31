@@ -1,0 +1,32 @@
+/* Shared palette and controls for the compact desktop surfaces. */
+:root {
+  color-scheme: dark;
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-synthesis: none;
+  --bg: #0b0b0e;
+  --surface: #121216;
+  --raised: #1b1b21;
+  --hover: #24242c;
+  --ink: #f4f4f7;
+  --muted: #a0a0ae;
+  --subtle: #80808e;
+  --line: #ffffff12;
+  --line-strong: #ffffff26;
+  --accent: #d8d7f2;
+  --success: #95cfb0;
+  --warning: #e3bd8e;
+  --ease: cubic-bezier(.2,.8,.2,1);
+}
+button, input, select { font: inherit; }
+button { transition: background .16s, border-color .16s, color .16s, transform .16s; }
+button:active:enabled { transform: scale(.97); }
+button:disabled { opacity: .4; cursor: default; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+::selection { background: #b9b6e344; color: #fff; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #ffffff29; border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
