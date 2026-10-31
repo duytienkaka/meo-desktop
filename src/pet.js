@@ -69,8 +69,8 @@
     for(const word of words){const candidate=line?line+' '+word:word;if(ctx.measureText(candidate).width>245&&line){lines.push(line);line=word;}else line=candidate;}if(line)lines.push(line);
     const bw=Math.min(width-12,Math.max(...lines.map(l=>ctx.measureText(l).width))+22),bh=lines.length*15+16;
     const bx=clamp(frame.anchorX-bw/2,6,width-bw-6),by=clamp(frame.anchorY-displaySize-52,8,height-bh-8);
-    ctx.fillStyle='#fffdf4ed';ctx.strokeStyle='#d5c9ad';ctx.lineWidth=1;
-    ctx.beginPath();ctx.roundRect(bx,by,bw,bh,10);ctx.fill();ctx.stroke();ctx.fillStyle='#746651';
+    ctx.fillStyle='#101014f5';ctx.strokeStyle='#ffffff26';ctx.lineWidth=1;
+    ctx.beginPath();ctx.roundRect(bx,by,bw,bh,10);ctx.fill();ctx.stroke();ctx.fillStyle='#eeeef4';
     for(let i=0;i<lines.length;i++)ctx.fillText(lines[i],bx+11,by+19+i*15);ctx.restore();
   }
   function sampleHit(point){

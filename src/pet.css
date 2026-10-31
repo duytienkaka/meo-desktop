@@ -1,5 +1,20 @@
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent!important;user-select:none;-webkit-user-select:none}canvas{display:block;width:100%;height:100%;background:transparent;touch-action:none}
-#audio-hud{position:absolute;z-index:2;display:flex;align-items:center;gap:9px;width:130px;height:36px;box-sizing:border-box;padding:3px 11px 3px 4px;background:#fffdf4f5;border:1px solid #d5c9ad;border-radius:13px;box-shadow:0 3px 10px #0002;font:12px "Segoe UI",sans-serif;color:#746651}#audio-hud[hidden]{display:none}#pet-mute{display:grid;place-items:center;width:30px;height:28px;flex-shrink:0;padding:5px;border:0;border-radius:9px;background:transparent;color:#6d7f58;cursor:pointer}#pet-mute:hover{background:#e9efdf}#pet-mute:focus-visible{outline:2px solid #889e72}#pet-mute svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.mute-mark{display:none}.muted .sound-wave{display:none}.muted .mute-mark{display:block}#audio-hud.muted{color:#a17c64}#audio-hud.muted #audio-level:after{content:" · tắt";font-size:10px}#pet-mute:disabled{opacity:.4;cursor:default}
-#photo-pocket{position:absolute;z-index:3;width:88px;height:27px}#photo-pocket[hidden]{display:none}#send-photos{display:block;width:100%;height:100%;padding:4px 6px;border:1px solid #c6d3b3;border-radius:9px;background:#fffdf2ef;box-shadow:0 2px 6px #1c311c18;font:10px "Segoe UI",system-ui,sans-serif;color:#627b4c;cursor:pointer;white-space:nowrap}#send-photos:hover:enabled{background:#e9f1dd;border-color:#a3ba8a}#send-photos:disabled{opacity:.6;cursor:default}#send-photos:focus-visible{outline:2px solid #849f6a;outline-offset:2px}
+@import url("theme.css");
 
-#utility-bag{position:absolute;z-index:4;min-width:26px;max-width:58px;height:25px;padding:3px 7px;border:1px solid #b4c59f;border-radius:9px;background:#f6f5e9ee;color:#5a7048;font:11px "Segoe UI",system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 5px #0002}#utility-bag[hidden]{display:none}#utility-bag:hover{background:#e6edda}#utility-bag.due{background:#fae6c1;border-color:#be9164;color:#7b5639}#utility-bag:focus-visible{outline:2px solid #8ea471;outline-offset:2px}
+html,body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent!important; user-select: none; -webkit-user-select: none; }
+canvas { display: block; width: 100%; height: 100%; background: transparent; touch-action: none; }
+#audio-hud { position: absolute; z-index: 2; display: flex; align-items: center; gap: 9px; width: 130px; height: 36px; box-sizing: border-box; padding: 3px 11px 3px 4px; background: linear-gradient(135deg,#19191f,#0b0b0e); border: 1px solid var(--line-strong); border-radius: 13px; box-shadow: 0 3px 10px #0004; font-size: 12px; color: var(--ink); animation: hud-in .18s var(--ease); }
+#pet-mute { display: grid; place-items: center; width: 30px; height: 28px; flex-shrink: 0; padding: 5px; border: 0; border-radius: 9px; background: transparent; color: #d2d0e2; cursor: pointer; }
+#pet-mute:hover { background: #ffffff12; }
+#pet-mute svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.mute-mark { display: none; }
+.muted .sound-wave { display: none; }
+.muted .mute-mark { display: block; }
+#audio-hud.muted { color: var(--muted); }
+#audio-hud.muted #audio-level:after { content: " · tắt"; font-size: 10px; }
+#photo-pocket { position: absolute; z-index: 3; width: 88px; height: 27px; }
+#send-photos { display: block; width: 100%; height: 100%; padding: 4px 6px; border: 1px solid var(--line-strong); border-radius: 10px; background: linear-gradient(135deg,#22222b,#101014); box-shadow: 0 2px 6px #0004; font-size: 10px; color: #eeedf6; cursor: pointer; white-space: nowrap; }
+#send-photos:hover:enabled { background: #30303a; border-color: #d8d7f266; }
+#utility-bag { position: absolute; z-index: 4; min-width: 26px; max-width: 58px; height: 25px; padding: 3px 7px; border: 1px solid var(--line-strong); border-radius: 9px; background: #121217; color: #dedbea; font-size: 11px; cursor: pointer; box-shadow: 0 2px 5px #0004; }
+#utility-bag:hover { background: #30303a; }
+#utility-bag.due { background: #30261d; border-color: #e3bd8e66; color: var(--warning); }
+@keyframes hud-in { from { opacity: 0; scale: .92; } to { opacity: 1; scale: 1; } }
