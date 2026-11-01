@@ -36,6 +36,10 @@ jobs:
           node -e "if(process.env.GITHUB_REF_NAME!=='v'+require('./package.json').version)process.exit(1)"
           npm run check
           npm test
+      - name: Compile Windows overlay helper
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: ./scripts/build-overlay.ps1
       - name: Build Windows installer and validate update metadata
         if: matrix.platform == 'windows'
         run: npm run setup:win

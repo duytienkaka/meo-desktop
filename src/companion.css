@@ -83,3 +83,10 @@ input[type=checkbox] { accent-color: var(--accent); }
 footer { flex-shrink: 0; border-top: 1px solid var(--line); padding-top: 11px; display: grid; gap: 4px; color: var(--subtle); font-size: 9px; line-height: 1.5; }
 footer span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 footer span:empty { display: none; }
+
+/* The transparent surface includes the head as the expansion origin. */
+#panel { position:absolute; width:366px; height:496px; transform:scale(.055); opacity:0; transition:none; pointer-events:none; will-change:transform,opacity; }
+body.open #panel { pointer-events:auto; transition:none; }
+#panel svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.75; stroke-linecap:round; stroke-linejoin:round; }
+#capture-new { display:inline-flex; align-items:center; justify-content:center; gap:8px; margin-top:7px; padding:9px 13px; font-size:11px; border-radius:11px; }
+.drop-icon svg { width:27px!important; height:27px!important; }

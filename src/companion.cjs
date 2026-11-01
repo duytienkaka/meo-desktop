@@ -1,10 +1,13 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const {configureOverlay}=require('./overlay.cjs');
+const {companionLayout}=require('./companion-layout.cjs');
 const {createCompanionStore}=require('./companion-store.cjs');
 const {createBatteryMonitor,createDownloadMonitor}=require('./desktop-monitors.cjs');
 function createCompanion({electron,getAnchor,getPetState,applyPet,controlAudio,getAudio,getPins,launchPin,getShots,getIcon,canUse,onChange=()=>{},onNotice=()=>{},testMode=false}){
  const {app,BrowserWindow,ipcMain,screen,clipboard,shell,nativeImage,dialog,powerMonitor}=electron;
  let window=null,loaded=false,open=false,last='',hideTimer,pulseUntil=0,pulseKind='',battery={available:false},lowDismissed=false,downloadStatus='Đang chuẩn bị…',batteryStatus='Đang đọc pin…',applying=false;
+ let presentation=null,mouseIgnored=null;
  const thumbs=new Map(),importDirectory=path.join(app.getPath('userData'),'shelf-images');
  const store=createCompanionStore({directory:app.getPath('userData'),downloads:app.getPath('downloads'),onChange:changed});
  function changed(){publish();onChange();}
@@ -48,17 +51,23 @@ function createCompanion({electron,getAnchor,getPetState,applyPet,controlAudio,g
  ipcMain.handle('meo:utils:drop',(event,value)=>{if(!valid(event)||!open)throw new Error('Túi chưa mở.');return drop(value);});
  ipcMain.on('meo:utils:drag',(event,id)=>{if(!valid(event)||!open)return;try{const item=store.item(id);if(item.kind!=='file')return;event.sender.startDrag({file:item.location,icon:getIcon()});}catch(error){window.webContents.send('meo:utils:error',error.message);}});
  function publish(){if(!open||!loaded||!window||window.isDestroyed())return;const value=snapshot(),key=JSON.stringify(value);if(key!==last){last=key;window.webContents.send('meo:utils:state',value);}}
+ function updateMouse(cursor){
+  if(!window?.isVisible()||!presentation)return;
+  const c=presentation.card,w=presentation.window,x=cursor.x-w.x,y=cursor.y-w.y;
+  const ignored=!open||!(x>=c.x&&x<=c.x+c.width&&y>=c.y&&y<=c.y+c.height);
+  if(ignored!==mouseIgnored){window.setIgnoreMouseEvents(ignored,ignored?{forward:true}:undefined);mouseIgnored=ignored;}
+ }
  async function show(tab='shelf'){
   if(!canUse(true))throw new Error('Hãy mở khóa máy trước.');clearTimeout(hideTimer);open=true;
-  if(!window||window.isDestroyed()){loaded=false;window=new BrowserWindow({width:380,height:510,show:false,frame:false,transparent:true,backgroundColor:'#00000000',hasShadow:false,resizable:false,skipTaskbar:true,alwaysOnTop:true,acceptFirstMouse:true,title:'Mèo Desktop — Túi & việc',webPreferences:{preload:path.join(__dirname,'companion-preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false}});window.setMenu(null);window.setAlwaysOnTop(true,'floating');if(process.platform==='darwin')window.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());window.on('closed',()=>{window=null;open=false;loaded=false;});await window.loadFile(path.join(__dirname,'companion.html'));loaded=true;}
-  if(!open||!window||window.isDestroyed())return;const anchor=getAnchor(),area=screen.getDisplayNearestPoint(anchor).workArea,width=Math.min(380,area.width),height=Math.min(510,area.height);window.setBounds({width,height,x:Math.round(Math.max(area.x,Math.min(area.x+area.width-width,anchor.x-width/2))),y:Math.round(Math.max(area.y,Math.min(area.y+area.height-height,anchor.y-height-65)))},false);window.show();last='';publish();window.webContents.send('meo:utils:show',tab);refreshThumbs();
+  if(!window||window.isDestroyed()){loaded=false;mouseIgnored=null;window=new BrowserWindow({width:380,height:510,show:false,frame:false,transparent:true,backgroundColor:'#00000000',hasShadow:false,resizable:false,skipTaskbar:true,alwaysOnTop:true,acceptFirstMouse:true,title:'Mèo Desktop — Túi & việc',webPreferences:{preload:path.join(__dirname,'companion-preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false}});window.setMenu(null);configureOverlay(window);window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());window.on('closed',()=>{window=null;open=false;loaded=false;});await window.loadFile(path.join(__dirname,'companion.html'));loaded=true;}
+  if(!open||!window||window.isDestroyed())return;const anchor=getAnchor(),area=screen.getDisplayNearestPoint({x:Math.round(anchor.x),y:Math.round(anchor.y)}).workArea,reset=!window.isVisible();presentation=companionLayout(area,anchor);window.setBounds(presentation.window,false);window.setIgnoreMouseEvents(true,{forward:true});mouseIgnored=true;window.show();last='';publish();window.webContents.send('meo:utils:show',{open:true,reset,presentation,tab});updateMouse(screen.getCursorScreenPoint());refreshThumbs();
  }
- function hide(immediate=false){open=false;if(!window||window.isDestroyed())return;window.webContents.send('meo:utils:show',false);clearTimeout(hideTimer);if(immediate)window.hide();else hideTimer=setTimeout(()=>{if(!open&&!window?.isDestroyed())window?.hide();},180);}
+ function hide(immediate=false){open=false;if(!window||window.isDestroyed())return;window.webContents.send('meo:utils:show',{open:false,presentation});clearTimeout(hideTimer);if(immediate)window.hide();else hideTimer=setTimeout(()=>{if(!open&&!window?.isDestroyed())window?.hide();},300);}
  let configured='',tickTimer;
  async function restartMonitors(){const settings=store.overview().settings;if(settings.battery){if(!testMode)batteryMonitor.start();}else{batteryMonitor.stop();battery={available:false};batteryStatus='Đã tắt nhắc pin.';if(['battery','charging'].includes(pulseKind))pulseUntil=0;}const key=JSON.stringify([settings.downloads,settings.downloadDirectory]);if(key!==configured){configured=key;if(settings.downloads){if(!testMode)await downloadMonitor.start(settings.downloadDirectory);}else{downloadMonitor.stop();downloadStatus='Đã tắt theo dõi file mới.';}}changed();}
  function tick(){const due=store.tick();if(due.length)pulse('reminder','Đến giờ: '+due[0].text);publish();}
  function start(){tick();tickTimer=setInterval(tick,1000);tickTimer.unref?.();powerMonitor.on('on-ac',batteryMonitor.sample);powerMonitor.on('on-battery',batteryMonitor.sample);restartMonitors();refreshThumbs();try{const retained=new Set(store.snapshot().items.filter(i=>i.kind==='file').map(i=>i.location));for(const entry of fs.readdirSync(importDirectory,{withFileTypes:true})){if(!entry.isFile()||!/^Meo-anh-\d+-[a-f0-9]{8}\.png$/.test(entry.name))continue;const location=path.join(importDirectory,entry.name);if(!retained.has(location))fs.unlinkSync(location);}}catch{}}
  function dispose(){clearInterval(tickTimer);clearTimeout(hideTimer);powerMonitor.removeListener('on-ac',batteryMonitor.sample);powerMonitor.removeListener('on-battery',batteryMonitor.sample);batteryMonitor.stop();downloadMonitor.stop();window?.destroy();}
- return {start,dispose,show,hide,toggle:()=>open?hide():show(),isOpen:()=>open,window:()=>window,summary,badge,snapshot,drop,action,store,tick,receiveBattery,downloadMonitor,applyProfile};
+ return {start,dispose,show,hide,updateMouse,layout:()=>presentation,toggle:()=>open?hide():show(),isOpen:()=>open,window:()=>window,summary,badge,snapshot,drop,action,store,tick,receiveBattery,downloadMonitor,applyProfile};
 }
 module.exports={createCompanion};
