@@ -4,10 +4,6 @@
   const images={},pixels={},atlas=window.CAT_SPRITES;
   let width=320,height=320,dpr=1,frame=null,previousTime=null,displaySize=112,previousMode=null,lastPounce=false,held=null,hit=false,transform=null;
   const particles=[],seen=new Set();let fileHover=false,fileHoverTimer;
-  const utilityButton=document.querySelector('#utility-bag');
-  function onUtility(point){if(utilityButton.hidden)return false;const r=utilityButton.getBoundingClientRect();return point.x>=r.left&&point.x<=r.right&&point.y>=r.top&&point.y<=r.bottom;}
-  utilityButton.addEventListener('click',()=>window.meo.utilities.open(frame?.utilityBadge?.due?'reminders':'shelf').catch(()=>{}));
-  utilityButton.addEventListener('pointerenter',()=>window.meo.hit(true));
   const pocket=document.querySelector('#photo-pocket'),sendPhotos=document.querySelector('#send-photos');let photoState={photos:[]},carried=[],flightPhotos=[],lastActivity=null,pocketKey='';
   function onPocket(point){if(pocket.hidden)return false;const r=pocket.getBoundingClientRect();return point.x>=r.left&&point.x<=r.right&&point.y>=r.top&&point.y<=r.bottom;}
   function receivePhotos(value){if(value.busy&&!photoState.busy)flightPhotos=carried.slice();photoState=value;sendPhotos.disabled=value.busy||!value.target;sendPhotos.textContent=value.busy?'Đang đưa…':'Đưa '+value.photos.length+' ảnh ↗';sendPhotos.title=value.target?'Đưa toàn bộ ảnh vào ô vừa chọn trong '+value.target.name+'; bạn tự bấm gửi.':'Bấm vào ô nhận ảnh trong ứng dụng trước.';const key=JSON.stringify(value.photos.map(p=>p.id));if(key===pocketKey)return;pocketKey=key;carried=[];value.photos.forEach((photo,index)=>{const image=new Image();image.onload=()=>{if(pocketKey===key)carried[index]=image;};image.src=photo.thumb;});}
@@ -82,11 +78,6 @@
     const data=pixels[t.sheet],px=Math.floor(t.source.x+u),py=Math.floor(t.source.y+v);
     return data.data[(py*data.width+px)*4+3]>48;
   }
-  function drawUtility(f){
-    const badge=f.utilityBadge||{};utilityButton.hidden=f.fileHover||f.audioFeedback;
-    utilityButton.textContent=badge.due?'Nhắc '+badge.due:badge.count?'Túi '+badge.count:'Túi';utilityButton.classList.toggle('due',!!badge.due);utilityButton.title=badge.due?badge.text:'Túi đồ, nhắc việc & chế độ máy';
-    utilityButton.style.left=clamp(f.anchorX+displaySize*.37,4,width-60)+'px';utilityButton.style.top=clamp(f.anchorY-displaySize-27,4,height-30)+'px';
-  }
 
   function render(f){
     const dt=previousTime===null?0:clamp(f.time-previousTime,0,.12);previousTime=f.time;
@@ -109,10 +100,9 @@
     window.__wasMusicReaction=reaction;window.__lastMusicReaction=f.musicReactionElapsed;
     if(lastPounce&&f.jumpPhase===null)emit(clamp(x,25,width-25),clamp(y-5,25,height-25),'spark',3);lastPounce=f.jumpPhase!==null;
     drawParticles(dt);
-    drawUtility(f);
     renderAudio(f);
     if(f.fileHover)textBubble('Thả file ở đây');else if(f.toast&&!f.audioFeedback&&!photoState.photos.length)textBubble(f.toast);
-    hit=(sampleHit(f.cursor)||onAudioHud(f.cursor)||onPocket(f.cursor)||onUtility(f.cursor));canvas.style.cursor=f.dragging?'grabbing':hit?'grab':'default';window.meo.hit(hit||!!held||fileHover);
+    hit=(sampleHit(f.cursor)||onAudioHud(f.cursor)||onPocket(f.cursor));canvas.style.cursor=f.dragging?'grabbing':hit?'grab':'default';window.meo.hit(hit||!!held||fileHover);
   }
   function nearPet(event){if(!frame||!transform)return false;const angle=frame.rotation,cx=transform.x+Math.sin(angle)*displaySize*.55,cy=transform.y-Math.cos(angle)*displaySize*.55;return sampleHit({x:event.clientX,y:event.clientY})||Math.hypot(event.clientX-cx,event.clientY-cy)<displaySize*.8;}
   function setFileHover(active){clearTimeout(fileHoverTimer);fileHover=active;window.meo.fileHover(active);if(active)fileHoverTimer=setTimeout(()=>setFileHover(false),1100);}

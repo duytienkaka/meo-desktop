@@ -14,7 +14,4 @@ canvas { display: block; width: 100%; height: 100%; background: transparent; tou
 #photo-pocket { position: absolute; z-index: 3; width: 88px; height: 27px; }
 #send-photos { display: block; width: 100%; height: 100%; padding: 4px 6px; border: 1px solid var(--line-strong); border-radius: 10px; background: linear-gradient(135deg,#22222b,#101014); box-shadow: 0 2px 6px #0004; font-size: 10px; color: #eeedf6; cursor: pointer; white-space: nowrap; }
 #send-photos:hover:enabled { background: #30303a; border-color: #d8d7f266; }
-#utility-bag { position: absolute; z-index: 4; min-width: 26px; max-width: 58px; height: 25px; padding: 3px 7px; border: 1px solid var(--line-strong); border-radius: 9px; background: #121217; color: #dedbea; font-size: 11px; cursor: pointer; box-shadow: 0 2px 5px #0004; }
-#utility-bag:hover { background: #30303a; }
-#utility-bag.due { background: #30261d; border-color: #e3bd8e66; color: var(--warning); }
 @keyframes hud-in { from { opacity: 0; scale: .92; } to { opacity: 1; scale: 1; } }

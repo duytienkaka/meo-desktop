@@ -14,6 +14,7 @@ const {createScreenshotFeature}=require('./screenshots.cjs');
 const {createStartup,startsInBackground}=require('./startup.cjs');
 const {createUpdates}=require('./updates.cjs');
 const {createCompanion}=require('./companion.cjs');
+const {configureOverlay,createOverlayGuard}=require('./overlay.cjs');
 const {createMacMonitor,createMacAudio,createMacTransport}=require('./macos.cjs');
 const mac=process.platform==='darwin',desktopSupported=['win32','darwin'].includes(process.platform);
 const testMode=process.argv.includes('--meo-test');
@@ -71,6 +72,7 @@ else {
   preferences.roam=preferences.roam!==false;preferences.follow=preferences.follow!==false;
   const state={...preferences,baseMode:preferences.mode,autoMedia:desktopSupported&&(mac?preferences.autoMedia===true:preferences.autoMedia!==false),mediaStatus:'connecting',mediaPlaying:false,visible:preferences.visible!==false,paused:preferences.paused===true,time:0,distance:0,target:null,direction:1,action:'idle',actionStart:0,jump:null,petUntil:0,nextWander:3,nextPounce:2,interactive:false,dragging:false,dragAt:0,toast:'Chuột phải lên mèo để mở menu',toastUntil:5,closeEnough:false};
   const log=message=>{try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.appendFileSync(path.join(app.getPath('userData'),'app.log'),new Date().toISOString()+' '+message+'\n');}catch{}};
+  const overlayGuard=createOverlayGuard({getWindow:()=>win,canRaise:()=>ready&&state.visible&&!suspended&&!quitting&&!screenshots?.isCapturing(),onRaise:()=>{for(const panel of [playerWindow,utilities?.window()])if(panel&&!panel.isDestroyed()&&panel.isVisible())panel.moveTop();},onError:log});
   const appLabels={};
   let nativeMouseState=null,nextMouseRepair=0,dragOffset={x:0,y:0};
   if(!state.freePosition||!Number.isFinite(state.freePosition.x)||!Number.isFinite(state.freePosition.y))state.freePosition=null;
@@ -107,13 +109,14 @@ else {
   function playerVisible(){return playerOpen&&playerWindow?.isVisible();}
   function openPlayer(){
     if(suspended||!desktopSupported)return;
+    utilities?.hide();
     playerOpen=true;clearTimeout(playerHideTimer);clearTimeout(playerBlurTimer);
     state.target=null;state.action='idle';state.jump=null;playBehavior.affection(state.time);
     if(!playerWindow||playerWindow.isDestroyed()){
       playerLoaded=false;
       playerWindow=new BrowserWindow({width:460,height:256,frame:false,transparent:true,hasShadow:false,resizable:false,show:false,skipTaskbar:true,alwaysOnTop:true,backgroundColor:'#00000000',title:'Mèo · Nhạc của bạn',webPreferences:{preload:path.join(__dirname,'player-preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,spellcheck:false}});
       playerMouseIgnored=null;
-      playerWindow.setMenu(null);playerWindow.webContents.setWindowOpenHandler(()=>({action:'deny'}));playerWindow.webContents.on('will-navigate',event=>event.preventDefault());
+      configureOverlay(playerWindow);playerWindow.setMenu(null);playerWindow.webContents.setWindowOpenHandler(()=>({action:'deny'}));playerWindow.webContents.on('will-navigate',event=>event.preventDefault());
       playerWindow.on('close',event=>{if(!quitting){event.preventDefault();hidePlayer();}});
       // A click on the pet belongs to togglePlayer, not outside-click dismissal.
       playerWindow.on('blur',()=>{clearTimeout(playerBlurTimer);playerBlurTimer=setTimeout(()=>{if(!state.interactive&&!state.dragging&&Date.now()-petPressedAt>12000)hidePlayer();},80);});
@@ -229,7 +232,7 @@ else {
   }
   function validSettings(event){return settingsWindow&&!settingsWindow.isDestroyed()&&event.sender.id===settingsWindow.webContents.id;}
   function requireSettings(event){if(!validSettings(event))throw new Error('Cửa sổ không hợp lệ.');}
-  async function openUtilities(tab='shelf'){hidePlayer(true);await utilities.show(tab);}
+  async function openUtilities(tab='shelf'){hidePlayer();await utilities.show(tab);}
   ipcMain.handle('meo:utilities:open',async(event,tab)=>{if(!valid(event)&&!validSettings(event))throw new Error('Cửa sổ không hợp lệ.');if(utilities.isOpen()&&valid(event))utilities.hide();else await openUtilities(tab);return true;});
   ipcMain.handle('meo:utilities:configure',async(event,patch)=>{requireSettings(event);await utilities.action({action:'configure',patch});return settingsSnapshot();});
   ipcMain.handle('meo:utilities:folder',async event=>{requireSettings(event);await utilities.action({action:'choose-downloads'});return settingsSnapshot();});
@@ -341,6 +344,7 @@ else {
     if(ready&&state.visible&&!suspended){
       const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint();advance(dt,cursor);tickFrame();
       if(playerWindow?.isVisible())updatePlayerMouse();
+      utilities?.updateMouse(cursor);
       syncMouseInput(state.interactive||state.dragging);
       if(state.interactive&&!state.dragging&&Date.now()-lastHitAt>700)syncMouseInput(false,true);
     }
@@ -349,19 +353,18 @@ else {
   function createWindow(){
     ready=false;lastBounds='';nativeMouseState=null;state.interactive=false;
     win=new BrowserWindow({width:320,height:320,show:false,frame:false,transparent:true,backgroundColor:'#00000000',hasShadow:false,resizable:false,movable:false,minimizable:false,maximizable:false,fullscreenable:false,skipTaskbar:true,focusable:true,alwaysOnTop:true,title:'Mèo Desktop',webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false,spellcheck:false}});
-    win.setMenu(null);syncMouseInput(false,true);win.setAlwaysOnTop(true,'floating');
-    if(process.platform==='darwin')win.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});
+    win.setMenu(null);syncMouseInput(false,true);configureOverlay(win);
     win.webContents.setWindowOpenHandler(()=>({action:'deny'}));
     win.webContents.on('will-navigate',event=>event.preventDefault());
     win.webContents.on('render-process-gone',(_event,details)=>{log('Renderer stopped: '+details.reason);if(!quitting){win.destroy();setTimeout(createWindow,300);}});
     win.webContents.on('did-fail-load',(_e,code,description)=>log(`Load failure ${code}: ${description}`));
-    win.on('closed',()=>{ready=false;});
+    win.on('closed',()=>{overlayGuard.stop();ready=false;});
     win.loadFile(path.join(__dirname,'pet.html'));
   }
   function valid(event){return win&&!win.isDestroyed()&&event.sender.id===win.webContents.id;}
   ipcMain.on('meo:files:hover',(event,active)=>{if(!valid(event))return;fileHoverUntil=active===true?Date.now()+1200:0;if(fileHoverUntil){state.target=null;state.jump=null;syncMouseInput(true,true);}tickFrame();});
   ipcMain.handle('meo:files:drop',(event,paths)=>{if(!valid(event))throw new Error('Cửa sổ không hợp lệ.');try{return acceptDroppedFiles(paths);}catch(error){fileHoverUntil=0;note(error.message);throw error;}});
-  ipcMain.on('meo:ready',event=>{if(!valid(event))return;ready=true;tickFrame();if(state.visible&&!suspended){win.showInactive();}});
+  ipcMain.on('meo:ready',event=>{if(!valid(event))return;ready=true;tickFrame();if(!testMode||process.argv.includes('--meo-overlay-test'))overlayGuard.start();if(state.visible&&!suspended){win.showInactive();}});
   ipcMain.on('meo:hit',(event,hit)=>{
     if(!valid(event)||typeof hit!=='boolean')return;lastHitAt=Date.now();
     syncMouseInput(hit||state.dragging);
@@ -369,8 +372,8 @@ else {
   ipcMain.on('meo:action',(event,value)=>{
     if(!valid(event))return;
     if(value==='press'){petPressedAt=Date.now();const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint(),placement=currentPlacement();dragOffset={x:cursor.x-placement.x-placement.anchorX,y:cursor.y-placement.y-placement.anchorY};clearTimeout(playerBlurTimer);}
-    else if(value==='menu')popup();else if(value==='pet'){petPressedAt=0;if(playerOpen||state.mode==='music'||(state.autoMedia&&mediaData.hasSession))togglePlayer();else pet();}
-    else if(value==='drag-start'){petPressedAt=0;if(playerOpen)hidePlayer(true);playBehavior.affection(state.time);state.dragging=true;state.dragAt=Date.now();state.jump=null;state.action='idle';syncMouseInput(true,true);}
+    else if(value==='menu')popup();else if(value==='pet'){petPressedAt=0;if(utilities?.isOpen()){utilities.hide();if(mediaData.hasSession)openPlayer();else pet();return;}if(playerOpen||state.mode==='music'||(state.autoMedia&&mediaData.hasSession))togglePlayer();else pet();}
+    else if(value==='drag-start'){petPressedAt=0;if(playerOpen)hidePlayer(true);utilities?.hide(true);playBehavior.affection(state.time);state.dragging=true;state.dragAt=Date.now();state.jump=null;state.action='idle';syncMouseInput(true,true);}
     else if(value==='drag-end'){petPressedAt=0;state.dragging=false;if(state.freePosition){const nearest=route.nearest(state.freePosition);if(nearest.separation<24){state.distance=nearest.distance;state.freePosition=null;}}state.nextWander=state.time+4;persist();}
     else if(value==='error')log('Renderer could not load character assets');
   });
@@ -381,7 +384,7 @@ else {
     if(mac){app.dock?.hide();Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'Mèo Desktop',submenu:[{role:'about'},{type:'separator'},{label:'Cài đặt…',accelerator:'Command+,',click:()=>openSettings()},{type:'separator'},{role:'quit'}]},{role:'editMenu'}]));}
     refreshRoute();createWindow();
     screenshots=createScreenshotFeature({electron:require('electron'),getPet:()=>win,getPlacement:currentPlacement,getWindows:()=>[win,playerWindow,settingsWindow,utilities?.window()],canUse:()=>state.visible&&!suspended&&!quitting,onStatus:text=>{note(text);lastMenuKey='';refreshMenu();},onCapture:()=>{utilities?.hide(true);hidePlayer(true);state.target=null;state.jump=null;state.action='idle';},testMode});
-    utilities=createCompanion({electron:require('electron'),getAnchor:()=>{const p=currentPlacement();return{x:Math.round(p.x+p.anchorX),y:Math.round(p.y+p.anchorY)};},getPetState:()=>({mode:state.baseMode,size:state.size,visible:state.visible,roam:state.roam,follow:state.follow}),applyPet:async p=>{setMode(p.mode);setSize(p.size);state.roam=p.roam;state.follow=p.follow;setVisible(p.visible);persist();publishSettings();},controlAudio:level=>controlAudio('set',level),getAudio:()=>audioState,getPins:()=>desktopActions.pins(),launchPin:id=>desktopActions.launch(id),getShots:()=>screenshots,getIcon:()=>catIcon(),canUse:allowHidden=>!suspended&&!quitting&&(allowHidden||state.visible),onChange:()=>publishSettings(),onNotice:message=>note(message),testMode});
+    utilities=createCompanion({electron:require('electron'),getAnchor:()=>{const p=currentPlacement(),s=state.size,c=Math.cos(p.rotation),sn=Math.sin(p.rotation),x=p.x+p.anchorX,y=p.y+p.anchorY;const ys=[-.65,.65].flatMap(dx=>[0,-1.2].map(dy=>y+dx*s*sn+dy*s*c));return{x:x+sn*s*.8+c*state.direction*s*.1,y:y-c*s*.8+sn*state.direction*s*.1,top:Math.min(...ys),bottom:Math.max(...ys)};},getPetState:()=>({mode:state.baseMode,size:state.size,visible:state.visible,roam:state.roam,follow:state.follow}),applyPet:async p=>{setMode(p.mode);setSize(p.size);state.roam=p.roam;state.follow=p.follow;setVisible(p.visible);persist();publishSettings();},controlAudio:level=>controlAudio('set',level),getAudio:()=>audioState,getPins:()=>desktopActions.pins(),launchPin:id=>desktopActions.launch(id),getShots:()=>screenshots,getIcon:()=>catIcon(),canUse:allowHidden=>!suspended&&!quitting&&(allowHidden||state.visible),onChange:()=>publishSettings(),onNotice:message=>note(message),testMode});
     utilities.start();
     const icon=nativeImage.createFromPath(path.join(__dirname,'../assets/core.png')).crop({x:53,y:50,width:280,height:292}).resize({height:24});
     tray=new Tray(icon);refreshMenu();refreshPinIcons();tray.on('double-click',()=>openSettings());
@@ -389,12 +392,12 @@ else {
     globalShortcut.register('CommandOrControl+Alt+B',()=>runDesktopAction(()=>utilities.isOpen()?utilities.hide():openUtilities()));
     if(desktopSupported)globalShortcut.register('CommandOrControl+Alt+S',()=>runDesktopAction(()=>screenshots.capture()));
     for(const event of ['display-added','display-removed','display-metrics-changed'])screen.on(event,()=>{refreshRoute(display.id);tickFrame();});
-    const sleep=()=>{utilities?.hide(true);suspended=true;screenshots?.hide();hidePlayer(true);audioControl.stop();mediaTransport.stop();mediaMonitor.stop();win?.hide();};
-    const wake=()=>{suspended=false;if(!testMode)audioControl.start();lastTick=0;startMedia();if(state.visible&&ready)win.showInactive();};
+    const sleep=()=>{overlayGuard.stop();utilities?.hide(true);suspended=true;screenshots?.hide();hidePlayer(true);audioControl.stop();mediaTransport.stop();mediaMonitor.stop();win?.hide();};
+    const wake=()=>{suspended=false;if(!testMode||process.argv.includes('--meo-overlay-test'))overlayGuard.start();if(!testMode)audioControl.start();lastTick=0;startMedia();if(state.visible&&ready)win.showInactive();};
     powerMonitor.on('suspend',sleep);powerMonitor.on('resume',wake);
     powerMonitor.on('lock-screen',sleep);powerMonitor.on('unlock-screen',wake);
     if(testMode)global.__meo={cursor:null,window:()=>win,setMode,setSize,setVisible,setPaused,setAutoMedia,receiveMedia,mediaPid:()=>mediaMonitor.pid(),route:()=>route,state:()=>({...state,ready,display:{id:display.id,workArea:display.workArea},bounds:win.getBounds(),visible:win.isVisible(),alwaysOnTop:win.isAlwaysOnTop(),focusable:win.isFocusable()}),move:s=>{state.freePosition=null;state.distance=wrap(s,route.total);state.target=null;state.jump=null;state.action='idle';tickFrame();},menu:()=>buildMenu().items.map(i=>i.label),drag:value=>{state.dragging=value;state.dragAt=Date.now();},shutdown:()=>{quitting=true;app.quit();}};
-    if(testMode)Object.assign(global.__meo,{utilities,updates,screenshots,audioControl,receiveAudio,desktopActions,acceptDroppedFiles,fileMenuTemplate,pinnedMenu,refreshPinIcons,openSettings,settingsSnapshot,settingsWindow:()=>settingsWindow});
+    if(testMode)Object.assign(global.__meo,{overlayGuard,utilities,updates,screenshots,audioControl,receiveAudio,desktopActions,acceptDroppedFiles,fileMenuTemplate,pinnedMenu,refreshPinIcons,openSettings,settingsSnapshot,settingsWindow:()=>settingsWindow});
     if(testMode)Object.assign(global.__meo,{advancePlay:seconds=>{for(let t=0;t<seconds;t+=.05)advance(.05,{x:-10000,y:-10000});tickFrame();}});
     if(testMode)Object.assign(global.__meo,{placeFree:point=>{state.freePosition={...constrainPosition(display.workArea,point,state.size),displayId:display.id};state.target=null;state.jump=null;tickFrame();},openPlayer,togglePlayer,playerWindow:()=>playerWindow,playerState:()=>({open:playerOpen,loaded:playerLoaded}),playerSnapshot,mediaTransport});
     startMedia();if(!testMode)audioControl.start();
@@ -405,5 +408,5 @@ else {
   app.on('second-instance',(_event,argv)=>{if(argv.includes('--meo-quit')){quitting=true;app.quit();return;}if(!startsInBackground(argv))openSettings();});
   app.on('activate',()=>{if(app.isReady())openSettings();});
   app.on('window-all-closed',()=>{});
-  app.on('before-quit',()=>{quitting=true;utilities?.dispose();updates.dispose();screenshots?.dispose();clearTimeout(timer);clearTimeout(persistTimer);clearTimeout(playerHideTimer);clearTimeout(playerBlurTimer);mediaTransport.stop();mediaMonitor.stop();mediaDecision.reset();audioControl.stop();if(display)saveSettings();globalShortcut.unregisterAll();tray?.destroy();});
+  app.on('before-quit',()=>{quitting=true;overlayGuard.stop();utilities?.dispose();updates.dispose();screenshots?.dispose();clearTimeout(timer);clearTimeout(persistTimer);clearTimeout(playerHideTimer);clearTimeout(playerBlurTimer);mediaTransport.stop();mediaMonitor.stop();mediaDecision.reset();audioControl.stop();if(display)saveSettings();globalShortcut.unregisterAll();tray?.destroy();});
 }
