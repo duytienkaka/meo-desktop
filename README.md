@@ -16,7 +16,7 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 
 ## Xem trước
 
-![Giao diện Cài đặt Mèo Desktop 0.12.0 trên Windows](docs/images/settings.png)
+![Giao diện Cài đặt Mèo Desktop trên Windows](docs/images/settings.png)
 
 <details>
 <summary>Xem card điều khiển nhạc</summary>
@@ -40,15 +40,15 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 
 ## Tải xuống và cài ứng dụng
 
-**Bản hiện tại: 0.12.0 — Preview. Người dùng cài app không cần Node.js hay công cụ lập trình.**
+**Bản hiện tại: 0.13.0 — Preview. Người dùng cài app không cần Node.js hay công cụ lập trình.**
 
 | Máy của bạn | Bấm để tải | Yêu cầu |
 | --- | --- | --- |
-| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.12.0/Meo-Desktop-Setup-0.12.0-x64.exe)** | Windows 10/11, x64 |
-| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.12.0/Meo-Desktop-0.12.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
-| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.12.0/Meo-Desktop-0.12.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
+| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.13.0/Meo-Desktop-Setup-0.13.0-x64.exe)** | Windows 10/11, x64 |
+| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.13.0/Meo-Desktop-0.13.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
+| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.13.0/Meo-Desktop-0.13.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
 
-[Xem Release 0.12.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.12.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+[Xem Release 0.13.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.13.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 1. Chọn đúng bộ cài trong bảng. Trên Mac, xem loại chip tại menu Apple → **About This Mac** nếu chưa biết chọn bản nào.
 2. **Windows:** mở `.exe` và làm theo trình cài đặt. **Mac:** mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app từ đó.
@@ -63,6 +63,7 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 - **Mèo trên desktop:** đi dạo theo mép, rình/vồ con trỏ, phản ứng khi vuốt ve; giữ và kéo để đặt ở vị trí bạn muốn.
 - **Nghe nhạc cùng bạn:** nhấp mèo để mở/đóng card nhạc, phát/dừng/chuyển bài, tua khi được hỗ trợ và mở trình phát.
 - **Điều khiển âm lượng:** cuộn trên mèo để tăng/giảm âm lượng hệ thống, bấm nút loa để bật/tắt tiếng.
+- **Dùng công cụ chụp của hệ thống:** bật Cài đặt → Tiện ích → Nhận ảnh chụp từ công cụ hệ thống. Windows dùng `Win + Shift + S`; Mac dùng `Control + Shift + ⌘ + 4` để chụp vào clipboard. Khi bật, mèo cũng nhận ảnh mới copy từ app khác; không đọc chữ, không nhận lại ảnh cũ khi bật.
 - **Giữ tối đa 3 ảnh:** chụp vùng màn hình, để mèo cầm xấp ảnh rồi đưa cả bộ vào bản nháp bằng một nút.
 - **Túi đồ:** giữ tối đa 20 file, thư mục, ảnh và đoạn chữ; kéo tên / ảnh ra app khác, sao chép chữ, mở file hoặc tìm vị trí. Không di chuyển file gốc.
 - **Nhắc việc:** nhập thời gian bằng tiếng Việt, mèo cầm biển khi đến giờ; hoàn thành hoặc nhắc lại sau 10 phút. Lưu qua lần mở app.
@@ -72,7 +73,7 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 - **Mở cùng máy tính:** tùy chọn chạy nền khi đăng nhập, mặc định tắt.
 - **Cập nhật phiên bản:** kiểm tra bản mới trên GitHub Releases, hiển thị trạng thái trong Cài đặt → Cập nhật; Windows tải/cài khi bạn chọn, Mac tải đúng DMG theo chip.
 
-Thay đổi trong 0.12.0: đồng bộ Cài đặt, Túi đồ, Nhắc việc, Chế độ máy, chụp màn hình và nút nổi theo phong cách tối của card nhạc. Cài đặt có thanh điều hướng bên trái; bố cục thích ứng với cửa sổ nhỏ và hỗ trợ giảm chuyển động. Sửa lỗi mèo nhấp nháy do cửa sổ bị đưa lên trước liên tục. README có GIF mèo và ảnh giao diện mới.
+Thay đổi trong 0.13.0: Sửa mèo bị cắt ở mép/góc khi xoay và ở màn hình có tỷ lệ hiển thị khác nhau; thêm nhận ảnh clipboard từ công cụ chụp hệ thống (bật trong Tiện ích). Túi đồ mở tránh đầu mèo, có hiệu ứng phóng/thu; nút Chụp nằm trong túi và bỏ chữ Túi nổi. Bấm mèo đóng túi hoặc chuyển sang card nhạc khi có phiên nhạc. Giữ mèo phía trên cửa sổ làm việc mà không giành focus hoặc đẩy lên liên tục.
 
 ## Công nghệ sử dụng
 
@@ -192,7 +193,7 @@ Phần này dành cho **người phát triển**. Nếu chỉ muốn dùng app, 
    npm start -- --background
    ```
 
-Mã tương ứng với bộ cài 0.12.0 nằm ở [tag v0.12.0](https://github.com/duytienkaka/meo-desktop/tree/v0.12.0). Dùng `git switch --detach v0.12.0` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
+Mã tương ứng với bộ cài 0.13.0 nằm ở [tag v0.13.0](https://github.com/duytienkaka/meo-desktop/tree/v0.13.0). Dùng `git switch --detach v0.13.0` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
 
 ### Kiểm tra và đóng gói
 

@@ -40,11 +40,12 @@
     }
   }
   document.querySelectorAll('[data-utility-tab]').forEach(button=>button.onclick=()=>api.utilities(button.dataset.utilityTab).catch(showError));
+  document.querySelector('#utility-clipboard-photos').onchange=e=>request(()=>api.utilityConfigure({clipboardPhotos:e.target.checked}));
   document.querySelector('#utility-battery').onchange=e=>request(()=>api.utilityConfigure({battery:e.target.checked}));
   document.querySelector('#utility-downloads').onchange=e=>request(()=>api.utilityConfigure({downloads:e.target.checked}));
   document.querySelector('#utility-folder').onclick=()=>request(()=>api.utilityFolder());
   function render(value){
-    const utility=value.utilities;if(utility){document.querySelector('#utility-count').textContent=utility.count+'/20 món · Ctrl / ⌘ + Alt + B để mở túi';document.querySelector('#utility-battery').checked=utility.settings.battery;document.querySelector('#utility-downloads').checked=utility.settings.downloads;document.querySelector('#utility-battery-status').textContent=utility.batteryStatus;document.querySelector('#utility-download-path').textContent=utility.settings.downloadDirectory;document.querySelector('#utility-download-status').textContent=utility.downloadStatus;document.querySelector('#utility-profile').textContent='Đang chọn: '+({work:'Làm việc',relax:'Thư giãn'}[utility.activeProfile]||'Chưa chọn');}
+    const utility=value.utilities;if(utility){document.querySelector('#utility-clipboard-photos').checked=utility.settings.clipboardPhotos;document.querySelector('#utility-count').textContent=utility.count+'/20 món · Ctrl / ⌘ + Alt + B để mở túi';document.querySelector('#utility-battery').checked=utility.settings.battery;document.querySelector('#utility-downloads').checked=utility.settings.downloads;document.querySelector('#utility-battery-status').textContent=utility.batteryStatus;document.querySelector('#utility-download-path').textContent=utility.settings.downloadDirectory;document.querySelector('#utility-download-status').textContent=utility.downloadStatus;document.querySelector('#utility-profile').textContent='Đang chọn: '+({work:'Làm việc',relax:'Thư giãn'}[utility.activeProfile]||'Chưa chọn');}
 
     const updates=value.updates||{status:'unavailable',supported:false,message:'Cập nhật chưa sẵn sàng.'},busy=['checking','downloading','installing'].includes(updates.status);
     document.querySelector('#update-versions').textContent='Đang dùng '+(updates.current||value.version)+(updates.latest?' · Bản mới '+updates.latest:'');
