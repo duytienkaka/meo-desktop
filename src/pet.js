@@ -85,7 +85,10 @@
     frame=f;const activity=window.CAT_PROPS.update(f,photoState),p=window.CAT_PROPS.pose(pose(f),activity,f),source=atlas[p.sheet].frames[p.index];lastActivity=activity;if(activity.event!=='throw'&&!photoState.busy)flightPhotos=[];seen.add(p.sheet+':'+p.index);
     const unit=p.sheet==='actions'?displaySize/314:displaySize/292*(p.sheet==='moods'?.93:1),drawWidth=source.w*unit,drawHeight=source.h*unit;
     const angle=f.rotation+p.rotation,c=Math.cos(f.rotation),s=Math.sin(f.rotation);
-    const x=f.anchorX+s*p.altitude,y=f.anchorY-c*p.altitude;
+    let x=f.anchorX+s*p.altitude,y=f.anchorY-c*p.altitude;
+    const ca=Math.cos(angle),sa=Math.sin(angle),points=[-drawWidth/2,drawWidth/2].flatMap(px=>[-drawHeight,0].map(py=>({x:px*f.direction*p.sx*ca-py*p.sy*sa,y:px*f.direction*p.sx*sa+py*p.sy*ca})));
+    x=clamp(x,2-Math.min(...points.map(q=>q.x)),width-2-Math.max(...points.map(q=>q.x)));
+    y=clamp(y,2-Math.min(...points.map(q=>q.y)),height-2-Math.max(...points.map(q=>q.y)));
     transform={x,y,angle,sx:f.direction*p.sx,sy:p.sy,drawWidth,drawHeight,unit,source,sheet:p.sheet};
     ctx.clearRect(0,0,width,height);
     if(f.fileHover){ctx.save();ctx.translate(f.anchorX,f.anchorY);ctx.rotate(f.rotation);ctx.fillStyle='#b8dba02b';ctx.strokeStyle='#a2c18a';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.beginPath();ctx.roundRect(-displaySize*.65,-displaySize*1.1,displaySize*1.3,displaySize*1.2,18);ctx.fill();ctx.stroke();ctx.restore();}
