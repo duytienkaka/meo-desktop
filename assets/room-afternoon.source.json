@@ -1,0 +1,10 @@
+{
+  "generator": "Built-in image_gen",
+  "prompt": "A premium hand-painted 2D anime cozy desktop wallpaper, panoramic 16:9 landscape, beautifully composed quiet afternoon reading room for a tiny pet cat to inhabit. NO cat, NO people, NO text, NO interface. Rich soft illustrated detail, fine warm brown outlines, watercolor/gouache textures, subtle ambient occlusion and warm late afternoon sunlight, restrained sage green, honey oak, ivory, terracotta palette. Wide composition with quiet pale shaded wall and minimal visual clutter in LEFTMOST 18 percent for desktop icons. Big wooden arched window in central left at x25%-64%, overlooking layered lush green hills, blue sky and fluffy clouds. A broad EMPTY wooden windowsill top at y57%, safe empty landing space centered x45%. Translucent linen curtains gently draped at window sides. RIGHT side honey oak desk top at y74%, empty clear tabletop landing space centered x69%, with charming ceramic mushroom lamp at x83%, small leafy plant at x91%, books and steaming ivory tea mug. Bottom left-mid an oval sage fabric pet cushion centered x32%, top landing surface at y88%, on warm woven rug over detailed oak floor. Small tasteful wall shelf with books and framed botanical artwork upper right. Perspective believable, furniture beautifully designed, handmade cozy indie game environment, strong depth, soft atmospheric sunlight rays. Every item sits on a surface, no floating items. Compose as a sophisticated illustrated environment not geometric flat placeholder, clean enough for a wallpaper. Full bleed image, no frame. Entire scene visible.",
+  "asset": "room-afternoon.png",
+  "size": [
+    1672,
+    941
+  ],
+  "note": "Original image preserved. Motion effects are separate CSS/SVG layers."
+}

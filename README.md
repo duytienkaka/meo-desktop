@@ -40,15 +40,15 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 
 ## Tải xuống và cài ứng dụng
 
-**Bản hiện tại: 0.13.0 — Preview. Người dùng cài app không cần Node.js hay công cụ lập trình.**
+**Bản hiện tại: 0.14.0 — Preview. Người dùng cài app không cần Node.js hay công cụ lập trình.**
 
 | Máy của bạn | Bấm để tải | Yêu cầu |
 | --- | --- | --- |
-| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.13.0/Meo-Desktop-Setup-0.13.0-x64.exe)** | Windows 10/11, x64 |
-| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.13.0/Meo-Desktop-0.13.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
-| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.13.0/Meo-Desktop-0.13.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
+| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.14.0/Meo-Desktop-Setup-0.14.0-x64.exe)** | Windows 10/11, x64 |
+| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.14.0/Meo-Desktop-0.14.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
+| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v0.14.0/Meo-Desktop-0.14.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
 
-[Xem Release 0.13.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.13.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+[Xem Release 0.14.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v0.14.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 1. Chọn đúng bộ cài trong bảng. Trên Mac, xem loại chip tại menu Apple → **About This Mac** nếu chưa biết chọn bản nào.
 2. **Windows:** mở `.exe` và làm theo trình cài đặt. **Mac:** mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app từ đó.
@@ -59,6 +59,8 @@ Một người bạn mèo 2D nhỏ trên màn hình dành cho người dùng **W
 <a id="features"></a>
 
 ## Tính năng chính
+
+**Mới trong 0.14.0:** Cài đặt → Người bạn → Chọn người bạn để đổi giữa Bông, Mít, Mây và Mực. Mỗi mèo có hình riêng cho nghe nhạc, ngủ, cầm ảnh, giữ túi và nhắc việc; lựa chọn lưu trên máy. Chu trình đi có 8 tư thế và chuyển trạng thái mềm, tôn trọng thiết lập giảm chuyển động. Hình nền “Chiều bên cửa sổ” có ánh sáng, hơi trà và bướm chuyển động; bật/tắt trong Cài đặt → Người bạn. Hình nền hiện chỉ thử nghiệm trên Windows, trên màn hình chính; chưa hỗ trợ Mac. Bản này cũng sửa nhận ảnh chụp qua clipboard trên Electron 45.
 
 - **Mèo trên desktop:** đi dạo theo mép, rình/vồ con trỏ, phản ứng khi vuốt ve; giữ và kéo để đặt ở vị trí bạn muốn.
 - **Nghe nhạc cùng bạn:** nhấp mèo để mở/đóng card nhạc, phát/dừng/chuyển bài, tua khi được hỗ trợ và mở trình phát.
