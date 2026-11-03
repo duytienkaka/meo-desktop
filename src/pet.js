@@ -1,7 +1,8 @@
 (() => {
   'use strict';
   const canvas=document.querySelector('#pet'),ctx=canvas.getContext('2d');
-  const images={},pixels={},atlas=window.CAT_SPRITES;
+  const images={},pixels={},atlas=window.CAT_SPRITES,characters=window.CAT_CHARACTERS,transition=window.CAT_ANIMATION.createTransition(),reducedMotion=matchMedia('(prefers-reduced-motion:reduce)');
+  let incoming=null,receivedAt=0,raf=0,renderedPose=null,renderCount=0;
   let width=320,height=320,dpr=1,frame=null,previousTime=null,displaySize=112,previousMode=null,lastPounce=false,held=null,hit=false,transform=null;
   const particles=[],seen=new Set();let fileHover=false,fileHoverTimer;
   const pocket=document.querySelector('#photo-pocket'),sendPhotos=document.querySelector('#send-photos');let photoState={photos:[]},carried=[],flightPhotos=[],lastActivity=null,pocketKey='';
@@ -51,7 +52,7 @@
     }
     return {sheet,index,altitude,rotation,sx,sy};
   }
-  function emit(x,y,kind,count=5){for(let i=0;i<count;i++)particles.push({x,y,age:0,life:.7+Math.random()*.5,vx:(Math.random()-.5)*28,vy:-20-Math.random()*30,kind,size:2+Math.random()*3});}
+  function emit(x,y,kind,count=5){if(reducedMotion.matches||frame?.paused)return;for(let i=0;i<count;i++)particles.push({x,y,age:0,life:.7+Math.random()*.5,vx:(Math.random()-.5)*28,vy:-20-Math.random()*30,kind,size:2+Math.random()*3});}
   function drawParticles(dt){
     for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.age+=dt;if(p.age>p.life){particles.splice(i,1);continue;}p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.save();ctx.translate(p.x,p.y);ctx.globalAlpha=Math.sin(p.age/p.life*Math.PI)*.9;
       if(p.kind==='heart'){ctx.scale(p.size/6,p.size/6);ctx.fillStyle='#d18e87';ctx.beginPath();ctx.moveTo(0,3);ctx.bezierCurveTo(-12,-4,-5,-11,0,-5);ctx.bezierCurveTo(5,-11,12,-4,0,3);ctx.fill();}
@@ -82,8 +83,10 @@
   function render(f){
     const dt=previousTime===null?0:clamp(f.time-previousTime,0,.12);previousTime=f.time;
     displaySize+= (f.size-displaySize)*(1-Math.exp(-Math.max(dt,.016)*6));
-    frame=f;const activity=window.CAT_PROPS.update(f,photoState),p=window.CAT_PROPS.pose(pose(f),activity,f),source=atlas[p.sheet].frames[p.index];lastActivity=activity;if(activity.event!=='throw'&&!photoState.busy)flightPhotos=[];seen.add(p.sheet+':'+p.index);
-    const unit=p.sheet==='actions'?displaySize/314:displaySize/292*(p.sheet==='moods'?.93:1),drawWidth=source.w*unit,drawHeight=source.h*unit;
+    frame=f;const activity=window.CAT_PROPS.update(f,photoState),visualFrame=reducedMotion.matches?{...f,time:0,actionElapsed:0,musicReactionElapsed:null,jumpPhase:null,pet:false}:f,target=characters.resolve(window.CAT_PROPS.pose(pose(visualFrame),activity,visualFrame),f.character,visualFrame);
+    const group=[f.character,f.mode,f.action,!!f.pet,f.jumpPhase!==null,target.logicalSheet,target.logicalSheet==='actions'?target.logicalIndex:''].join(':');
+    const p=transition.sample(target,group,performance.now(),f.paused||f.dragging||reducedMotion.matches),source=atlas[p.sheet].frames[p.index];renderedPose=p;renderCount++;lastActivity=activity;if(activity.event!=='throw'&&!photoState.busy)flightPhotos=[];seen.add(p.sheet+':'+p.index);
+    const unit=characters.unit(p.sheet,displaySize),drawWidth=source.w*unit,drawHeight=source.h*unit;
     const angle=f.rotation+p.rotation,c=Math.cos(f.rotation),s=Math.sin(f.rotation);
     let x=f.anchorX+s*p.altitude,y=f.anchorY-c*p.altitude;
     const ca=Math.cos(angle),sa=Math.sin(angle),points=[-drawWidth/2,drawWidth/2].flatMap(px=>[-drawHeight,0].map(py=>({x:px*f.direction*p.sx*ca-py*p.sy*sa,y:px*f.direction*p.sx*sa+py*p.sy*ca})));
@@ -93,8 +96,8 @@
     ctx.clearRect(0,0,width,height);
     if(f.fileHover){ctx.save();ctx.translate(f.anchorX,f.anchorY);ctx.rotate(f.rotation);ctx.fillStyle='#b8dba02b';ctx.strokeStyle='#a2c18a';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.beginPath();ctx.roundRect(-displaySize*.65,-displaySize*1.1,displaySize*1.3,displaySize*1.2,18);ctx.fill();ctx.stroke();ctx.restore();}
     ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(transform.sx,transform.sy);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-    ctx.drawImage(images[p.sheet],source.x,source.y,source.w,source.h,-drawWidth/2,-drawHeight,drawWidth,drawHeight);
-    window.CAT_PROPS.drawDetails(ctx,p,source,unit,drawWidth,drawHeight,activity,activity.event==='throw'&&flightPhotos.length?flightPhotos:carried);ctx.restore();
+    ctx.globalAlpha=p.opacity;ctx.drawImage(images[p.sheet],source.x,source.y,source.w,source.h,-drawWidth/2,-drawHeight,drawWidth,drawHeight);
+    const photoImages=activity.event==='throw'&&flightPhotos.length?flightPhotos:carried;if(!characters.details(ctx,p,source,unit,drawWidth,drawHeight,activity,photoImages))window.CAT_PROPS.drawDetails(ctx,p,source,unit,drawWidth,drawHeight,activity,photoImages);ctx.restore();
     pocket.hidden=!photoState.photos.length||f.fileHover||f.audioFeedback||audioHover;const px=f.anchorX+Math.cos(f.rotation)*displaySize*.54,py=f.anchorY+Math.sin(f.rotation)*displaySize*.54-displaySize*.40;pocket.style.left=clamp(px+88>width?f.anchorX-displaySize*.54-88:px,5,width-93)+'px';pocket.style.top=clamp(py,5,height-30)+'px';
     if(f.pet&&!window.__wasPet)emit(clamp(x,25,width-25),clamp(y-displaySize*.8,25,height-25),'heart');window.__wasPet=f.pet;
     if(previousMode!==null&&previousMode!==f.mode)emit(clamp(x,25,width-25),clamp(y-displaySize*.6,25,height-25),'spark',4);previousMode=f.mode;
@@ -102,7 +105,7 @@
     if(reaction&&(!window.__wasMusicReaction||f.musicReactionElapsed<window.__lastMusicReaction))emit(clamp(x+displaySize*.25,25,width-25),clamp(y-displaySize*.85,25,height-25),'note',3);
     window.__wasMusicReaction=reaction;window.__lastMusicReaction=f.musicReactionElapsed;
     if(lastPounce&&f.jumpPhase===null)emit(clamp(x,25,width-25),clamp(y-5,25,height-25),'spark',3);lastPounce=f.jumpPhase!==null;
-    drawParticles(dt);
+    if(reducedMotion.matches||f.paused)particles.length=0;drawParticles(dt);
     renderAudio(f);
     if(f.fileHover)textBubble('Thả file ở đây');else if(f.toast&&!f.audioFeedback&&!photoState.photos.length)textBubble(f.toast);
     hit=(sampleHit(f.cursor)||onAudioHud(f.cursor)||onPocket(f.cursor));canvas.style.cursor=f.dragging?'grabbing':hit?'grab':'default';window.meo.hit(hit||!!held||fileHover);
@@ -128,12 +131,22 @@
   function release(){if(!held)return;window.meo.action(held.drag?'drag-end':'pet');held=null;}
   canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',()=>{if(held){window.meo.action('drag-end');held=null;}});
   canvas.addEventListener('lostpointercapture',()=>{if(held){window.meo.action('drag-end');held=null;}});
+  function animate(now){
+    raf=0;if(!incoming||document.hidden)return;
+    const age=now-receivedAt;
+    if(age>150)return; // No renderer loop while the native pet is hidden/suspended.
+    const extra=incoming.paused||reducedMotion.matches?0:Math.min(age,34)/1000;
+    render({...incoming,time:incoming.time+extra,actionElapsed:incoming.actionElapsed+extra});
+    if(!incoming.paused&&!reducedMotion.matches)raf=requestAnimationFrame(animate);
+  }
+  function receiveFrame(value){incoming=value;receivedAt=performance.now();if(value.paused||reducedMotion.matches){cancelAnimationFrame(raf);raf=0;render(value);}else if(!raf)raf=requestAnimationFrame(animate);}
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(raf);raf=0;}});
   addEventListener('resize',resize);resize();
-  window.meoPet={snapshot:()=>({frame,activity:lastActivity,pose:frame?pose(frame):null,displaySize,hit,seen:[...seen],width,height}),hitAt:point=>sampleHit(point)};
-  Promise.all(['core','moods','actions'].map(name=>new Promise((resolve,reject)=>{
+  window.meoPet={snapshot:()=>({renderedPose,renderCount,transitioning:transition.active,frame,activity:lastActivity,pose:frame?pose(frame):null,displaySize,hit,seen:[...seen],width,height}),hitAt:point=>sampleHit(point)};
+  Promise.all(['core','moods','actions','walk','mit','may','muc','mit-walk','may-walk','muc-walk'].map(name=>new Promise((resolve,reject)=>{
     const img=new Image();img.onload=()=>{
       images[name]=img;const buffer=document.createElement('canvas');buffer.width=img.naturalWidth;buffer.height=img.naturalHeight;
       const context=buffer.getContext('2d',{willReadFrequently:true});context.drawImage(img,0,0);pixels[name]=context.getImageData(0,0,buffer.width,buffer.height);resolve();
     };img.onerror=reject;img.src=`../assets/${name}.png`;
-  }))).then(()=>{window.meo.onFrame(render);window.meo.ready();}).catch(()=>window.meo.action('error'));
+  }))).then(()=>{window.meo.onFrame(receiveFrame);window.meo.ready();}).catch(()=>window.meo.action('error'));
 })();

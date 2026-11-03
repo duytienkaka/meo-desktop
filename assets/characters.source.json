@@ -1,0 +1,39 @@
+{
+  "generator": "Built-in image_gen (transparent_background: true)",
+  "date": "2026-11-03",
+  "characters": {
+    "mit": {
+      "name": "Mít",
+      "design": "ginger tabby, cream muzzle, green eyes"
+    },
+    "may": {
+      "name": "Mây",
+      "design": "silver gray, white muzzle, blue eyes"
+    },
+    "muc": {
+      "name": "Mực",
+      "design": "black and white tuxedo, gold eyes"
+    }
+  },
+  "prompt": "Production sprite atlas on TRUE TRANSPARENT alpha background. Flat vector-like soft 2D cartoon, solid pastel fills, clean dark outlines, no texture or lighting or shadow. 4 columns by 6 rows, 24 equal cells, generous 15% padding within every cell. Same {CAT} kitten, round body big head short legs. EXACTLY FOUR LEGS. When holding something BOTH front paws lift off ground to hold it, ONLY TWO hind paws remain on ground, never extra paws. No human hands. All poses entire body, aligned bottom center. Row1 sit open eyes, sit half blink, sit eyes shut, sit head tilt. Row2 four DISTINCT walking right leg phases (leftfore forward, passing, rightfore forward, oppositepassing), anatomically four legs. Row3 crouch, leap, land, wave with one foreleg raised and otherthree down. Row4 headphones nod left, headphones nod right, curled sleeping eyesclosed, sleeping yawn. Row5 hold photo between both raised forepaws TWO hind paws on ground, release photo one front paw extended other front paw down TWO hind paws, seated wearing side satchel, leaning head down toward satchel. Row6 hold blank wood reminder board between BOTH raised forepaws TWO hind paws onground, hug yellow battery BOTH forepaws TWO hind paws, lick one raised forepaw with otherthree down, seated yawn. No text, no border, no duplicate limbs, no colored backgrounds, no gradients. Clean alpha zero in ALL gaps between sprites. Character identity across all24poses. Aspect ratio 2:3.",
+  "walkPrompt": "Additional eight-frame walk cycle of each reference kitten. Four columns, two rows: contact, down, passing, up on each side. Exactly four legs, stable body scale and baseline, transparent alpha background.",
+  "assets": [
+    "mit.png",
+    "may.png",
+    "muc.png",
+    "walk.png",
+    "mit-walk.png",
+    "may-walk.png",
+    "muc-walk.png"
+  ],
+  "layout": {
+    "characters": "4 columns x 6 rows; 24 full-body poses",
+    "walk": "4 columns x 2 rows; 8 full-body poses"
+  },
+  "notes": [
+    "Original generated PNG alpha is preserved; no post-generation image editing.",
+    "Coordinates in src/character-sprites.js use alpha-connected component bounds to exclude neighboring poses.",
+    "Two forepaws plus two hind paws; carrying poses lift both forepaws.",
+    "classic character retains existing core, moods and actions assets; walk uses a reference-matched new sheet."
+  ]
+}

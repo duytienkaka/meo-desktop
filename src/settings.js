@@ -1,7 +1,14 @@
 (() => {
   'use strict';
   const api=window.settings,labels={play:'Tinh nghịch',music:'Nghe nhạc',focus:'Tập trung',sleep:'Buồn ngủ'};
-  let snapshot=null,queue=Promise.resolve(),displayKey='',pinsKey='';
+  let snapshot=null,queue=Promise.resolve(),displayKey='',pinsKey='',characterKey='';
+  const characters=window.CAT_CHARACTERS;
+  for(const character of characters.list){
+    const button=document.createElement('button');button.type='button';button.dataset.character=character.id;button.setAttribute('aria-pressed','false');
+    const picture=document.createElement('canvas');picture.width=160;picture.height=140;picture.setAttribute('aria-hidden','true');
+    const name=document.createElement('strong');name.textContent=character.name;const description=document.createElement('small');description.textContent=character.description;
+    button.append(picture,name,description);button.addEventListener('click',()=>update({character:character.id}));document.querySelector('#character-grid').append(button);
+  }
   const error=document.querySelector('#error'),saved=document.querySelector('#saved');
   function showError(e){error.textContent=e?.message?.replace(/^Error invoking remote method '[^']+': Error: /,'')||'Chưa áp dụng được thay đổi. Hãy thử lại.';error.hidden=false;saved.textContent='Chưa lưu';if(snapshot)render(snapshot);}
   function request(work){saved.textContent='Đang lưu…';error.hidden=true;queue=queue.then(async()=>{const value=await work();render(value);saved.textContent='✓ Đã lưu';}).catch(showError);return queue;}
@@ -44,7 +51,10 @@
   document.querySelector('#utility-battery').onchange=e=>request(()=>api.utilityConfigure({battery:e.target.checked}));
   document.querySelector('#utility-downloads').onchange=e=>request(()=>api.utilityConfigure({downloads:e.target.checked}));
   document.querySelector('#utility-folder').onclick=()=>request(()=>api.utilityFolder());
+  document.querySelector('#wallpaper').onchange=e=>update({wallpaper:e.target.checked});
+  document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>update({roomSpot:b.dataset.room}));
   function render(value){
+    document.querySelector('#wallpaper').checked=!!value.wallpaper;document.querySelectorAll('[data-room]').forEach(b=>b.disabled=!value.wallpaper);
     const utility=value.utilities;if(utility){document.querySelector('#utility-clipboard-photos').checked=utility.settings.clipboardPhotos;document.querySelector('#utility-count').textContent=utility.count+'/20 món · Ctrl / ⌘ + Alt + B để mở túi';document.querySelector('#utility-battery').checked=utility.settings.battery;document.querySelector('#utility-downloads').checked=utility.settings.downloads;document.querySelector('#utility-battery-status').textContent=utility.batteryStatus;document.querySelector('#utility-download-path').textContent=utility.settings.downloadDirectory;document.querySelector('#utility-download-status').textContent=utility.downloadStatus;document.querySelector('#utility-profile').textContent='Đang chọn: '+({work:'Làm việc',relax:'Thư giãn'}[utility.activeProfile]||'Chưa chọn');}
 
     const updates=value.updates||{status:'unavailable',supported:false,message:'Cập nhật chưa sẵn sàng.'},busy=['checking','downloading','installing'].includes(updates.status);
@@ -64,13 +74,19 @@
     document.querySelector('#startAtLogin').disabled=!startup.supported;
     document.querySelector('#startup-status').textContent=startup.message;
     const mac=value.platform==='darwin';
+    document.querySelector('#wallpaper').disabled=mac;
+    document.querySelector('.room-hint').textContent=mac?'Hình nền tương tác đang thử nghiệm trên Windows; chưa hỗ trợ macOS.':'Tự nghỉ khi bạn chuyển sang ứng dụng khác · Hoàn toàn im lặng';
     document.querySelector('kbd').textContent=value.shortcut||'Ctrl + Alt + M';
     document.querySelector('#platform-note').textContent=mac?'macOS: nhạc hỗ trợ Apple Music và Spotify. Cho phép Automation khi được hỏi; nhạc trong trình duyệt chưa hỗ trợ.':'Nhận diện nhạc tự động hiện hỗ trợ Windows và macOS.';
     document.querySelector('#platform-note').hidden=!mac&&value.autoSupported;
     document.querySelector('.pinned-section>.hint').textContent='Thả file, ảnh hoặc đoạn chữ vào mèo để giữ trong túi. Ghim ứng dụng bằng nút + Ghim ứng dụng phía trên.';
     const pk=JSON.stringify(value.pinnedApps||[]);if(pk!==pinsKey){pinsKey=pk;renderPins(value.pinnedApps||[]);}
     document.querySelector('#pin-count').textContent=(value.pinnedApps||[]).length;document.querySelector('#add-pin').disabled=!value.pinSupported||(value.pinnedApps||[]).length>=20;
-    snapshot=value;document.querySelector('#version').textContent='Mèo Desktop · '+value.version;document.querySelector('#current-mood').textContent=labels[value.mode]||'Mèo đang ở đây';
+    snapshot=value;
+    document.querySelectorAll('[data-character]').forEach(button=>{const active=button.dataset.character===(value.character||'classic');button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
+    const character=characters.list.find(c=>c.id===value.character)||characters.list[0];document.querySelector('.companion-caption h2').textContent=character.name+' ở bên bạn';
+    if(ready&&characterKey!==value.character){characterKey=value.character;drawMoodCards();}
+    document.querySelector('#version').textContent='Mèo Desktop · '+value.version;document.querySelector('#current-mood').textContent=labels[value.mode]||'Mèo đang ở đây';
     document.querySelector('#preview-note').textContent=!value.visible?'Mèo đang ẩn. Bật hiển thị để gặp lại nhé.':value.paused?'Đang đứng yên một lát, vẫn ở bên bạn.':({play:'Một chút tinh nghịch, một chút đáng yêu.',music:'Giai điệu của bạn, niềm vui của mèo.',focus:'Bạn cứ tập trung, mèo ngồi ngoan đây.',sleep:'Cuộn tròn và mơ một giấc mơ nhỏ.'}[value.mode]);
     for(const key of ['visible','paused','roam','follow','autoMedia'])document.querySelector('#'+key).checked=value[key];
     for(const key of ['autoMedia'])document.querySelector('#'+key).disabled=!value.autoSupported;
@@ -98,12 +114,13 @@
   canvas.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();petPreview();}});
   function preview(timestamp){
     raf=0;if(document.hidden)return;
-    if(timestamp-last<1000/30){raf=requestAnimationFrame(preview);return;}const dt=last?Math.min(.06,(timestamp-last)/1000):0;last=timestamp;if(!snapshot?.paused&&!reducedMotion.matches)time+=dt;
+    const dt=last?Math.min(.06,(timestamp-last)/1000):0;last=timestamp;if(!snapshot?.paused&&!reducedMotion.matches)time+=dt;
     previewSize+=(Number(snapshot?.size||112)-previewSize)*(reducedMotion.matches?1:Math.min(1,dt*12));
     if(ready){
       const mode=snapshot?.mode||'play',p=time%4.8;let sheet='core',index=p>4.42&&p<4.56?2:0,rotation=0;
       if(mode==='music'){sheet='moods';index=Math.floor(time*3.3)%4;rotation=Math.sin(time*5.2)*.035;}else if(mode==='sleep'){sheet='moods';index=time%12>10.6?10:9;}
-      const source=window.CAT_SPRITES[sheet].frames[index],scale=220/292*(sheet==='moods'?.93:1)*(previewSize/148),w=source.w*scale,h=source.h*scale;
+      const mapped=characters.resolve({sheet,index},snapshot?.character);sheet=mapped.sheet;index=mapped.index;
+      const source=window.CAT_SPRITES[sheet].frames[index],scale=characters.unit(sheet,220)*(previewSize/148),w=source.w*scale,h=source.h*scale;
       const affection=(timestamp-petAt)/1300,petting=affection>=0&&affection<1;
       canvas.dataset.petting=String(petting);canvas.dataset.previewSize=String(Math.round(previewSize));
       ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(180,319);ctx.rotate(rotation);ctx.scale(1,1+Math.sin(time*1.9)*.007);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(images[sheet],source.x,source.y,source.w,source.h,-w/2,-h,w,h);ctx.restore();
@@ -115,11 +132,12 @@
   function drawMoodCards(){
     document.querySelectorAll('[data-mood]').forEach(button=>{
       const mode=button.dataset.mood,c=button.querySelector('canvas'),context=c.getContext('2d');
-      const sheet=['music','sleep'].includes(mode)?'moods':'core',index={play:8,music:0,focus:0,sleep:9}[mode];
+      const mapped=characters.resolve({sheet:['music','sleep'].includes(mode)?'moods':'core',index:{play:8,music:0,focus:0,sleep:9}[mode]},snapshot?.character),{sheet,index}=mapped;
       const frame=window.CAT_SPRITES[sheet].frames[index],scale=Math.min(135/frame.w,120/frame.h),w=frame.w*scale,h=frame.h*scale;
       context.clearRect(0,0,c.width,c.height);context.imageSmoothingQuality='high';context.drawImage(images[sheet],frame.x,frame.y,frame.w,frame.h,(c.width-w)/2,140-h,w,h);
     });
   }
-  Promise.all(['core','moods'].map(name=>new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>{images[name]=image;resolve();};image.onerror=reject;image.src='../assets/'+name+'.png';}))).then(()=>{ready=true;drawMoodCards();if(!document.hidden&&!raf)raf=requestAnimationFrame(preview);}).catch(()=>{});
+  function drawCharacterCards(){document.querySelectorAll('[data-character]').forEach(button=>{const c=button.querySelector('canvas'),context=c.getContext('2d'),p=characters.resolve({sheet:'core',index:0},button.dataset.character),f=window.CAT_SPRITES[p.sheet].frames[p.index],scale=Math.min(128/f.w,122/f.h);context.clearRect(0,0,c.width,c.height);context.imageSmoothingQuality='high';context.drawImage(images[p.sheet],f.x,f.y,f.w,f.h,(c.width-f.w*scale)/2,c.height-8-f.h*scale,f.w*scale,f.h*scale);});}
+  Promise.all(['core','moods','mit','may','muc'].map(name=>new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>{images[name]=image;resolve();};image.onerror=reject;image.src='../assets/'+name+'.png';}))).then(()=>{ready=true;drawCharacterCards();drawMoodCards();if(!document.hidden&&!raf)raf=requestAnimationFrame(preview);}).catch(()=>{});
   document.addEventListener('visibilitychange',()=>{cancelAnimationFrame(raf);raf=0;last=0;if(!document.hidden)raf=requestAnimationFrame(preview);});
 })();
