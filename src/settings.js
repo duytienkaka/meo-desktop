@@ -52,6 +52,7 @@
   document.querySelector('#utility-downloads').onchange=e=>request(()=>api.utilityConfigure({downloads:e.target.checked}));
   document.querySelector('#utility-folder').onclick=()=>request(()=>api.utilityFolder());
   document.querySelector('#room-lighting').onchange=e=>update({roomLighting:e.target.value});
+  document.querySelector('#room-enter').onclick=()=>update({roomPinned:!snapshot?.roomPinned});
   document.querySelector('#wallpaper').onchange=e=>update({wallpaper:e.target.checked});
   document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>update({roomSpot:b.dataset.room}));
   function render(value){
@@ -87,6 +88,10 @@
     const pk=JSON.stringify(value.pinnedApps||[]);if(pk!==pinsKey){pinsKey=pk;renderPins(value.pinnedApps||[]);}
     document.querySelector('#pin-count').textContent=(value.pinnedApps||[]).length;document.querySelector('#add-pin').disabled=!value.pinSupported||(value.pinnedApps||[]).length>=20;
     snapshot=value;
+    const roomEnter=document.querySelector('#room-enter');
+    roomEnter.disabled=value.platform!=='win32';
+    roomEnter.textContent=value.roomPinned?'Trở lại tự động':'Vào phòng ngay';
+    roomEnter.setAttribute('aria-pressed',String(!!value.roomPinned));
     document.querySelectorAll('[data-character]').forEach(button=>{const active=button.dataset.character===(value.character||'classic');button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
     const character=characters.list.find(c=>c.id===value.character)||characters.list[0];document.querySelector('.companion-caption h2').textContent=character.name+' ở bên bạn';
     if(ready&&characterKey!==value.character){characterKey=value.character;drawMoodCards();}

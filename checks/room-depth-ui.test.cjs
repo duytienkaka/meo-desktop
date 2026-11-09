@@ -22,6 +22,12 @@ const root=path.resolve(__dirname,'..'),env={...process.env};delete env.ELECTRON
  await room.waitForFunction(()=>window.meoRoom.snapshot().reactionState.curtain>.1,{},{timeout:45000});
  await room.screenshot({path:path.join(root,'.cache/room-depth-curtain.png')});
  await app.evaluate(()=>{Object.defineProperty(global.__meo.wallpaper,'desktop',{get:()=>false});});
+ await room.waitForFunction(()=>!window.meoRoom.snapshot().state.showPet);
+ await settings.locator('#room-enter').click();
+ await room.waitForFunction(()=>window.meoRoom.snapshot().state.showPet&&!window.meoRoom.snapshot().state.paused);
+ assert.equal(await app.evaluate(()=>global.__meo.window().isVisible()),false);
+ assert.equal(await settings.locator('#room-enter').textContent(),'Trở lại tự động');
+ await settings.locator('#room-enter').click();
  await room.waitForFunction(()=>!window.meoRoom.snapshot().state.showPet);assert.equal(await app.evaluate(()=>global.__meo.window().isVisible()),true,'floating cat restored above apps');
  await settings.evaluate(()=>window.settings.update({roomLighting:'night'}));await room.waitForFunction(()=>window.meoRoom.snapshot().state.lighting.phase==='night');await room.waitForTimeout(3200);await room.screenshot({path:path.join(root,'.cache/room-night.png')});
  await settings.evaluate(()=>window.settings.update({roomLighting:'morning'}));await room.waitForFunction(()=>window.meoRoom.snapshot().state.lighting.phase==='morning');

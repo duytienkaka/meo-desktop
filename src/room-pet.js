@@ -1,6 +1,6 @@
 (function(root){
  'use strict';
- const spots={bed:{x:.315,y:.855,depth:.93,surface:'bed'},desk:{x:.71,y:.643,depth:.82,surface:'desk'},sill:{x:.56,y:.585,depth:.76,surface:'sill'}},chair={x:.73,y:.865,depth:.94,surface:'chair'},floor=x=>({x,y:.95,depth:1,surface:'floor'});
+ const spots={bed:{x:.315,y:.855,depth:.93,surface:'bed'},desk:{x:.71,y:.658,depth:.82,surface:'desk'},sill:{x:.555,y:.522,depth:.76,surface:'sill'}},chair={x:.73,y:.851,depth:.94,surface:'chair'},floor=x=>({x,y:.95,depth:1,surface:'floor'});
  const mix=(a,b,t)=>a+(b-a)*t;
  function create(){let position={...floor(.49)},target='',queue=[],age=0,elapsed=0,phase='idle',surface='floor',facing=1;
   function travel(key){const to=spots[key]||spots.bed;queue=[];age=0;
@@ -9,7 +9,7 @@
    // Elevated routes always return through known support points, never through furniture.
    if(surface==='desk'){add('walk',.9,{...spots.desk,x:.73});jump(chair);jump(floor(.82));}
    else if(surface==='chair')jump(floor(.82));
-   else if(surface==='sill'){add('walk',.7,{...spots.sill,x:.51});jump({...chair,x:.60,y:.86});jump(floor(.50));}
+   else if(surface==='sill'){add('walk',.7,{...spots.sill,x:.51});jump({...spots.desk,x:.65});jump(chair);jump(floor(.82));}
    else if(surface==='bed')jump(floor(.315));
    else if(position.y<.91)jump(floor(position.x));
    const from=()=>queue.at(-1)?.to||position;
@@ -18,7 +18,7 @@
     walk(floor(.47));walk(floor(.315));jump(to);
    }else{ // The open aisle in front of the chair avoids its feet and backrest.
     walk(floor(.50));walk({...floor(.82),y:.965});jump(chair);
-    if(key==='desk'){jump({...to,x:.77});walk(to);}else{jump({...spots.desk,x:.59});jump({...to,x:.51});walk(to);}
+    if(key==='desk'){jump({...to,x:.73});walk(to);}else{jump({...spots.desk,x:.65});jump({...to,x:.51});walk(to);}
    }
    add('settle',1.1,to);if(key==='desk'){walk({...to,x:.865});add('touch',1.8,{...to,x:.865});walk(to);}else if(key==='sill')add('touch',1.8,to);add('rest',3,to);
    for(let i=0;i<queue.length;i++)queue[i].from=i?queue[i-1].to:{...position};target=key;
