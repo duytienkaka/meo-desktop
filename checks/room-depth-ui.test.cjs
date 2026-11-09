@@ -1,0 +1,31 @@
+const {_electron}=require('playwright'),path=require('node:path'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'..'),env={...process.env};delete env.ELECTRON_RUN_AS_NODE;let app;
+(async()=>{
+ app=await _electron.launch({executablePath:path.join(root,'.cache/electron-dist-45.0.0-win32-x64/electron.exe'),args:[root,'--meo-test'],env});
+ const pet=await app.firstWindow();await pet.waitForFunction(()=>window.meoPet?.snapshot().frame);
+ await app.evaluate(()=>{global.__meo.setMode('play');global.__meo.setPaused(false);global.__meo.setVisible(true);global.__meo.screenshots.clear();global.__meo.utilities.badge=()=>({count:0,due:0});Object.defineProperty(global.__meo.wallpaper,'desktop',{get:()=>true});});
+ const opened=app.waitForEvent('window');await app.evaluate(()=>global.__meo.openSettings());const settings=await opened;await settings.waitForSelector('#wallpaper');
+ await settings.evaluate(()=>window.settings.update({roomLighting:'afternoon'}));await settings.evaluate(()=>window.settings.update({roomSpot:'bed'}));await settings.evaluate(()=>window.settings.update({wallpaper:true}));
+ const room=app.windows().find(w=>w.url().endsWith('/room.html')),errors=[];room.on('pageerror',e=>errors.push(e.message));
+ await room.waitForFunction(()=>window.meoRoom?.snapshot().ready&&window.meoRoom.snapshot().state.showPet);
+ assert.equal(await app.evaluate(()=>global.__meo.window().isVisible()),false,'floating cat hidden while scene owns cat');
+ await room.waitForFunction(()=>window.meoRoom.snapshot().pose?.phase==='sleep',{},{timeout:20000});
+ await room.screenshot({path:path.join(root,'.cache/room-depth-bed.png')});
+ const input=app.windows().find(w=>w.url().endsWith('/room-input.html'));assert.ok(input);const target=await room.evaluate(()=>window.meoRoom.snapshot().hitTargets[0]);
+ await app.evaluate((_,point)=>{global.__meo.cursor=point;},{x:target.x+target.width/2,y:target.y+target.height/2});await room.waitForTimeout(150);await input.mouse.click(target.x+target.width/2,target.y+target.height/2);await room.waitForFunction(()=>window.meoRoom.snapshot().lifeState.affection>0);
+ await input.evaluate(()=>window.roomInput.action('bed'));await room.waitForFunction(()=>window.meoRoom.snapshot().lifeState.destination==='bed');
+
+ await settings.evaluate(()=>window.settings.update({roomSpot:'desk'}));
+ await room.waitForFunction(()=>window.meoRoom.snapshot().reactionState.plant>.1,{},{timeout:45000});
+ await room.screenshot({path:path.join(root,'.cache/room-depth-plant.png')});
+ await settings.evaluate(()=>window.settings.update({roomSpot:'sill'}));
+ await room.waitForFunction(()=>window.meoRoom.snapshot().reactionState.curtain>.1,{},{timeout:45000});
+ await room.screenshot({path:path.join(root,'.cache/room-depth-curtain.png')});
+ await app.evaluate(()=>{Object.defineProperty(global.__meo.wallpaper,'desktop',{get:()=>false});});
+ await room.waitForFunction(()=>!window.meoRoom.snapshot().state.showPet);assert.equal(await app.evaluate(()=>global.__meo.window().isVisible()),true,'floating cat restored above apps');
+ await settings.evaluate(()=>window.settings.update({roomLighting:'night'}));await room.waitForFunction(()=>window.meoRoom.snapshot().state.lighting.phase==='night');await room.waitForTimeout(3200);await room.screenshot({path:path.join(root,'.cache/room-night.png')});
+ await settings.evaluate(()=>window.settings.update({roomLighting:'morning'}));await room.waitForFunction(()=>window.meoRoom.snapshot().state.lighting.phase==='morning');
+ await settings.evaluate(()=>window.settings.update({roomLighting:'auto'}));
+ await settings.evaluate(()=>window.settings.update({wallpaper:false}));assert.equal(await app.evaluate(()=>global.__meo.wallpaper.active),false);
+ assert.deepEqual(errors,[]);console.log('PASS: scene renderer ready, bed sequence, native overlay handoff, paused scene and wallpaper shutdown.');
+})().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{await app?.close();});

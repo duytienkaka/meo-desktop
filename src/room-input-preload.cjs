@@ -1,0 +1,1 @@
+const {contextBridge,ipcRenderer}=require('electron');contextBridge.exposeInMainWorld('roomInput',{onTargets:callback=>ipcRenderer.on('room:targets',(_,t)=>callback(t)),action:kind=>ipcRenderer.send('room:input',kind)});
