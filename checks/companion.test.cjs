@@ -42,3 +42,7 @@ test('interrupted copies are cleaned safely on restart and total storage limit i
  const directory=fixture(t),orphan=path.join(directory,'shelf-files','12345678-1234-1234-1234-123456789abc');fs.mkdirSync(orphan,{recursive:true});fs.writeFileSync(path.join(orphan,'partial'),'partial');
  const source=path.join(directory,'source');fs.writeFileSync(source,'aa');const store=createCompanionStore({directory,downloads:directory,fileLimits:{maxTotalBytes:3}});await store.addFiles([source]);assert.equal(fs.existsSync(orphan),false);const second=path.join(directory,'second');fs.writeFileSync(second,'bb');await assert.rejects(store.addFiles([second]),/Kho túi/);assert.equal(store.snapshot().items.length,1);assert.equal(fs.readFileSync(store.snapshot().items[0].location,'utf8'),'aa');
 });
+
+test('storage aliases cannot bypass the check against copying a parent into its own bag',async t=>{
+ const directory=fixture(t),real=path.join(directory,'real'),alias=path.join(directory,'alias');fs.mkdirSync(real);fs.symlinkSync(real,alias,process.platform==='win32'?'junction':'dir');const store=createCompanionStore({directory:alias,downloads:directory});await assert.rejects(store.addFiles([real]),/kho túi/);assert.equal(store.snapshot().items.length,0);
+});

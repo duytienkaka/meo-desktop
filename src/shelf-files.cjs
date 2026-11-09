@@ -7,7 +7,8 @@ function createShelfFiles(directory,{maxItemBytes=250*1024*1024,maxTotalBytes=10
  async function remove(item){const dir=folder(item);if(!dir)return;await fs.promises.rm(dir,{recursive:true,force:true});}
  async function copy(location,id,used=0){
   const source=await fs.promises.realpath(location),name=path.basename(source),dir=path.resolve(root,id);
-  if(!name||!inside(root,dir)||path.dirname(dir)!==root||source===root||inside(source,root))throw new Error('Không thể cất thư mục chứa kho túi của mèo.');
+  await fs.promises.mkdir(root,{recursive:true});const canonicalRoot=await fs.promises.realpath(root);
+  if(!name||!inside(root,dir)||path.dirname(dir)!==root||source===canonicalRoot||inside(source,canonicalRoot))throw new Error('Không thể cất thư mục chứa kho túi của mèo.');
   const original=await fs.promises.lstat(location);if(original.isSymbolicLink())throw new Error('Hãy thả file thật thay vì liên kết tượng trưng.');
   const destination=path.join(dir,name);let bytes=0,entries=0;
   try{
