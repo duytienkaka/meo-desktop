@@ -29,6 +29,10 @@ Mèo nằm trong ổ, có bóng và bị thành ổ che theo chiều sâu. Khôn
 
 Ảnh chụp từ giao diện Windows; tên bài, ảnh bìa và trình phát trong hình là dữ liệu demo.
 
+<img src="docs/images/music-lyrics.png" width="480" alt="Tab lời bài hát trượt ngang và tô đậm dòng đang phát">
+
+Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu kiểm thử.
+
 </details>
 
 <details>
@@ -44,15 +48,15 @@ Mèo nằm trong ổ, có bóng và bị thành ổ che theo chiều sâu. Khôn
 
 ## Tải xuống và cài ứng dụng
 
-**Bản hiện tại: 1.0.0. Người dùng cài app không cần Node.js hay công cụ lập trình.**
+**Bản hiện tại: 1.0.1. Người dùng cài app không cần Node.js hay công cụ lập trình.**
 
 | Máy của bạn | Bấm để tải | Yêu cầu |
 | --- | --- | --- |
-| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.0/Meo-Desktop-Setup-1.0.0-x64.exe)** | Windows 10/11, x64 |
-| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.0/Meo-Desktop-1.0.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
-| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.0/Meo-Desktop-1.0.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
+| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.1/Meo-Desktop-Setup-1.0.1-x64.exe)** | Windows 10/11, x64 |
+| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.1/Meo-Desktop-1.0.1-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
+| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.1/Meo-Desktop-1.0.1-mac-x64.dmg)** | macOS 13 Ventura trở lên |
 
-[Xem Release 1.0.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.0.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+[Xem Release 1.0.1 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.0.1) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 1. Chọn đúng bộ cài trong bảng. Trên Mac, xem loại chip tại menu Apple → **About This Mac** nếu chưa biết chọn bản nào.
 2. **Windows:** mở `.exe` và làm theo trình cài đặt. **Mac:** mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app từ đó.
@@ -63,6 +67,8 @@ Mèo nằm trong ổ, có bóng và bị thành ổ che theo chiều sâu. Khôn
 <a id="features"></a>
 
 ## Tính năng chính
+
+**Bản vá 1.0.1:** sửa tư thế nghe nhạc bị túi đồ che; thêm tab Lời bài hát có hiệu ứng trượt trong card nhạc. Lời từ [LRCLIB](https://lrclib.net), chỉ tra cứu khi mở tab (gửi tên bài, nghệ sĩ và thời lượng), lưu đệm tạm trong RAM. Có đồng bộ theo thời gian nếu nguồn có LRC; không phải bài nào cũng có lời. Sửa cập nhật Windows trong app qua GitHub Assets API, cho tải lại khi lỗi mạng và khởi động lại để cài.
 
 **Mới trong 1.0.0 — Không gian sống cho mèo:** Trên Windows, mèo được vẽ trong cảnh 2.5D, có bóng và bị mép ổ/ghế che theo chiều sâu. Mèo đi trên sàn, dùng ghế để lên bàn, chuẩn bị trước khi nhảy xuống. Đệm lún, rèm và lá cây phản ứng khi mèo chạm. Bấm/vuốt ve mèo, bấm phần trống của ổ để gọi về ngủ; có thói quen vươn vai, liếm chân, ngắm cửa sổ và đuổi bướm với khoảng nghỉ. Ánh sáng thay đổi theo giờ máy, tối đèn ấm hơn; chọn xem thử sáng/chiều/tối trong Cài đặt. Đi dạo tự động ưu tiên cửa sổ buổi sáng và ổ ngủ ban đêm. Khi chuyển ứng dụng, mèo trở lại dạng nổi. Không gian hiện hỗ trợ Windows trên màn hình chính; macOS vẫn hỗ trợ mèo nổi và các tiện ích, chưa có không gian tương tác. Bật lại hình nền sau khi mở app.
 

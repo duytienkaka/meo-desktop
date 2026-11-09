@@ -18,6 +18,8 @@ const {createWallpaper}=require('./wallpaper.cjs');
 const roomLayout=require('./room-layout.js');
 const roomClock=require('./room-clock.js');
 const wallpaper=createWallpaper();
+const {createLyrics}=require('./lyrics.cjs');
+const lyrics=createLyrics({version:app.getVersion()});
 const {createClipboardPhotos}=require('./clipboard-photos.cjs');
 const {configureOverlay,createOverlayGuard}=require('./overlay.cjs');
 const {createMacMonitor,createMacAudio,createMacTransport}=require('./macos.cjs');
@@ -147,6 +149,7 @@ else {
   }
   function requirePlayer(event){if(!playerWindow||playerWindow.isDestroyed()||!playerVisible()||event.sender.id!==playerWindow.webContents.id)throw new Error('Cửa sổ điều khiển không hợp lệ.');}
   ipcMain.handle('meo:player:get',event=>{if(!playerWindow||event.sender.id!==playerWindow.webContents.id)throw new Error('Cửa sổ không hợp lệ.');return playerSnapshot();});
+  ipcMain.handle('meo:player:lyrics',async(event,key)=>{requirePlayer(event);const track=playerSnapshot();if(key!==JSON.stringify([track.sourceAppId,track.title,track.artist]))throw new Error('Bài hát đã đổi.');return lyrics.get(track);});
   ipcMain.handle('meo:player:close',event=>{if(!playerWindow||event.sender.id!==playerWindow.webContents.id)throw new Error('Cửa sổ không hợp lệ.');if(playerOpen)hidePlayer();});
   ipcMain.on('meo:player:scrubbing',(event,active)=>{if(playerWindow&&!playerWindow.isDestroyed()&&event.sender.id===playerWindow.webContents.id){playerScrubbing=active===true&&playerOpen;updatePlayerMouse();}});
   ipcMain.handle('meo:player:command',async(event,value)=>{
@@ -419,7 +422,7 @@ else {
     powerMonitor.on('suspend',sleep);powerMonitor.on('resume',wake);
     powerMonitor.on('lock-screen',sleep);powerMonitor.on('unlock-screen',wake);
     if(testMode)global.__meo={cursor:null,window:()=>win,setMode,setSize,setVisible,setPaused,setAutoMedia,receiveMedia,mediaPid:()=>mediaMonitor.pid(),route:()=>route,state:()=>({...state,ready,display:{id:display.id,workArea:display.workArea},bounds:win.getBounds(),visible:win.isVisible(),alwaysOnTop:win.isAlwaysOnTop(),focusable:win.isFocusable()}),move:s=>{state.freePosition=null;state.distance=wrap(s,route.total);state.target=null;state.jump=null;state.action='idle';tickFrame();},menu:()=>buildMenu().items.map(i=>i.label),drag:value=>{state.dragging=value;state.dragAt=Date.now();},shutdown:()=>{quitting=true;app.quit();}};
-    if(testMode)Object.assign(global.__meo,{wallpaper,clipboardPhotos,overlayGuard,utilities,updates,screenshots,audioControl,receiveAudio,desktopActions,acceptDroppedFiles,fileMenuTemplate,pinnedMenu,refreshPinIcons,openSettings,settingsSnapshot,settingsWindow:()=>settingsWindow});
+    if(testMode)Object.assign(global.__meo,{lyrics,wallpaper,clipboardPhotos,overlayGuard,utilities,updates,screenshots,audioControl,receiveAudio,desktopActions,acceptDroppedFiles,fileMenuTemplate,pinnedMenu,refreshPinIcons,openSettings,settingsSnapshot,settingsWindow:()=>settingsWindow});
     if(testMode)Object.assign(global.__meo,{advancePlay:seconds=>{for(let t=0;t<seconds;t+=.05)advance(.05,{x:-10000,y:-10000});tickFrame();}});
     if(testMode)Object.assign(global.__meo,{placeFree:point=>{state.freePosition={...constrainPosition(display.workArea,point,state.size),displayId:display.id};state.target=null;state.jump=null;tickFrame();},openPlayer,togglePlayer,playerWindow:()=>playerWindow,playerState:()=>({open:playerOpen,loaded:playerLoaded}),playerSnapshot,mediaTransport});
     startMedia();if(!testMode)audioControl.start();
