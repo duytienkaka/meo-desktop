@@ -1,7 +1,7 @@
 {
   "name": "meo-desktop",
   "productName": "Meo Desktop",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "A quiet, mischievous cat along the edges of your desktop.",
   "main": "src/main.cjs",

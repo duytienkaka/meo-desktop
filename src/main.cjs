@@ -81,6 +81,8 @@ else {
   if(![80,112,148].includes(preferences.size))preferences.size=112;
   preferences.roam=preferences.roam!==false;preferences.follow=preferences.follow!==false;
   const state={...preferences,baseMode:preferences.mode,autoMedia:desktopSupported&&(mac?preferences.autoMedia===true:preferences.autoMedia!==false),mediaStatus:'connecting',mediaPlaying:false,visible:preferences.visible!==false,paused:preferences.paused===true,time:0,distance:0,target:null,direction:1,action:'idle',actionStart:0,jump:null,petUntil:0,nextWander:3,nextPounce:2,interactive:false,dragging:false,dragAt:0,toast:'Chuột phải lên mèo để mở menu',toastUntil:5,closeEnough:false};
+  // Listening is transient while automatic detection is enabled, including legacy preferences.
+  if(state.autoMedia&&state.baseMode==='music')state.mode=state.baseMode='play';
   const log=message=>{try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.appendFileSync(path.join(app.getPath('userData'),'app.log'),new Date().toISOString()+' '+message+'\n');}catch{}};
   const overlayGuard=createOverlayGuard({getWindow:()=>win,canRaise:()=>ready&&state.visible&&!suspended&&!quitting&&!screenshots?.isCapturing(),onRaise:()=>{for(const panel of [playerWindow,utilities?.window()])if(panel&&!panel.isDestroyed()&&panel.isVisible())panel.moveTop();},onError:log});
   const appLabels={};
@@ -173,6 +175,7 @@ else {
   function startMedia(){if((!state.autoMedia&&!playerWindow?.isVisible())||suspended)return;if(state.autoMedia&&!mediaMonitor.isRunning())state.mediaStatus='connecting';if(!testMode||process.argv.includes('--meo-live-media-test'))mediaMonitor.start();}
   function setAutoMedia(enabled){
     state.autoMedia=!!enabled&&desktopSupported;mediaDecision.reset();state.mediaPlaying=false;
+    if(state.autoMedia&&state.baseMode==='music')state.baseMode='play';
     mediaMonitor.stop();state.mediaStatus=state.autoMedia?'connecting':'off';
     applyAutomaticMode();startMedia();persist();refreshMenu();
   }

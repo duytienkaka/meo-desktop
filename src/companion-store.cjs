@@ -1,5 +1,6 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const {createShelfFiles}=require('./shelf-files.cjs');
 const PROFILE_IDS=['work','relax'];
 function parseReminder(input,now=Date.now()){
  if(typeof input!=='string'||input.length>500)throw new Error('Nhập lời nhắc dưới 500 ký tự.');
@@ -9,19 +10,31 @@ function parseReminder(input,now=Date.now()){
  const clock=/^\s*([01]?\d|2[0-3]):([0-5]\d)\s+/.exec(normalized);if(clock){const date=new Date(now);date.setHours(Number(clock[1]),Number(clock[2]),0,0);if(date.getTime()<=now)date.setDate(date.getDate()+1);const text=input.slice(clock[0].length).trim();if(text)return {text,dueAt:date.getTime()};}
  throw new Error('Ví dụ: “15 phút nữa kiểm tra đồ ăn” hoặc “18:30 tưới cây”.');
 }
-function createCompanionStore({directory,downloads,now=()=>Date.now(),onChange=()=>{}}){
- const file=path.join(directory,'companion.json'),uid=()=>crypto.randomUUID();
+function createCompanionStore({directory,downloads,now=()=>Date.now(),onChange=()=>{},fileLimits}){
+ const file=path.join(directory,'companion.json'),uid=()=>crypto.randomUUID(),files=createShelfFiles(directory,fileLimits);
+ let imports=Promise.resolve();const queue=work=>{const task=imports.then(work);imports=task.catch(()=>{});return task;};
+ const same=(a,b)=>typeof a==='string'&&typeof b==='string'&&(process.platform==='win32'?a.toLowerCase()===b.toLowerCase():a===b);
+ const used=()=>data.items.filter(i=>files.owns(i)).reduce((sum,i)=>sum+(Number.isFinite(i.bytes)?Math.max(0,i.bytes):0),0);
  const defaults={items:[],reminders:[],activeProfile:null,settings:{battery:true,downloads:true,clipboardPhotos:false,downloadDirectory:downloads},profiles:PROFILE_IDS.map((id,i)=>({id,name:['Làm việc','Thư giãn'][i],volume:null,appIds:[],mode:['focus','music'][i],size:112,visible:true,roam:false,follow:false}))};
  let data=structuredClone(defaults);
  try{const saved=JSON.parse(fs.readFileSync(file,'utf8'));if(saved&&typeof saved==='object'){data.items=(Array.isArray(saved.items)?saved.items:[]).filter(i=>i&&typeof i.id==='string'&&((i.kind==='text'&&typeof i.text==='string'&&i.text.length<=16000)||(i.kind==='file'&&typeof i.location==='string'&&path.isAbsolute(i.location)))).slice(0,20);data.reminders=(Array.isArray(saved.reminders)?saved.reminders:[]).filter(r=>r&&typeof r.id==='string'&&typeof r.text==='string'&&r.text.length<=500&&Number.isFinite(r.dueAt)).slice(0,30);for(const p of saved.profiles||[])if(PROFILE_IDS.includes(p.id))data.profiles[PROFILE_IDS.indexOf(p.id)]={...data.profiles[PROFILE_IDS.indexOf(p.id)],...validateProfile(p)};data.activeProfile=PROFILE_IDS.includes(saved.activeProfile)?saved.activeProfile:null;data.settings.clipboardPhotos=saved.settings?.clipboardPhotos===true;data.settings.battery=saved.settings?.battery!==false;data.settings.downloads=saved.settings?.downloads!==false;if(typeof saved.settings?.downloadDirectory==='string'&&path.isAbsolute(saved.settings.downloadDirectory))data.settings.downloadDirectory=saved.settings.downloadDirectory;}}catch{}
- function commit(next){fs.mkdirSync(directory,{recursive:true});fs.writeFileSync(file+'.tmp',JSON.stringify(next,null,2),'utf8');fs.renameSync(file+'.tmp',file);data=next;onChange();}
+ imports=files.cleanup(data.items).catch(()=>{});
+ function commit(next){fs.mkdirSync(directory,{recursive:true});fs.writeFileSync(file+'.tmp',JSON.stringify(next,null,2),'utf8');fs.renameSync(file+'.tmp',file);data=next;try{onChange();}catch{}}
  const mutate=fn=>{const next=structuredClone(data),result=fn(next);commit(next);return result;};
  function validateProfile(p){if(!p||!PROFILE_IDS.includes(p.id)||!['focus','music','play','sleep'].includes(p.mode)||![80,112,148].includes(p.size)||!['visible','roam','follow'].every(k=>typeof p[k]==='boolean')||!(p.volume===null||Number.isInteger(p.volume)&&p.volume>=0&&p.volume<=100)||!Array.isArray(p.appIds)||p.appIds.length>20||p.appIds.some(id=>typeof id!=='string'||id.length>100))throw new Error('Chế độ máy không hợp lệ.');return {id:p.id,mode:p.mode,size:p.size,visible:p.visible,roam:p.roam,follow:p.follow,volume:p.volume,appIds:[...new Set(p.appIds)]};}
- function addFiles(values,source='drop'){
+ function addFiles(values,source='drop'){return queue(async()=>{
   if(!Array.isArray(values)||!values.length||values.length>20)throw new Error('Thả tối đa 20 file một lần.');
-  const files=[...new Set(values)].map(location=>{if(typeof location!=='string'||!path.isAbsolute(location)||/[\x00-\x1f]/.test(location))throw new Error('Đường dẫn không hợp lệ.');const stat=fs.statSync(location);if(!stat.isFile()&&!stat.isDirectory())throw new Error('Không thể giữ file này.');return path.normalize(location);});
-  return mutate(next=>{let count=0;for(const location of files){if(next.items.some(i=>i.kind==='file'&&(process.platform==='win32'?i.location.toLowerCase()===location.toLowerCase():i.location===location)))continue;if(next.items.length>=20)throw new Error('Túi đầy 20 món. Bỏ bớt món trước khi thêm.');next.items.unshift({id:uid(),kind:'file',location,name:path.basename(location),source,createdAt:now()});count++;}return count;});
- }
+  const locations=[...new Set(values)].map(location=>{if(typeof location!=='string'||!path.isAbsolute(location)||/[\x00-\x1f]/.test(location))throw new Error('Đường dẫn không hợp lệ.');return path.normalize(location);}).filter(location=>!data.items.some(i=>i.kind==='file'&&(same(i.location,location)||same(i.originalLocation,location))));
+  if(data.items.length+locations.length>20)throw new Error('Túi đầy 20 món. Bỏ bớt món trước khi thêm.');
+  const added=[];let total=used();
+  try{for(const location of locations){const id=uid(),value=await files.copy(location,id,total);total+=value.bytes;added.push({id,kind:'file',...value,source,createdAt:now()});}
+   mutate(next=>{if(next.items.length+added.length>20)throw new Error('Túi đầy 20 món.');next.items.unshift(...added.reverse());});return added.length;
+  }catch(error){for(const item of added)await files.remove(item);throw error;}
+ });}
+ function keepFile(id){return queue(async()=>{const old=item(id);if(old.kind!=='file'||files.owns(old))return;const newId=uid(),value=await files.copy(old.location,newId,used()),saved={...old,...value,id:newId};
+  try{mutate(next=>{const index=next.items.findIndex(i=>i.id===id);if(index<0)throw new Error('Món đồ đã được bỏ khỏi túi.');next.items[index]=saved;});}catch(error){await files.remove(saved);throw error;}
+ });}
+ async function remove(id){const old=data.items.find(i=>i.id===id);mutate(next=>{next.items=next.items.filter(i=>i.id!==id);});if(old)await files.remove(old);}
  function addText(text){if(typeof text!=='string'||!text.trim()||text.length>16000)throw new Error('Đoạn chữ cần từ 1 đến 16.000 ký tự.');return mutate(next=>{if(next.items.length>=20)throw new Error('Túi đầy 20 món.');next.items.unshift({id:uid(),kind:'text',text,name:text.trim().slice(0,80),createdAt:now(),source:'drop'});});}
  function item(id){const result=data.items.find(i=>i.id===id);if(!result)throw new Error('Món đồ không còn trong túi.');if(result.kind==='file'&&!fs.existsSync(result.location))throw new Error('File đã di chuyển hoặc không còn truy cập được.');return structuredClone(result);}
  function addReminder(input){const reminder={...parseReminder(input,now()),id:uid(),fired:false};return mutate(next=>{if(next.reminders.length>=30)throw new Error('Đã có 30 lời nhắc. Hoàn thành bớt trước khi thêm.');next.reminders.push(reminder);return reminder.id;});}
@@ -29,6 +42,6 @@ function createCompanionStore({directory,downloads,now=()=>Date.now(),onChange=(
  function reminder(action,id){return mutate(next=>{const r=next.reminders.find(r=>r.id===id);if(!r)throw new Error('Lời nhắc không còn tồn tại.');if(action==='done')next.reminders=next.reminders.filter(r=>r.id!==id);else if(action==='snooze'){r.dueAt=now()+10*60000;r.fired=false;}else throw new Error('Thao tác không hợp lệ.');});}
  function configure(patch){if(!patch||typeof patch!=='object'||Object.keys(patch).some(k=>!['battery','downloads','clipboardPhotos','downloadDirectory'].includes(k)))throw new Error('Thiết lập không hợp lệ.');if(['battery','downloads','clipboardPhotos'].some(k=>k in patch&&typeof patch[k]!=='boolean'))throw new Error('Thiết lập không hợp lệ.');if('downloadDirectory'in patch&&(!path.isAbsolute(patch.downloadDirectory)||!fs.statSync(patch.downloadDirectory).isDirectory()))throw new Error('Hãy chọn một thư mục.');mutate(next=>Object.assign(next.settings,patch));}
  function overview(){const due=data.reminders.filter(r=>r.dueAt<=now());return {count:data.items.length,due:due.length,text:due[0]?.text||'',settings:{...data.settings},activeProfile:data.activeProfile,reminderCount:data.reminders.length};}
- return {snapshot:()=>structuredClone(data),overview,item,addFiles,addText,addReminder,tick,reminder,configure,remove:id=>mutate(next=>{next.items=next.items.filter(i=>i.id!==id);}),saveProfile:profile=>{const value=validateProfile(profile);mutate(next=>Object.assign(next.profiles.find(p=>p.id===value.id),value));},activate:id=>{if(!PROFILE_IDS.includes(id))throw new Error('Chế độ không hợp lệ.');mutate(next=>{next.activeProfile=id;});}};
+ return {snapshot:()=>structuredClone(data),overview,item,addFiles,addText,addReminder,tick,reminder,configure,remove,keepFile,saveProfile:profile=>{const value=validateProfile(profile);mutate(next=>Object.assign(next.profiles.find(p=>p.id===value.id),value));},activate:id=>{if(!PROFILE_IDS.includes(id))throw new Error('Chế độ không hợp lệ.');mutate(next=>{next.activeProfile=id;});}};
 }
 module.exports={createCompanionStore,parseReminder,PROFILE_IDS};

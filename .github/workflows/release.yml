@@ -62,6 +62,7 @@ jobs:
           MEO_EXECUTABLE="$PWD/$bundle/Contents/MacOS/Meo" node checks/updates-ui.test.cjs
           MEO_EXECUTABLE="$PWD/$bundle/Contents/MacOS/Meo" node checks/companion-ui.test.cjs
           MEO_EXECUTABLE="$PWD/$bundle/Contents/MacOS/Meo" node checks/lyrics-ui.test.cjs
+          MEO_EXECUTABLE="$PWD/$bundle/Contents/MacOS/Meo" node checks/media-mood-ui.test.cjs
       - uses: actions/upload-artifact@v6
         if: matrix.platform == 'windows'
         with:

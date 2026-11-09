@@ -48,15 +48,15 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 
 ## Tải xuống và cài ứng dụng
 
-**Bản hiện tại: 1.0.1. Người dùng cài app không cần Node.js hay công cụ lập trình.**
+**Bản hiện tại: 1.0.2. Người dùng cài app không cần Node.js hay công cụ lập trình.**
 
 | Máy của bạn | Bấm để tải | Yêu cầu |
 | --- | --- | --- |
-| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.1/Meo-Desktop-Setup-1.0.1-x64.exe)** | Windows 10/11, x64 |
-| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.1/Meo-Desktop-1.0.1-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
-| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.1/Meo-Desktop-1.0.1-mac-x64.dmg)** | macOS 13 Ventura trở lên |
+| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.2/Meo-Desktop-Setup-1.0.2-x64.exe)** | Windows 10/11, x64 |
+| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.2/Meo-Desktop-1.0.2-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
+| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.2/Meo-Desktop-1.0.2-mac-x64.dmg)** | macOS 13 Ventura trở lên |
 
-[Xem Release 1.0.1 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.0.1) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+[Xem Release 1.0.2 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.0.2) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 1. Chọn đúng bộ cài trong bảng. Trên Mac, xem loại chip tại menu Apple → **About This Mac** nếu chưa biết chọn bản nào.
 2. **Windows:** mở `.exe` và làm theo trình cài đặt. **Mac:** mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app từ đó.
@@ -68,6 +68,8 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 
 ## Tính năng chính
 
+**Bản vá 1.0.2:** sửa mèo giữ trạng thái nghe nhạc sau khi dừng/đóng trình phát. Túi giữ bản sao độc lập của file/thư mục, có nút Sao chép file để dán vào app hỗ trợ. Liên kết cũ có nút Giữ bản sao; bỏ khỏi túi chỉ xóa bản sao. Tối đa 20 món, 250 MB/món, 1 GB/túi.
+
 **Bản vá 1.0.1:** sửa tư thế nghe nhạc bị túi đồ che; thêm tab Lời bài hát có hiệu ứng trượt trong card nhạc. Lời từ [LRCLIB](https://lrclib.net), chỉ tra cứu khi mở tab (gửi tên bài, nghệ sĩ và thời lượng), lưu đệm tạm trong RAM. Có đồng bộ theo thời gian nếu nguồn có LRC; không phải bài nào cũng có lời. Sửa cập nhật Windows trong app qua GitHub Assets API, cho tải lại khi lỗi mạng và khởi động lại để cài.
 
 **Mới trong 1.0.0 — Không gian sống cho mèo:** Trên Windows, mèo được vẽ trong cảnh 2.5D, có bóng và bị mép ổ/ghế che theo chiều sâu. Mèo đi trên sàn, dùng ghế để lên bàn, chuẩn bị trước khi nhảy xuống. Đệm lún, rèm và lá cây phản ứng khi mèo chạm. Bấm/vuốt ve mèo, bấm phần trống của ổ để gọi về ngủ; có thói quen vươn vai, liếm chân, ngắm cửa sổ và đuổi bướm với khoảng nghỉ. Ánh sáng thay đổi theo giờ máy, tối đèn ấm hơn; chọn xem thử sáng/chiều/tối trong Cài đặt. Đi dạo tự động ưu tiên cửa sổ buổi sáng và ổ ngủ ban đêm. Khi chuyển ứng dụng, mèo trở lại dạng nổi. Không gian hiện hỗ trợ Windows trên màn hình chính; macOS vẫn hỗ trợ mèo nổi và các tiện ích, chưa có không gian tương tác. Bật lại hình nền sau khi mở app.
@@ -77,7 +79,7 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 - **Điều khiển âm lượng:** cuộn trên mèo để tăng/giảm âm lượng hệ thống, bấm nút loa để bật/tắt tiếng.
 - **Dùng công cụ chụp của hệ thống:** bật Cài đặt → Tiện ích → Nhận ảnh chụp từ công cụ hệ thống. Windows dùng `Win + Shift + S`; Mac dùng `Control + Shift + ⌘ + 4` để chụp vào clipboard. Khi bật, mèo cũng nhận ảnh mới copy từ app khác; không đọc chữ, không nhận lại ảnh cũ khi bật.
 - **Giữ tối đa 3 ảnh:** chụp vùng màn hình, để mèo cầm xấp ảnh rồi đưa cả bộ vào bản nháp bằng một nút.
-- **Túi đồ:** giữ tối đa 20 file, thư mục, ảnh và đoạn chữ; kéo tên / ảnh ra app khác, sao chép chữ, mở file hoặc tìm vị trí. Không di chuyển file gốc.
+- **Túi đồ:** giữ tối đa 20 file, thư mục, ảnh và đoạn chữ; kéo tên / ảnh ra app khác, sao chép chữ, mở file hoặc tìm vị trí. Túi giữ bản sao độc lập, không di chuyển file gốc. Mỗi món tối đa 250 MB, cả túi 1 GB.
 - **Nhắc việc:** nhập thời gian bằng tiếng Việt, mèo cầm biển khi đến giờ; hoàn thành hoặc nhắc lại sau 10 phút. Lưu qua lần mở app.
 - **Pin và file mới:** mèo ôm pin khi còn 20% hoặc thấp hơn, phản ứng khi cắm sạc; nhận file mới ổn định trong Downloads vào túi. Có thể tắt hoặc chọn thư mục khác.
 - **Chế độ máy:** Làm việc và Thư giãn; mỗi chế độ nhớ âm lượng, app cần mở và cách mèo xuất hiện.
@@ -120,7 +122,7 @@ Thay đổi trong 0.13.0: Sửa mèo bị cắt ở mép/góc khi xoay và ở m
 ### Túi & việc — mới từ 0.10.0
 
 - Bấm nút **Túi** nhỏ bên mèo hoặc vào **Cài đặt → Tiện ích**. Bảng chỉ mở khi bạn yêu cầu; đến giờ nhắc, mèo chỉ cầm biển, không mở cửa sổ hay phát âm thanh.
-- Thả file / ảnh / chữ vào mèo hoặc bảng túi. Kéo tên file hoặc ảnh thu nhỏ sang app nhận file; kéo dòng chữ vào ô nhập. Có nút sao chép để dùng với app không nhận kéo thả. File bị di chuyển sẽ được đánh dấu, không tự tìm hay xóa file gốc.
+- Thả file / ảnh / chữ vào mèo hoặc bảng túi. Kéo tên file hoặc ảnh thu nhỏ sang app nhận file; kéo dòng chữ vào ô nhập. Có nút sao chép để dùng với app không nhận kéo thả. File mới được chép vào kho riêng nên vẫn dùng được khi file gốc bị đổi tên, di chuyển hoặc xóa. Bỏ khỏi túi chỉ xóa bản sao. Các liên kết từ bản cũ có nút **Giữ bản sao** để chuyển đổi.
 - Ảnh chụp tối đa 3 ảnh vẫn có nút đưa nhanh; có thể chọn **Giữ vào túi** để giữ lâu hơn và kéo ảnh ra. Ảnh từ trình duyệt được nhận khi nguồn cho kéo dữ liệu ảnh PNG/JPEG/WebP (tối đa 8 MB); các nguồn khác có thể chỉ đưa vào đường link / chữ.
 - Nhắc việc: **15 phút nữa kiểm tra đồ ăn**, **2 giờ nữa uống nước**, **18:30 tưới cây**. Giờ đã qua tính vào ngày mai; hỗ trợ tối đa 30 lời nhắc. App tắt hoặc máy ngủ thì hiển thị lời nhắc khi chạy lại. Nếu mèo đang ẩn, biển nhắc hiện khi bạn bật lại mèo.
 - **Chế độ máy → Chỉnh:** chọn app đã ghim, âm lượng (mặc định giữ nguyên) và cách mèo xuất hiện. **Lấy thiết lập máy hiện tại** lưu âm lượng/dáng vẻ đang dùng. Bấm **Bật** để áp dụng; app chỉ mở ứng dụng được chọn, không đóng app khác. Chế độ được chọn thủ công, không tự thay đổi âm lượng khi khởi động app.
