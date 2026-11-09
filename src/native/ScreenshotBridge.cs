@@ -66,6 +66,7 @@ internal static class ScreenshotBridge {
  [STAThread] public static int Main(string[] args){Console.OutputEncoding=new UTF8Encoding(false);try{SetProcessDpiAwarenessContext(new IntPtr(-4));}catch{}
   try{
    if(args.Length==0)return 2;if(args[0]=="paste")return Paste(args);if(args[0]=="files")return Files(args);
+   if(args[0]=="copy-file"&&args.Length==2){string file=Path.GetFullPath(args[1]);if(!Path.IsPathRooted(args[1])||(!File.Exists(file)&&!Directory.Exists(file)))throw new ArgumentException("InvalidFile");var paths=new StringCollection();paths.Add(file);Clipboard.SetFileDropList(paths);Console.WriteLine(Json.Serialize(new {success=true}));return 0;}
    int parent;if(args.Length!=2||args[0]!="watch"||!int.TryParse(args[1],out parent))return 2;
    while(true){try{using(var process=Process.GetProcessById(parent)){if(process.HasExited)return 0;}}catch{return 0;}Console.WriteLine(Json.Serialize(Target(parent)));Console.Out.Flush();Thread.Sleep(450);}
   }catch(Exception error){Console.WriteLine(Json.Serialize(new {success=false,error=error.Message}));return 1;}

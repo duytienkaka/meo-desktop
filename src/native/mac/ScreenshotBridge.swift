@@ -23,6 +23,11 @@ if args.first == "watch", args.count == 2, let owner = Int32(args[1]) {
         }
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.45))
     }
+} else if args.first == "copy-file", args.count == 2 {
+    if args[1].hasPrefix("/") && FileManager.default.fileExists(atPath: args[1]) {
+        NSPasteboard.general.clearContents()
+        output(["success": NSPasteboard.general.writeObjects([NSURL(fileURLWithPath: args[1])])])
+    } else { output(["success": false, "error": "InvalidFile"]) }
 } else if args.first == "files", (2...4).contains(args.count) {
     let paths = Array(args.dropFirst())
     if paths.allSatisfy({ $0.hasPrefix("/") && $0.hasSuffix(".png") && FileManager.default.fileExists(atPath: $0) }) {
