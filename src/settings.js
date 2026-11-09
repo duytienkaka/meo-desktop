@@ -63,9 +63,11 @@
     document.querySelector('#update-versions').textContent='Đang dùng '+(updates.current||value.version)+(updates.latest?' · Bản mới '+updates.latest:'');
     document.querySelector('#update-status').textContent=updates.message;
     document.querySelector('#update-check').disabled=!updates.supported||busy||updates.status==='downloaded';
-    document.querySelector('#update-download').hidden=updates.status!=='available'||!updates.canDownload;
+    document.querySelector('#update-download').hidden=!['available','error'].includes(updates.status)||!updates.canDownload;
     document.querySelector('#update-install').hidden=updates.status!=='downloaded';
-    document.querySelector('#update-manual').hidden=!updates.latest||!['available','error'].includes(updates.status)||(updates.status==='available'&&updates.canDownload);
+    document.querySelector('#update-manual').hidden=value.platform==='win32'?updates.status!=='available'||updates.canDownload:!updates.latest||!['available','error'].includes(updates.status);
+    document.querySelector('#update-download').textContent=updates.status==='error'?'Thử tải lại trong app':'Tải và cập nhật trong app';
+    document.querySelector('#update-check').textContent=updates.status==='error'?'Thử kiểm tra lại':'Kiểm tra cập nhật';
     document.querySelector('#update-manual').textContent=value.platform==='darwin'?'Tải bản Mac':'Tải bộ cài';
     document.querySelector('#update-progress').hidden=!['downloading','downloaded'].includes(updates.status);
     document.querySelector('#update-progress').value=updates.progress||0;

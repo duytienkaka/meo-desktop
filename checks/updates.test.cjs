@@ -30,6 +30,11 @@ test('unverified or mismatched manifests cannot be downloaded or installed',asyn
 test('failed download cannot transition to ready or invoke installer',async()=>{
  const f=fixture();f.engine.downloadUpdate=async()=>{throw new Error('Checksum mismatch');};await f.updater.action('check');assert.equal((await f.updater.action('download')).status,'error');await assert.rejects(f.updater.action('install'));assert.equal(f.installs.length,0);
 });
+test('Windows download failure can retry inside the app without opening a browser',async()=>{
+ const f=fixture();await f.updater.action('check');let attempt=0;f.engine.downloadUpdate=async()=>{if(++attempt===1)throw new Error('HTTP 504');return ['verified-update.exe'];};
+ assert.equal((await f.updater.action('download')).status,'error');assert.equal(f.updater.snapshot().canDownload,true);
+ assert.equal((await f.updater.action('download')).status,'downloaded');assert.deepEqual(f.opened,[]);assert.equal(f.installs.length,0);await f.updater.action('install');assert.deepEqual(f.installs,[[true,true]]);
+});
 test('checks serialize, notifications deduplicate and offline checks can be retried',async()=>{
  let unblock;const gate=new Promise(resolve=>{unblock=resolve;});let requests=0;const f=fixture({fetcher:async()=>{requests++;await gate;return {ok:true,text:async()=>JSON.stringify([release()])};}});const first=f.updater.action('check'),second=f.updater.action('check');unblock();await Promise.all([first,second]);assert.equal(requests,1);assert.equal(f.notifications.length,1);await f.updater.action('check');assert.equal(f.notifications.length,1);
  let fail=true;const offline=fixture({fetcher:()=>{if(fail)throw new Error('Offline');return Promise.resolve({ok:true,text:async()=>JSON.stringify([])});}});assert.equal((await offline.updater.action('check')).status,'error');fail=false;assert.equal((await offline.updater.action('check')).status,'up-to-date');

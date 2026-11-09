@@ -1,7 +1,7 @@
 'use strict';
 const {clamp}=require('./route.cjs');
 function playerLayout(area,head){
-  const width=Math.min(460,area.width-16),height=Math.min(204,area.height-16),gap=18;
+  const width=Math.min(460,area.width-16),height=Math.min(258,area.height-16),gap=18;
   const x=clamp(Math.round(head.x-width/2),area.x+8,area.x+area.width-width-8);
   const preferredY=head.y-area.y>=height+gap+8?head.y-height-gap:head.y+gap;
   const y=clamp(Math.round(preferredY),area.y+8,area.y+area.height-height-8);

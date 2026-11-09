@@ -1,5 +1,9 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
 function fixture(){const context={window:{},matchMedia:()=>({matches:false}),Math};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../src/pet-props.js'),'utf8'),context);return context.window.CAT_PROPS;}
+test('stored bag items do not hide listening pose, while new-item animation still runs',()=>{
+ const props=fixture(),base={sheet:'moods',index:0},f={mode:'music',action:'idle',jumpPhase:null,utilityBadge:{count:2}};
+ assert.equal(props.pose(base,{quiet:false,event:'',photos:0},f).sheet,'moods');assert.equal(props.pose(base,{quiet:false,event:'store',progress:.2,beat:.3,photos:0},f).sheet,'actions');
+});
 test('accessories react once to new items, repeated downloads, photos and reminder completion',()=>{
  const props=fixture(),f={time:1,mode:'play',utilityBadge:{count:1,due:0,pulseId:0}},photos={photos:[],busy:false};
  assert.equal(props.update(f,photos).event,'');f.time=2;f.utilityBadge.count=2;assert.equal(props.update(f,photos).event,'store');

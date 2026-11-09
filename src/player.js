@@ -16,6 +16,7 @@ function timeline(){
   $('#remaining').textContent=duration?'-'+format(duration-position):'--:--';
   $('#progress-fill').style.transform='scaleX('+percent+')';$('#progress').style.setProperty('--progress',percent*100+'%');
   seek.max=String(duration||1);if(!scrub)seek.value=String(position);
+  window.dispatchEvent(new CustomEvent('player-position',{detail:{position,playing:state.playing}}));
   seek.setAttribute('aria-valuetext',duration?format(position)+' / '+format(duration):'Trình phát chưa cung cấp thời lượng');
 }
 function scrollTitle(){
@@ -31,7 +32,7 @@ function render(value){
     if(scrub&&(scrub.track!==trackKey(value)||!value.canSeek||!value.duration))scrub=null;
     if(pendingSeek&&(pendingSeek.track!==trackKey(value)||Math.abs(value.position-pendingSeek.position)<2))pendingSeek=null;
   }
-  state=value;
+  state=value;window.dispatchEvent(new CustomEvent('player-track',{detail:value}));
   document.body.classList.toggle('playing',value.playing);
   $('#status').textContent=value.playing?'ĐANG PHÁT':value.hasSession?'TẠM DỪNG':'NHẠC CÙNG MÈO';
   const label=value.hasSession?(value.title||'Bản nhạc đang mở'):value.available?'Chọn một giai điệu cho hôm nay.':'Đang kết nối với trình phát…';

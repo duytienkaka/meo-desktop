@@ -11,22 +11,36 @@ function selectRelease(releases,current,platform,arch){
   const prefix='/duytienkaka/meo-desktop/releases/download/'+release.tag_name+'/',name=platform==='win32'?'Meo-Desktop-Setup-'+version+'-'+arch+'.exe':'Meo-Desktop-'+version+'-mac-'+arch+'.dmg';
   const asset=release.assets.find(a=>a.name===name&&trustedURL(a.browser_download_url,prefix+name)&&Number.isFinite(a.size)&&a.size>0);
   if(!asset||!trustedURL(release.html_url,'/duytienkaka/meo-desktop/releases/tag/'+release.tag_name))continue;
-  const manifest=release.assets.some(a=>a.name==='latest.yml'&&trustedURL(a.browser_download_url,prefix+'latest.yml'));
-  candidates.push({version,name,releaseURL:release.html_url,assetURL:asset.browser_download_url,feedURL:REPO+'/releases/download/'+encodeURIComponent(release.tag_name)+'/',notes:typeof release.body==='string'?release.body.slice(0,12000):'',canDownload:platform==='win32'&&arch==='x64'&&manifest});
+  const manifestAsset=release.assets.find(a=>a.name==='latest.yml'&&trustedURL(a.browser_download_url,prefix+'latest.yml')),manifest=!!manifestAsset;
+  const apiAsset=a=>Number.isSafeInteger(a?.id)&&a.id>0?'https://api.github.com/repos/duytienkaka/meo-desktop/releases/assets/'+a.id:null;
+  candidates.push({manifestAPI:apiAsset(manifestAsset),installerAPI:apiAsset(asset),version,name,releaseURL:release.html_url,assetURL:asset.browser_download_url,feedURL:REPO+'/releases/download/'+encodeURIComponent(release.tag_name)+'/',notes:typeof release.body==='string'?release.body.slice(0,12000):'',canDownload:platform==='win32'&&arch==='x64'&&manifest});
  }
  return candidates.sort((a,b)=>semver.rcompare(a.version,b.version))[0]||null;
 }
 function validateManifest(info,candidate){
  return info?.version===candidate.version&&Array.isArray(info.files)&&info.files.length===1&&info.files.every(file=>file.url===candidate.name&&typeof file.sha512==='string'&&file.sha512.length<=128&&/^[A-Za-z0-9+/]+={0,2}$/.test(file.sha512)&&Buffer.from(file.sha512,'base64').length===64&&Number.isFinite(file.size)&&file.size>0);
 }
-function createUpdates({app,platform=process.platform,arch=process.arch,fetcher=global.fetch,openExternal,onChange=()=>{},onAvailable=()=>{},beforeInstall=()=>{},testMode=false,createEngine=feed=>new(require('electron-updater').NsisUpdater)({provider:'generic',url:feed,useMultipleRangeRequest:false})}={}){
+function createWindowsEngine(feed,candidate){
+ const {GenericProvider}=require('electron-updater/out/providers/GenericProvider'),{parseUpdateInfo}=require('electron-updater/out/providers/Provider');
+ const engine=new(require('electron-updater').NsisUpdater)({provider:'generic',url:feed,useMultipleRangeRequest:false});
+ if(candidate?.manifestAPI&&candidate?.installerAPI){
+  class ReleaseAssetsProvider extends GenericProvider{
+   async getLatestVersion(){const response=await fetch(candidate.manifestAPI,{headers:{Accept:'application/octet-stream'},signal:AbortSignal.timeout(30000)});if(!response.ok)throw new Error('UpdateMetadataHTTP'+response.status);const text=await response.text();if(text.length>1000000)throw new Error('UpdateMetadataTooLarge');return parseUpdateInfo(text,'latest.yml',candidate.manifestAPI);}
+   get fileExtraDownloadHeaders(){return {Accept:'application/octet-stream'};}
+   resolveFiles(info){return super.resolveFiles(info).map(file=>({...file,url:new URL(candidate.installerAPI)}));}
+  }
+  engine.clientPromise=Promise.resolve(new ReleaseAssetsProvider({provider:'generic',url:feed},engine,{isUseMultipleRangeRequest:false,platform:'win32',executor:engine.httpExecutor}));
+ }
+ return engine;
+}
+function createUpdates({app,platform=process.platform,arch=process.arch,fetcher=global.fetch,openExternal,onChange=()=>{},onAvailable=()=>{},beforeInstall=()=>{},testMode=false,createEngine=createWindowsEngine}={}){
  const supported=app.isPackaged&&!testMode&&['win32','darwin'].includes(platform),current=app.getVersion();
  let state={supported,status:supported?'idle':'unavailable',current,latest:'',notes:'',progress:0,canDownload:false,message:supported?'Ứng dụng tự kiểm tra bản mới sau khi mở và mỗi 6 giờ.':'Kiểm tra cập nhật dùng trong bản ứng dụng đã cài.'};
  let candidate=null,engine=null,cancellation=null,controller=null,checking=null,closed=false,initialTimer,repeatTimer,notified='';
  const snapshot=()=>({...state});
  function change(patch){if(closed)return;state={...state,...patch};onChange(snapshot());}
  const busy=()=>['checking','downloading','downloaded','installing'].includes(state.status);
- function fail(){change({status:'error',message:'Chưa cập nhật được. Kiểm tra kết nối mạng rồi thử lại; bạn cũng có thể tải bộ cài từ trang phát hành.'});}
+ function fail(){change({status:'error',message:platform==='win32'?'Chưa tải được bản cập nhật. Hãy kiểm tra kết nối và thử lại trong ứng dụng.':'Chưa kiểm tra được bản cập nhật. Hãy thử lại.'});}
  async function check(){
   if(!supported)return snapshot();if(checking)return checking;if(busy())return snapshot();
   checking=(async()=>{
@@ -43,7 +57,7 @@ function createUpdates({app,platform=process.platform,arch=process.arch,fetcher=
     if(!found){change({status:'up-to-date',latest:'',notes:'',message:'Bạn đang dùng phiên bản mới nhất dành cho máy này.'});return snapshot();}
     change({latest:found.version,notes:found.notes});
     if(found.canDownload){
-     engine=createEngine(found.feedURL);engine.autoDownload=false;engine.autoInstallOnAppQuit=false;engine.allowPrerelease=true;engine.allowDowngrade=false;engine.logger=null;
+     engine=createEngine(found.feedURL,found);engine.autoDownload=false;engine.autoInstallOnAppQuit=false;engine.allowPrerelease=true;engine.allowDowngrade=false;engine.disableDifferentialDownload=true;engine.logger=null;
      engine.on('error',()=>{if(closed)return;if(state.status==='installing')change({status:'downloaded',message:'Chưa khởi động được trình cài. Hãy thử lại hoặc tải bộ cài từ trang phát hành.'});else if(['checking','downloading'].includes(state.status))fail();});
      engine.on('download-progress',value=>{if(state.status==='downloading'&&Number.isFinite(value.percent))change({progress:Math.max(0,Math.min(100,value.percent)),message:'Đang tải bản cập nhật…'});});
      const result=await engine.checkForUpdates();
@@ -58,7 +72,7 @@ function createUpdates({app,platform=process.platform,arch=process.arch,fetcher=
   })();return checking;
  }
  async function download(){
-  if(!supported||state.status!=='available'||!candidate?.canDownload||!engine)throw new Error('Hãy kiểm tra phiên bản trước khi tải.');
+  if(!supported||!['available','error'].includes(state.status)||!state.canDownload||!candidate?.canDownload||!engine)throw new Error('Hãy kiểm tra phiên bản trước khi tải.');
   change({status:'downloading',progress:0,message:'Đang tải bản cập nhật…'});
   try{const files=await engine.downloadUpdate(cancellation);if(!Array.isArray(files)||!files.length)throw new Error('MissingDownloadedUpdate');change({status:'downloaded',progress:100,message:'Đã tải xong. Lưu công việc và ảnh mèo đang giữ trước khi khởi động lại để cài.'});}catch{fail();}
   return snapshot();
@@ -79,4 +93,4 @@ function createUpdates({app,platform=process.platform,arch=process.arch,fetcher=
  function dispose(){closed=true;clearTimeout(initialTimer);clearInterval(repeatTimer);controller?.abort();cancellation?.cancel();}
  return {start,dispose,snapshot,action};
 }
-module.exports={createUpdates,selectRelease,validateManifest};
+module.exports={createUpdates,selectRelease,validateManifest,createWindowsEngine};
