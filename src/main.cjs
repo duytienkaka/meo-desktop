@@ -32,7 +32,7 @@ else {
   const startup=createStartup({app,testMode});
   const updates=createUpdates({app,testMode,openExternal:url=>shell.openExternal(url),onChange:()=>publishSettings(),beforeInstall:()=>{if(screenshots?.isBusy())throw new Error('Hãy chờ thao tác ảnh hoàn tất trước khi cài.');if(!saveSettings())throw new Error('Chưa lưu được cài đặt. Hãy thử lại trước khi cập nhật.');}});
   const desktopActions=createDesktopActions({directory:app.getPath('userData'),shell,clipboard}),pinIcons=new Map();
-  let fileHoverUntil=0,fileMenuOpen=false,screenshots,utilities,clipboardPhotos,roomSpot='bed',roomOwnsPet=false,roomTime=0;
+  let fileHoverUntil=0,fileMenuOpen=false,screenshots,utilities,clipboardPhotos,roomSpot='bed',roomOwnsPet=false,roomPinned=false,roomTime=0;
   let audioState={available:false,level:0,muted:false},audioFeedbackUntil=0;
   function receiveAudio(value){const changed=audioState.muted!==value.muted;audioState=value;if(changed)refreshMenu();if(playerWindow&&!playerWindow.isDestroyed())playerWindow.webContents.send('meo:audio:state',value);}
   const audioControl=(mac?createMacAudio:createAudioControl)({onSample:receiveAudio});
@@ -222,7 +222,7 @@ else {
       {label:'Thoát mèo',click:()=>{quitting=true;app.quit();}}
     ]);
   }
-  function settingsSnapshot(){return{roomLighting:state.roomLighting,wallpaper:wallpaper.active,utilities:utilities?.summary(),updates:updates.snapshot(),startup:startup.snapshot(),pinnedApps:desktopActions.pins().map(pin=>({...pin,icon:pinIcons.get(pin.id)?.toDataURL()||''})),pinSupported:['win32','darwin'].includes(process.platform),version:app.getVersion(),character:state.character,mode:state.mode,baseMode:state.baseMode,visible:state.visible,paused:state.paused,size:state.size,roam:state.roam,follow:state.follow,autoMedia:state.autoMedia,mediaStatus:state.mediaStatus,platform:process.platform,shortcut:mac?'⌘ + ⌥ + M':'Ctrl + Alt + M',autoSupported:desktopSupported,displayId:String(display.id),displays:screen.getAllDisplays().map((d,i)=>({id:String(d.id),name:`Màn hình ${i+1} · ${d.size.width} × ${d.size.height}`}))};}
+  function settingsSnapshot(){return{roomLighting:state.roomLighting,wallpaper:wallpaper.active,roomPinned,utilities:utilities?.summary(),updates:updates.snapshot(),startup:startup.snapshot(),pinnedApps:desktopActions.pins().map(pin=>({...pin,icon:pinIcons.get(pin.id)?.toDataURL()||''})),pinSupported:['win32','darwin'].includes(process.platform),version:app.getVersion(),character:state.character,mode:state.mode,baseMode:state.baseMode,visible:state.visible,paused:state.paused,size:state.size,roam:state.roam,follow:state.follow,autoMedia:state.autoMedia,mediaStatus:state.mediaStatus,platform:process.platform,shortcut:mac?'⌘ + ⌥ + M':'Ctrl + Alt + M',autoSupported:desktopSupported,displayId:String(display.id),displays:screen.getAllDisplays().map((d,i)=>({id:String(d.id),name:`Màn hình ${i+1} · ${d.size.width} × ${d.size.height}`}))};}
   let lastSettingsKey='';
   function publishSettings(){
     if(!settingsWindow||settingsWindow.isDestroyed()||!settingsWindow.isVisible())return;
@@ -257,7 +257,15 @@ else {
   ipcMain.handle('meo:settings:update',async(event,patch)=>{
     requireSettings(event);if(!patch||typeof patch!=='object'||Array.isArray(patch)||Object.keys(patch).length!==1)throw new Error('Thiết lập không hợp lệ.');
     const [key,value]=Object.entries(patch)[0];
-    if(key==='wallpaper'&&typeof value==='boolean'){if(value){roomTime=0;await wallpaper.open();}else wallpaper.close();publishSettings();return settingsSnapshot();}
+    if(key==='wallpaper'&&typeof value==='boolean'){if(value){roomTime=0;await wallpaper.open();}else{roomPinned=false;wallpaper.close();}publishSettings();return settingsSnapshot();}
+    if(key==='roomPinned'&&typeof value==='boolean'){
+      if(value){
+        if(screenshots.isBusy())throw new Error('Hãy chờ thao tác ảnh hoàn tất.');
+        await wallpaper.open();
+        hidePlayer(true);utilities.hide(true);setVisible(true);
+      }
+      roomPinned=value;publishSettings();return settingsSnapshot();
+    }
     if(key==='roomSpot'&&['sill','desk','bed'].includes(value)){roomSpot=value;state.roam=false;return settingsSnapshot();}
     if(key==='startAtLogin'){await startup.set(value);publishSettings();return settingsSnapshot();}
     if(['visible','paused','roam','follow','autoMedia'].includes(key)){
@@ -360,13 +368,13 @@ else {
     const now=performance.now()/1000,dt=lastTick?Math.min(.1,now-lastTick):0;lastTick=now;
 
     if(ready&&state.visible&&!suspended){
-      const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint();if(wallpaper.active&&wallpaper.desktop&&!state.dragging&&!state.paused)state.time+=dt;else advance(dt,cursor);
-      const roomActive=wallpaper.active&&wallpaper.desktop&&wallpaper.petReady&&display.id===screen.getPrimaryDisplay().id&&!state.dragging&&!screenshots.isBusy()&&!screenshots.snapshot().photos.length&&!utilities.badge().count&&!utilities.badge().due;
+      const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint();if(wallpaper.active&&(wallpaper.desktop||roomPinned)&&!state.dragging&&!state.paused)state.time+=dt;else advance(dt,cursor);
+      const roomActive=wallpaper.active&&(wallpaper.desktop||roomPinned)&&wallpaper.petReady&&!state.dragging&&!screenshots.isBusy()&&(roomPinned||(display.id===screen.getPrimaryDisplay().id&&!screenshots.snapshot().photos.length&&!utilities.badge().count&&!utilities.badge().due));
       if(roomActive!==roomOwnsPet){roomOwnsPet=roomActive;syncMouseInput(false,true);if(roomActive)win.hide();else if(state.visible&&!suspended)win.showInactive();}
       if(roomActive&&win.isVisible())win.hide();
       if(roomActive&&!state.paused)roomTime+=dt;
       if(wallpaper.active){const date=new Date(),lighting=roomClock.sample(date.getHours()+date.getMinutes()/60,state.roomLighting);const destination=state.mode==='music'?'desk':state.mode==='sleep'?'bed':state.roam?(Math.floor(roomTime/75)%3===0?lighting.preferred:['bed','desk','sill'][Math.floor(roomTime/75)%3]):roomSpot;
-       wallpaper.update({paused:!wallpaper.desktop||state.paused||powerMonitor.isOnBatteryPower(),showPet:roomActive&&state.visible,music:state.mode==='music',nearPlant:false,cursor:{x:cursor.x-screen.getPrimaryDisplay().bounds.x,y:cursor.y-screen.getPrimaryDisplay().bounds.y},roam:state.roam,lighting,destination,character:state.character,size:state.size});}
+       wallpaper.update({interactive:wallpaper.desktop,paused:!(wallpaper.desktop||roomPinned)||state.paused||powerMonitor.isOnBatteryPower(),showPet:roomActive&&state.visible,music:state.mode==='music',nearPlant:false,cursor:{x:cursor.x-screen.getPrimaryDisplay().bounds.x,y:cursor.y-screen.getPrimaryDisplay().bounds.y},roam:state.roam,lighting,destination,character:state.character,size:state.size});}
 
       tickFrame();
       if(playerWindow?.isVisible())updatePlayerMouse();
