@@ -1,1 +1,1 @@
-const {contextBridge,ipcRenderer}=require('electron');contextBridge.exposeInMainWorld('room',{onState:callback=>ipcRenderer.on('room:state',(_,value)=>callback(value))});
+const {contextBridge,ipcRenderer}=require('electron');contextBridge.exposeInMainWorld('room',{onState:callback=>ipcRenderer.on('room:state',(_,value)=>callback(value)),onInteraction:callback=>ipcRenderer.on('room:interaction',(_,kind)=>callback(kind)),targets:value=>ipcRenderer.send('room:targets',value),ready:()=>ipcRenderer.send('meo:room:ready')});

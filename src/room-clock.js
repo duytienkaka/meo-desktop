@@ -1,0 +1,5 @@
+(function(root){
+ const keys=[{h:0,dark:.52,warm:0,lamp:1,sun:0},{h:5,dark:.52,warm:0,lamp:1,sun:0},{h:7,dark:.06,warm:.02,lamp:0,sun:.6},{h:11,dark:0,warm:0,lamp:0,sun:.8},{h:16,dark:0,warm:.13,lamp:.1,sun:1},{h:19,dark:.3,warm:.12,lamp:.8,sun:.18},{h:21,dark:.52,warm:0,lamp:1,sun:0},{h:24,dark:.52,warm:0,lamp:1,sun:0}];
+ function sample(hour,override='auto'){if(!Number.isFinite(hour))hour=12;hour=((hour%24)+24)%24;if(override!=='auto')hour=({morning:8,afternoon:16,night:22})[override]??hour;const phase=hour<6||hour>=21?'night':hour<11?'morning':hour<17?'afternoon':'evening';let i=0;while(i<keys.length-2&&hour>keys[i+1].h)i++;const a=keys[i],b=keys[i+1],t=(hour-a.h)/(b.h-a.h),ease=t*t*(3-2*t),result={phase,hour,preferred:phase==='morning'?'sill':phase==='night'?'bed':'desk'};for(const k of ['dark','warm','lamp','sun'])result[k]=a[k]+(b[k]-a[k])*ease;return result;}
+ const api={sample};if(typeof module!=='undefined')module.exports=api;else root.ROOM_CLOCK=api;
+})(typeof window==='undefined'?globalThis:window);

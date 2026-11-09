@@ -16,6 +16,7 @@ const {createUpdates}=require('./updates.cjs');
 const {createCompanion}=require('./companion.cjs');
 const {createWallpaper}=require('./wallpaper.cjs');
 const roomLayout=require('./room-layout.js');
+const roomClock=require('./room-clock.js');
 const wallpaper=createWallpaper();
 const {createClipboardPhotos}=require('./clipboard-photos.cjs');
 const {configureOverlay,createOverlayGuard}=require('./overlay.cjs');
@@ -29,7 +30,7 @@ else {
   const startup=createStartup({app,testMode});
   const updates=createUpdates({app,testMode,openExternal:url=>shell.openExternal(url),onChange:()=>publishSettings(),beforeInstall:()=>{if(screenshots?.isBusy())throw new Error('Hãy chờ thao tác ảnh hoàn tất trước khi cài.');if(!saveSettings())throw new Error('Chưa lưu được cài đặt. Hãy thử lại trước khi cập nhật.');}});
   const desktopActions=createDesktopActions({directory:app.getPath('userData'),shell,clipboard}),pinIcons=new Map();
-  let fileHoverUntil=0,fileMenuOpen=false,screenshots,utilities,clipboardPhotos,roomSpot='sill';
+  let fileHoverUntil=0,fileMenuOpen=false,screenshots,utilities,clipboardPhotos,roomSpot='bed',roomOwnsPet=false,roomTime=0;
   let audioState={available:false,level:0,muted:false},audioFeedbackUntil=0;
   function receiveAudio(value){const changed=audioState.muted!==value.muted;audioState=value;if(changed)refreshMenu();if(playerWindow&&!playerWindow.isDestroyed())playerWindow.webContents.send('meo:audio:state',value);}
   const audioControl=(mac?createMacAudio:createAudioControl)({onSample:receiveAudio});
@@ -69,9 +70,10 @@ else {
   const modes=['play','music','focus','sleep'];
   const modeLabels={play:'Tinh nghịch',music:'Nghe nhạc',focus:'Tập trung',sleep:'Buồn ngủ'};
   const characters=['classic','mit','may','muc'];
-  const defaults={character:'classic',mode:'play',size:112,roam:true,follow:true,displayId:null,autoMedia:!mac,visible:true,paused:false};
+  const defaults={roomLighting:'auto',character:'classic',mode:'play',size:112,roam:true,follow:true,displayId:null,autoMedia:!mac,visible:true,paused:false};
   let preferences={...defaults};
   try {preferences={...defaults,...JSON.parse(fs.readFileSync(path.join(app.getPath('userData'),'settings.json'),'utf8'))};} catch {}
+  if(!['auto','morning','afternoon','night'].includes(preferences.roomLighting))preferences.roomLighting='auto';
   if(!characters.includes(preferences.character))preferences.character='classic';
   if(!modes.includes(preferences.mode))preferences.mode='play';
   if(![80,112,148].includes(preferences.size))preferences.size=112;
@@ -94,7 +96,7 @@ else {
   }
   function currentPlacement(){return fitPlacement(display.workArea,state.freePosition?freePlacement(display.workArea,state.freePosition,state.size):route.windowAt(state.distance),state.size);}
   const playBehavior=createPlayBehavior();
-  function saveSettings(){try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.writeFileSync(path.join(app.getPath('userData'),'settings.json'),JSON.stringify({character:state.character,mode:state.baseMode,size:state.size,roam:state.roam,follow:state.follow,visible:state.visible,paused:state.paused,freePosition:state.freePosition,displayId:display.id,autoMedia:state.autoMedia},null,2));return true;}catch(error){log(error.message);return false;}}
+  function saveSettings(){try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.writeFileSync(path.join(app.getPath('userData'),'settings.json'),JSON.stringify({roomLighting:state.roomLighting,character:state.character,mode:state.baseMode,size:state.size,roam:state.roam,follow:state.follow,visible:state.visible,paused:state.paused,freePosition:state.freePosition,displayId:display.id,autoMedia:state.autoMedia},null,2));return true;}catch(error){log(error.message);return false;}}
   function persist(){clearTimeout(persistTimer);persistTimer=setTimeout(saveSettings,300);}
   function applyAutomaticMode(){const mode=state.autoMedia&&state.mediaPlaying?'music':state.baseMode;if(mode!==state.mode)setMode(mode,{automatic:true});}
   let mediaData=decodeMedia({available:false,playing:false}),lastPlayerKey='',playerOpen=false,playerLoaded=false,playerHideTimer,playerBlurTimer,petPressedAt=0,playerPresentation=null,playerMouseIgnored=null,playerScrubbing=false;
@@ -194,8 +196,8 @@ else {
   }
   function setVisible(visible){
     state.visible=!!visible;state.interactive=false;state.dragging=false;
-    if(!visible){hidePlayer(true);screenshots?.hide();utilities?.hide(true);}
-    if(win&&!win.isDestroyed()){syncMouseInput(false,true);if(state.visible&&!suspended&&ready){win.showInactive();}else win.hide();}
+    if(!visible){wallpaper.update({showPet:false,paused:true});hidePlayer(true);screenshots?.hide();utilities?.hide(true);}
+    if(win&&!win.isDestroyed()){syncMouseInput(false,true);if(state.visible&&!suspended&&ready&&!roomOwnsPet){win.showInactive();}else win.hide();}
     lastTick=0;persist();refreshMenu();
   }
   function setSize(size){if(![80,112,148].includes(size))return;state.size=size;persist();refreshMenu();tickFrame();}
@@ -214,7 +216,7 @@ else {
       {label:'Thoát mèo',click:()=>{quitting=true;app.quit();}}
     ]);
   }
-  function settingsSnapshot(){return{wallpaper:wallpaper.active,utilities:utilities?.summary(),updates:updates.snapshot(),startup:startup.snapshot(),pinnedApps:desktopActions.pins().map(pin=>({...pin,icon:pinIcons.get(pin.id)?.toDataURL()||''})),pinSupported:['win32','darwin'].includes(process.platform),version:app.getVersion(),character:state.character,mode:state.mode,baseMode:state.baseMode,visible:state.visible,paused:state.paused,size:state.size,roam:state.roam,follow:state.follow,autoMedia:state.autoMedia,mediaStatus:state.mediaStatus,platform:process.platform,shortcut:mac?'⌘ + ⌥ + M':'Ctrl + Alt + M',autoSupported:desktopSupported,displayId:String(display.id),displays:screen.getAllDisplays().map((d,i)=>({id:String(d.id),name:`Màn hình ${i+1} · ${d.size.width} × ${d.size.height}`}))};}
+  function settingsSnapshot(){return{roomLighting:state.roomLighting,wallpaper:wallpaper.active,utilities:utilities?.summary(),updates:updates.snapshot(),startup:startup.snapshot(),pinnedApps:desktopActions.pins().map(pin=>({...pin,icon:pinIcons.get(pin.id)?.toDataURL()||''})),pinSupported:['win32','darwin'].includes(process.platform),version:app.getVersion(),character:state.character,mode:state.mode,baseMode:state.baseMode,visible:state.visible,paused:state.paused,size:state.size,roam:state.roam,follow:state.follow,autoMedia:state.autoMedia,mediaStatus:state.mediaStatus,platform:process.platform,shortcut:mac?'⌘ + ⌥ + M':'Ctrl + Alt + M',autoSupported:desktopSupported,displayId:String(display.id),displays:screen.getAllDisplays().map((d,i)=>({id:String(d.id),name:`Màn hình ${i+1} · ${d.size.width} × ${d.size.height}`}))};}
   let lastSettingsKey='';
   function publishSettings(){
     if(!settingsWindow||settingsWindow.isDestroyed()||!settingsWindow.isVisible())return;
@@ -249,13 +251,14 @@ else {
   ipcMain.handle('meo:settings:update',async(event,patch)=>{
     requireSettings(event);if(!patch||typeof patch!=='object'||Array.isArray(patch)||Object.keys(patch).length!==1)throw new Error('Thiết lập không hợp lệ.');
     const [key,value]=Object.entries(patch)[0];
-    if(key==='wallpaper'&&typeof value==='boolean'){if(value)await wallpaper.open();else wallpaper.close();publishSettings();return settingsSnapshot();}
-    if(key==='roomSpot'&&['sill','desk','bed'].includes(value)){roomSpot=value;const q=roomLayout.point(display.bounds,value);state.freePosition={...q,displayId:display.id};state.roam=false;state.jump=null;state.action='idle';tickFrame();return settingsSnapshot();}
+    if(key==='wallpaper'&&typeof value==='boolean'){if(value){roomTime=0;await wallpaper.open();}else wallpaper.close();publishSettings();return settingsSnapshot();}
+    if(key==='roomSpot'&&['sill','desk','bed'].includes(value)){roomSpot=value;state.roam=false;return settingsSnapshot();}
     if(key==='startAtLogin'){await startup.set(value);publishSettings();return settingsSnapshot();}
     if(['visible','paused','roam','follow','autoMedia'].includes(key)){
       if(typeof value!=='boolean')throw new Error('Giá trị không hợp lệ.');
       if(key==='visible')setVisible(value);else if(key==='paused')setPaused(value);else if(key==='autoMedia')setAutoMedia(value);else{state[key]=value;state.target=null;}
     }else if(key==='size'&&[80,112,148].includes(value))setSize(value);
+    else if(key==='roomLighting'&&['auto','morning','afternoon','night'].includes(value))state.roomLighting=value;
     else if(key==='character'&&characters.includes(value)){state.character=value;tickFrame();}
     else if(key==='mode'&&modes.includes(value))setMode(value);
     else if(key==='displayId'&&screen.getAllDisplays().some(d=>String(d.id)===String(value))){refreshRoute(value);tickFrame();}
@@ -352,11 +355,13 @@ else {
 
     if(ready&&state.visible&&!suspended){
       const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint();if(wallpaper.active&&wallpaper.desktop&&!state.dragging&&!state.paused)state.time+=dt;else advance(dt,cursor);
-      if(wallpaper.active&&wallpaper.desktop&&!state.dragging&&!state.paused){
-        const spots=['sill','desk','bed'],idx=state.mode==='music'?1:state.mode==='sleep'?2:Math.floor(state.time/18)%3,target=roomLayout.point(display.bounds,state.roam?spots[idx]:roomSpot),from=state.freePosition||target,dist=Math.hypot(target.x-from.x,target.y-from.y),k=Math.min(1,dt*120/Math.max(1,dist));
-        state.freePosition={x:from.x+(target.x-from.x)*k,y:from.y+(target.y-from.y)*k,displayId:display.id};state.direction=target.x>=from.x?1:-1;state.jump=null;state.action=dist>3?'walk':'idle';if(state.action==='idle')state.actionStart=state.time;
-      }
-      if(wallpaper.active)wallpaper.update({paused:!wallpaper.desktop||state.paused||powerMonitor.isOnBatteryPower(),music:state.mode==='music',nearPlant:!!state.freePosition&&Math.abs(state.freePosition.x-(display.bounds.x+display.bounds.width*.76))<200});
+      const roomActive=wallpaper.active&&wallpaper.desktop&&wallpaper.petReady&&display.id===screen.getPrimaryDisplay().id&&!state.dragging&&!screenshots.isBusy()&&!screenshots.snapshot().photos.length&&!utilities.badge().count&&!utilities.badge().due;
+      if(roomActive!==roomOwnsPet){roomOwnsPet=roomActive;syncMouseInput(false,true);if(roomActive)win.hide();else if(state.visible&&!suspended)win.showInactive();}
+      if(roomActive&&win.isVisible())win.hide();
+      if(roomActive&&!state.paused)roomTime+=dt;
+      if(wallpaper.active){const date=new Date(),lighting=roomClock.sample(date.getHours()+date.getMinutes()/60,state.roomLighting);const destination=state.mode==='music'?'desk':state.mode==='sleep'?'bed':state.roam?(Math.floor(roomTime/75)%3===0?lighting.preferred:['bed','desk','sill'][Math.floor(roomTime/75)%3]):roomSpot;
+       wallpaper.update({paused:!wallpaper.desktop||state.paused||powerMonitor.isOnBatteryPower(),showPet:roomActive&&state.visible,music:state.mode==='music',nearPlant:false,cursor:{x:cursor.x-screen.getPrimaryDisplay().bounds.x,y:cursor.y-screen.getPrimaryDisplay().bounds.y},roam:state.roam,lighting,destination,character:state.character,size:state.size});}
+
       tickFrame();
       if(playerWindow?.isVisible())updatePlayerMouse();
       utilities?.updateMouse(cursor);
@@ -409,12 +414,12 @@ else {
     globalShortcut.register('CommandOrControl+Alt+B',()=>runDesktopAction(()=>utilities.isOpen()?utilities.hide():openUtilities()));
     if(desktopSupported)globalShortcut.register('CommandOrControl+Alt+S',()=>runDesktopAction(()=>screenshots.capture()));
     for(const event of ['display-added','display-removed','display-metrics-changed'])screen.on(event,()=>{refreshRoute(display.id);tickFrame();});
-    const sleep=()=>{overlayGuard.stop();utilities?.hide(true);suspended=true;screenshots?.hide();hidePlayer(true);audioControl.stop();mediaTransport.stop();mediaMonitor.stop();win?.hide();};
+    const sleep=()=>{wallpaper.update({showPet:false,paused:true});overlayGuard.stop();utilities?.hide(true);suspended=true;screenshots?.hide();hidePlayer(true);audioControl.stop();mediaTransport.stop();mediaMonitor.stop();win?.hide();};
     const wake=()=>{suspended=false;if(!testMode||process.argv.includes('--meo-overlay-test'))overlayGuard.start();if(!testMode)audioControl.start();lastTick=0;startMedia();if(state.visible&&ready)win.showInactive();};
     powerMonitor.on('suspend',sleep);powerMonitor.on('resume',wake);
     powerMonitor.on('lock-screen',sleep);powerMonitor.on('unlock-screen',wake);
     if(testMode)global.__meo={cursor:null,window:()=>win,setMode,setSize,setVisible,setPaused,setAutoMedia,receiveMedia,mediaPid:()=>mediaMonitor.pid(),route:()=>route,state:()=>({...state,ready,display:{id:display.id,workArea:display.workArea},bounds:win.getBounds(),visible:win.isVisible(),alwaysOnTop:win.isAlwaysOnTop(),focusable:win.isFocusable()}),move:s=>{state.freePosition=null;state.distance=wrap(s,route.total);state.target=null;state.jump=null;state.action='idle';tickFrame();},menu:()=>buildMenu().items.map(i=>i.label),drag:value=>{state.dragging=value;state.dragAt=Date.now();},shutdown:()=>{quitting=true;app.quit();}};
-    if(testMode)Object.assign(global.__meo,{clipboardPhotos,overlayGuard,utilities,updates,screenshots,audioControl,receiveAudio,desktopActions,acceptDroppedFiles,fileMenuTemplate,pinnedMenu,refreshPinIcons,openSettings,settingsSnapshot,settingsWindow:()=>settingsWindow});
+    if(testMode)Object.assign(global.__meo,{wallpaper,clipboardPhotos,overlayGuard,utilities,updates,screenshots,audioControl,receiveAudio,desktopActions,acceptDroppedFiles,fileMenuTemplate,pinnedMenu,refreshPinIcons,openSettings,settingsSnapshot,settingsWindow:()=>settingsWindow});
     if(testMode)Object.assign(global.__meo,{advancePlay:seconds=>{for(let t=0;t<seconds;t+=.05)advance(.05,{x:-10000,y:-10000});tickFrame();}});
     if(testMode)Object.assign(global.__meo,{placeFree:point=>{state.freePosition={...constrainPosition(display.workArea,point,state.size),displayId:display.id};state.target=null;state.jump=null;tickFrame();},openPlayer,togglePlayer,playerWindow:()=>playerWindow,playerState:()=>({open:playerOpen,loaded:playerLoaded}),playerSnapshot,mediaTransport});
     startMedia();if(!testMode)audioControl.start();
