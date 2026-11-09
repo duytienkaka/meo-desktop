@@ -28,3 +28,9 @@
 
 #object-window,#object-print{filter:drop-shadow(.15vw .32vw .18vw #513b3436)}
 #object-rug,#object-nest,#object-chair,#object-desk{filter:drop-shadow(.18vw .3vw .22vw #4837224a)}
+
+.room-controls{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:6px;border:1px solid #f7e7d940;border-radius:20px;background:#282521dc;box-shadow:0 6px 24px #1c171636;z-index:30}.room-controls button{display:flex;align-items:center;gap:8px;border:0;border-radius:14px;padding:10px 15px;background:#ffffff09;color:#f7eadd;font:500 13px "Segoe UI",sans-serif}.room-controls span{font-size:20px;line-height:20px;color:#e7b9a1}
+
+.room-controls{bottom:auto;top:50%;left:auto;right:18px;transform:translateY(-50%);flex-direction:column}.controls-left .room-controls{right:auto;left:18px}.room-controls button{min-width:116px}
+
+.room-controls [data-play="room-toggle"]{border-top:1px solid #f7e7d926;margin-top:3px}.room-controls .room-toggle-label{font-size:13px;line-height:20px;color:inherit}

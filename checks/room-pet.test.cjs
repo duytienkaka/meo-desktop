@@ -15,3 +15,10 @@ test('pause freezes movement; reduced motion settles directly; destination chang
  const changed=pet.step(0,'desk');assert.equal(changed.x,before.x);assert.equal(changed.y,before.y);
  const quiet=pet.step(0,'sill',true);assert.equal(quiet.altitude,0);assert.equal(quiet.x,spots.sill.x);
 });
+
+test('ball play returns from furniture, pounces on the floor and restarts on another throw',()=>{
+ const pet=create();pet.step(0,'desk',true);pet.play();
+ let pounces=0,previous=pet.step(0,'play');
+ for(let i=0;i<1200;i++){const current=pet.step(1/60,'play');assert.ok(Math.hypot(current.x-previous.x,current.y-previous.y)<.03);if(current.phase==='pounce'){pounces++;assert.equal(current.y,.95);assert.ok(current.altitude>=0);}previous=current;}
+ assert.ok(pounces>0);pet.play();let replay=false;for(let i=0;i<600;i++)replay ||= pet.step(1/60,'play').phase==='pounce';assert.ok(replay);
+});

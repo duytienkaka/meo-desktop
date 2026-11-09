@@ -48,15 +48,15 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 
 ## Tải xuống và cài ứng dụng
 
-**Bản hiện tại: 1.0.3. Người dùng cài app không cần Node.js hay công cụ lập trình.**
+**Bản hiện tại: 1.0.4. Người dùng cài app không cần Node.js hay công cụ lập trình.**
 
 | Máy của bạn | Bấm để tải | Yêu cầu |
 | --- | --- | --- |
-| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.3/Meo-Desktop-Setup-1.0.3-x64.exe)** | Windows 10/11, x64 |
-| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.3/Meo-Desktop-1.0.3-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
-| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.3/Meo-Desktop-1.0.3-mac-x64.dmg)** | macOS 13 Ventura trở lên |
+| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.4/Meo-Desktop-Setup-1.0.4-x64.exe)** | Windows 10/11, x64 |
+| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.4/Meo-Desktop-1.0.4-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
+| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.4/Meo-Desktop-1.0.4-mac-x64.dmg)** | macOS 13 Ventura trở lên |
 
-[Xem Release 1.0.3 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.0.3) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+[Xem Release 1.0.4 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.0.4) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 1. Chọn đúng bộ cài trong bảng. Trên Mac, xem loại chip tại menu Apple → **About This Mac** nếu chưa biết chọn bản nào.
 2. **Windows:** mở `.exe` và làm theo trình cài đặt. **Mac:** mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app từ đó.
@@ -68,7 +68,7 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 
 ## Tính năng chính
 
-**Mới trong 1.0.3:** căn phòng màu nước được dựng từ từng vật thể riêng, thêm nút **Vào phòng ngay** trong Cài đặt để đưa mèo vào hình nền lập tức. Nút **Trở lại tự động** khôi phục cách chuyển theo desktop. Hình nền hiện hỗ trợ Windows.
+**Mới trong 1.0.4:** thanh tương tác dọc ở giữa cạnh trái hoặc phải màn hình, đổi vị trí trong Cài đặt. Thả cuộn len để mèo đuổi bắt, chọc mèo với tia sáng và vuốt ve với trái tim bay. Nút Vào phòng / Ra phòng ngay trên thanh điều khiển. Hình nền hiện hỗ trợ Windows.
 
 **Bản vá 1.0.2:** sửa mèo giữ trạng thái nghe nhạc sau khi dừng/đóng trình phát. Túi giữ bản sao độc lập của file/thư mục, có nút Sao chép file để dán vào app hỗ trợ. Liên kết cũ có nút Giữ bản sao; bỏ khỏi túi chỉ xóa bản sao. Tối đa 20 món, 250 MB/món, 1 GB/túi.
 

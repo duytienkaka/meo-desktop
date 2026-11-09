@@ -51,13 +51,15 @@
   document.querySelector('#utility-battery').onchange=e=>request(()=>api.utilityConfigure({battery:e.target.checked}));
   document.querySelector('#utility-downloads').onchange=e=>request(()=>api.utilityConfigure({downloads:e.target.checked}));
   document.querySelector('#utility-folder').onclick=()=>request(()=>api.utilityFolder());
+  document.querySelector('#room-controls-side').onchange=e=>update({roomControlsSide:e.target.value});
   document.querySelector('#room-lighting').onchange=e=>update({roomLighting:e.target.value});
   document.querySelector('#room-enter').onclick=()=>update({roomPinned:!snapshot?.roomPinned});
   document.querySelector('#wallpaper').onchange=e=>update({wallpaper:e.target.checked});
-  document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>update({roomSpot:b.dataset.room}));
+  document.querySelectorAll('[data-room-play]').forEach(b=>b.onclick=()=>update({roomPlay:b.dataset.roomPlay}));
   function render(value){
+    document.querySelector('#room-controls-side').value=value.roomControlsSide||'right';document.querySelector('#room-controls-side').disabled=value.platform==='darwin';
     document.querySelector('#room-lighting').value=value.roomLighting||'auto';document.querySelector('#room-lighting').disabled=value.platform==='darwin';
-    document.querySelector('#wallpaper').checked=!!value.wallpaper;document.querySelectorAll('[data-room]').forEach(b=>b.disabled=!value.wallpaper);
+    document.querySelector('#wallpaper').checked=!!value.wallpaper;document.querySelectorAll('[data-room-play]').forEach(b=>b.disabled=value.platform!=='win32');
     const utility=value.utilities;if(utility){document.querySelector('#utility-clipboard-photos').checked=utility.settings.clipboardPhotos;document.querySelector('#utility-count').textContent=utility.count+'/20 món · Ctrl / ⌘ + Alt + B để mở túi';document.querySelector('#utility-battery').checked=utility.settings.battery;document.querySelector('#utility-downloads').checked=utility.settings.downloads;document.querySelector('#utility-battery-status').textContent=utility.batteryStatus;document.querySelector('#utility-download-path').textContent=utility.settings.downloadDirectory;document.querySelector('#utility-download-status').textContent=utility.downloadStatus;document.querySelector('#utility-profile').textContent='Đang chọn: '+({work:'Làm việc',relax:'Thư giãn'}[utility.activeProfile]||'Chưa chọn');}
 
     const updates=value.updates||{status:'unavailable',supported:false,message:'Cập nhật chưa sẵn sàng.'},busy=['checking','downloading','installing'].includes(updates.status);
