@@ -11,10 +11,15 @@ const root=path.resolve(__dirname,'..'),env={...process.env};delete env.ELECTRON
  assert.equal(await app.evaluate(()=>global.__meo.window().isVisible()),false,'floating cat hidden while scene owns cat');
  await settings.locator('[data-room-play="ball"]').click();
  await room.waitForFunction(()=>window.meoRoom.snapshot().playRemaining>0);
- await room.waitForFunction(()=>window.meoRoom.snapshot().pose?.phase==='pounce',null,{timeout:20000});
+ await room.waitForFunction(()=>window.meoRoom.snapshot().pose?.phase==='yarn',null,{timeout:20000});
  await room.screenshot({path:path.join(root,'.cache/room-playing-ball.png')});
  const input=app.windows().find(w=>w.url().endsWith('/room-input.html'));
  await room.waitForFunction(()=>document.querySelectorAll('[data-play]').length===4);
+ const ball=await room.locator('[data-play="ball"]').boundingBox();
+ const scene=await room.locator('#scene').boundingBox();
+ await input.mouse.move(ball.x+12,ball.y+12);await input.mouse.down();
+ await input.mouse.move(scene.x+scene.width*.42,scene.y+scene.height*.94,{steps:8});await input.mouse.up();
+ await room.waitForFunction(()=>Math.abs(window.meoRoom.snapshot().landing.x-.42)<.002);
  const box=await room.locator('[data-play="tease"]').boundingBox();
  await input.mouse.click(box.x+box.width/2,box.y+box.height/2);
  await room.waitForFunction(()=>window.meoRoom.snapshot().teaseRemaining>0);
