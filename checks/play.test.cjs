@@ -63,13 +63,14 @@ test('pounce flag survives hovering and behavior resets until cursor leaves chas
  assert.equal(play.update(input(8,{hasPounced:follow.hasPounced})).kind,'stalk');
 });
 
-test('catch completes a chase until the cursor leaves the radius',()=>{
+test('catch rests briefly and resumes pursuit when the cursor moves within range',()=>{
  const follow=require('../src/play.cjs').createCursorFollow();
  const update=(now,distance)=>follow.update({now,distance,size:112,enabled:true});
  update(0,100);update(2,100);follow.markPounced();follow.complete();
  assert.equal(follow.active,false);
  assert.equal(update(4,60),null);
- assert.equal(update(8,130),null);
+ assert.equal(update(8,130),'chase');
+ assert.equal(follow.hasPounced,true);
  update(9,500);
  assert.equal(update(10,130),'watch');
  assert.equal(update(12,130),'chase');
