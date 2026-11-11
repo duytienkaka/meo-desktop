@@ -16,7 +16,7 @@
   return {...motion(event,Math.max(0,f.time-started),quiet),photos:current.photos};
  }
  function pose(base,a,f){
-  if(f.dragging||f.pet||f.jumpPhase!=null||['walk','stalk','look-away'].includes(f.action))return base;
+  if(f.dragging||f.pet||f.jumpPhase!=null||['walk','stalk','look-away','yarn','caught','missed','landed'].includes(f.action))return base;
   const b=f.utilityBadge||{};let index=null;
   if(b.due)index=5;else if(b.kind==='charging'&&f.mode!=='music')index=9;else if(b.kind==='battery')index=8;else if(a.photos)index=0;else if(b.count&&f.mode!=='music')index=2;
   if(!a.quiet){

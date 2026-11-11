@@ -3,9 +3,10 @@
 function createPlayBehavior(){
   let stage=null,cooldown=0,restAt=45;
   function reset(now=0){stage=null;cooldown=now;restAt=now+45;}
-  function landed(now){stage={kind:'look-away',start:now,until:now+1.4};cooldown=now+7;}
+  function landed(now,{continueChase=false}={}){stage=continueChase?null:{kind:'look-away',start:now,until:now+1.4};cooldown=now+7;}
   function affection(now){stage=null;cooldown=now+3;restAt=now+35;}
-  function update({now,near,difference,interactive,follow,roam}){
+  function update({now,near,difference,interactive,follow,roam,hasPounced=false}){
+    if(hasPounced){stage=null;restAt=now+35;return null;}
     if(interactive){stage=null;restAt=now+35;return null;}
     if(stage?.kind==='stalk'){
       if(!follow||!near||Math.abs(difference)>190){stage={kind:'look-away',start:now,until:now+.9};cooldown=now+3;}
@@ -23,3 +24,22 @@ function createPlayBehavior(){
   return{update,reset,landed,affection};
 }
 module.exports={createPlayBehavior};
+
+function createCursorFollow(){
+ let since=null,chasing=false,hasPounced=false,finished=false;
+ function reset(){since=null;chasing=false;}
+ function update({now,distance,size,enabled}){
+  const wasChasing=chasing;
+  if(distance>Math.max(300,size*3.4)){reset();hasPounced=false;finished=false;return wasChasing?'stopped':null;}
+  if(!enabled){reset();return wasChasing?'stopped':null;}
+  if(finished)return null;
+  if(hasPounced){chasing=true;return 'chase';}
+  if(chasing)return 'chase';
+  if(distance>Math.max(150,size*1.8)){since=null;return null;}
+  if(since===null)since=now;
+  if(now-since>=2){chasing=true;return 'chase';}
+  return 'watch';
+ }
+ return{reset,update,complete(){reset();finished=true;},markPounced(){hasPounced=true;},get hasPounced(){return hasPounced;},get active(){return chasing||since!==null;}};
+}
+module.exports.createCursorFollow=createCursorFollow;

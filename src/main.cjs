@@ -100,7 +100,8 @@ else {
     nativeMouseState=enabled;nextMouseRepair=now+400;
   }
   function currentPlacement(){return fitPlacement(display.workArea,state.freePosition?freePlacement(display.workArea,state.freePosition,state.size):route.windowAt(state.distance),state.size);}
-  const playBehavior=createPlayBehavior();
+  let desktopToy=null,feedback=null,dragMotion=0,lastDragPoint=null;
+  const playBehavior=createPlayBehavior(),cursorFollow=require('./play.cjs').createCursorFollow();
   function saveSettings(){try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.writeFileSync(path.join(app.getPath('userData'),'settings.json'),JSON.stringify({roomControlsSide:state.roomControlsSide,roomLighting:state.roomLighting,character:state.character,mode:state.baseMode,size:state.size,roam:state.roam,follow:state.follow,visible:state.visible,paused:state.paused,freePosition:state.freePosition,displayId:display.id,autoMedia:state.autoMedia},null,2));return true;}catch(error){log(error.message);return false;}}
   function persist(){clearTimeout(persistTimer);persistTimer=setTimeout(saveSettings,300);}
   function applyAutomaticMode(){const mode=state.autoMedia&&state.mediaPlaying?'music':state.baseMode;if(mode!==state.mode)setMode(mode,{automatic:true});}
@@ -212,6 +213,7 @@ else {
   function buildMenu(){
     return Menu.buildFromTemplate([
       {label:'Cài đặt…',click:()=>openSettings()},
+      {label:'Thả bóng',enabled:!state.paused,click:()=>throwDesktopBall()},
       {label:'Túi & việc…',accelerator:'CommandOrControl+Alt+B',click:()=>runDesktopAction(()=>openUtilities())},
       {label:'Ứng dụng đã ghim',submenu:pinnedMenu()},
       {label:'Chụp vùng màn hình…',accelerator:'CommandOrControl+Alt+S',enabled:desktopSupported,click:()=>runDesktopAction(()=>screenshots.capture())},
@@ -326,51 +328,109 @@ else {
     if(state.action!=='walk')state.actionStart=state.time;
     state.action='walk';
   }
+  function throwDesktopBall(){
+    if(state.paused||state.dragging||screenshots?.isBusy())return;
+    roomOutside=true;roomPinned=false;hidePlayer(true);utilities?.hide(true);
+    const p=currentPlacement();
+    state.freePosition={...constrainPosition(display.workArea,{x:p.x+p.anchorX,y:p.y+p.anchorY},state.size),displayId:display.id};
+    const direction=state.freePosition.x<display.workArea.x+display.workArea.width*.65?1:-1;
+    desktopToy={x:state.freePosition.x+direction*state.size*.85,y:state.freePosition.y,start:state.time,phase:'drop',direction};
+    feedback=null;state.jump=null;state.target=null;cursorFollow.reset();setVisible(true);
+  }
   function advance(dt,cursor){
-    if(suspended)return;
+    if(suspended){cursorFollow.reset();return;}
     if(!state.paused)state.time+=dt;
-    if(screenshots?.isBusy()||utilities?.isOpen()||fileMenuOpen||Date.now()<fileHoverUntil||playerVisible()||playerWindow?.isVisible()){state.target=null;state.action='idle';return;}
+    if(screenshots?.isBusy()||utilities?.isOpen()||fileMenuOpen||Date.now()<fileHoverUntil||playerVisible()||playerWindow?.isVisible()){cursorFollow.reset();state.target=null;state.action='idle';return;}
     if(state.dragging){
+      cursorFollow.reset();desktopToy=null;feedback=null;
+      const speed=lastDragPoint?(cursor.x-lastDragPoint.x)/Math.max(dt,.016):0;
+      dragMotion+=(clamp(speed/1400,-.28,.28)-dragMotion)*(1-Math.exp(-dt*12));lastDragPoint={...cursor};
       if(Date.now()-state.dragAt>12000){state.dragging=false;return;}
       const nextDisplay=screen.getDisplayNearestPoint(cursor);
       if(nextDisplay.id!==display.id){refreshRoute(nextDisplay.id);state.dragging=true;state.dragAt=Date.now();}
       state.freePosition={...constrainPosition(display.workArea,{x:cursor.x-dragOffset.x,y:cursor.y-dragOffset.y},state.size),displayId:display.id};state.distance=route.nearest(state.freePosition).distance;state.action='idle';state.target=null;return;
     }
-    if(state.paused)return;
+    if(state.paused){cursorFollow.reset();return;}
+    if(feedback){
+      if(state.time<feedback.until){state.action=feedback.kind;state.actionStart=feedback.start;state.target=null;return;}
+      feedback=null;state.action='idle';
+    }
+    if(desktopToy){
+      const toy=desktopToy,elapsed=state.time-toy.start;
+      state.direction=toy.direction;state.target=null;
+      if(toy.phase==='drop'&&elapsed>=.45)toy.phase='approach';
+      if(toy.phase==='approach'){
+        const goal=toy.x-toy.direction*state.size*.32,dx=goal-state.freePosition.x;
+        state.freePosition.x+=Math.sign(dx)*Math.min(Math.abs(dx),dt*140);
+        if(Math.abs(dx)<1){toy.phase='play';toy.playStart=state.time;}
+      }
+      if(toy.phase==='play'&&state.time-toy.playStart>=5){desktopToy=null;state.action='idle';state.nextWander=state.time+4;return;}
+      const action=toy.phase==='play'?'yarn':toy.phase==='approach'?'walk':'stalk';
+      if(state.action!==action)state.actionStart=state.time;state.action=action;return;
+    }
     if(state.jump){
       const p=(state.time-state.jump.start)/state.jump.duration;
       if(p>.18){const f=clamp((p-.18)/.47,0,1),ease=f*f*(3-2*f);state.distance=wrap(state.jump.from+route.delta(state.jump.from,state.jump.to)*ease,route.total);}
-      if(p>=1){state.jump=null;state.action='idle';state.target=null;playBehavior.landed(state.time);}
+      if(p>=1){state.jump=null;state.action='idle';state.target=null;playBehavior.landed(state.time,{continueChase:state.mode==='play'&&state.follow&&cursorFollow.active});}
       return;
     }
-    if(state.time<state.petUntil){state.action='pet';return;}
-    if(state.freePosition){state.action='idle';return;}
-    if(state.mode!=='play'){state.action='idle';return;}
+    if(state.time<state.petUntil){cursorFollow.reset();state.action='pet';return;}
+    const placement=currentPlacement(),angle=placement.rotation||0;
+    const center={x:placement.x+placement.anchorX+Math.sin(angle)*state.size*.5,y:placement.y+placement.anchorY-Math.cos(angle)*state.size*.5};
+    const proximity=Math.hypot(cursor.x-center.x,cursor.y-center.y);
+    const following=cursorFollow.update({now:state.time,distance:proximity,size:state.size,enabled:state.follow});
+    if(following==='stopped'){
+      playBehavior.reset(state.time);feedback={kind:'missed',start:state.time,until:state.time+2.2};
+      state.action='missed';state.actionStart=state.time;state.target=null;state.nextWander=state.time+4;return;
+    }
+    if(following==='chase'&&proximity<=state.size*.58){
+      cursorFollow.complete();feedback={kind:'caught',start:state.time,until:state.time+1.7};
+      state.action='caught';state.actionStart=state.time;state.target=null;state.nextWander=state.time+4;return;
+    }
+    if(following==='watch'||following==='stopped'){
+      state.target=null;state.action=following==='watch'?'stalk':'look-away';
+      state.actionStart=state.time;state.nextWander=state.time+3;
+      state.direction=Math.sign(cursor.x-center.x)||state.direction;return;
+    }
+    if(state.freePosition){
+      state.target=null;
+      if(following==='chase'&&proximity>state.size*.45){
+        const step=Math.min(proximity-state.size*.45,dt*160);
+        const next={x:state.freePosition.x+(cursor.x-center.x)/proximity*step,y:state.freePosition.y+(cursor.y-center.y)/proximity*step};
+        state.freePosition={...constrainPosition(display.workArea,next,state.size),displayId:display.id};
+        if(state.action!=='walk')state.actionStart=state.time;
+        state.action='walk';state.direction=Math.sign(cursor.x-center.x)||state.direction;
+      }else state.action='idle';
+      return;
+    }
+    if(state.mode!=='play'&&following!=='chase'){state.target=null;state.action='idle';return;}
     const projected=route.nearest(cursor),difference=route.delta(state.distance,projected.distance);
-    const near=state.follow&&projected.separation<state.size*1.45&&Math.abs(difference)<420;
-    const behavior=playBehavior.update({now:state.time,near,difference,interactive:state.interactive,follow:state.follow,roam:state.roam});
+    const near=following==='chase'&&projected.separation<state.size*1.45&&Math.abs(difference)<420;
+    const behavior=playBehavior.update({now:state.time,near,difference,interactive:state.interactive,follow:state.follow,roam:state.roam,hasPounced:cursorFollow.hasPounced});
     if(behavior){
       state.target=null;
-      if(behavior.kind==='jump'){state.direction=Math.sign(difference||state.direction);startJump(wrap(projected.distance+state.direction*behavior.overshoot,route.total));}
+      if(behavior.kind==='jump'){cursorFollow.markPounced();state.direction=Math.sign(difference||state.direction);startJump(wrap(projected.distance+state.direction*behavior.overshoot,route.total));}
       else{state.action=behavior.kind;state.actionStart=state.time-behavior.elapsed;if(behavior.kind==='stalk')state.direction=Math.sign(difference||state.direction);}
       state.nextWander=state.time+3;return;
     }
-    if(state.follow&&projected.separation<state.size*1.45&&Math.abs(difference)<420&&!state.interactive){
-      const followDistance=wrap(projected.distance-Math.sign(difference||state.direction)*state.size*.28,route.total);
+    if(following==='chase'&&projected.separation<state.size*1.45){
+      const gap=state.size*.45;
+      const followDistance=Math.abs(difference)<=gap?state.distance:wrap(projected.distance-Math.sign(difference)*gap,route.total);
       state.nextWander=state.time+4;
       state.target=followDistance;
-    }else if(state.interactive){state.target=null;state.action='idle';state.nextWander=state.time+2;return;}
+    }else if(following==='chase'){state.target=null;state.action='idle';return;}
+    else if(state.interactive){state.target=null;state.action='idle';state.nextWander=state.time+2;return;}
     else if(state.time>state.nextWander&&state.roam){
       const distance=180+Math.random()*240;
       state.target=wrap(state.distance+(Math.random()>.35?state.direction:-state.direction)*distance,route.total);
       state.nextWander=state.time+8+Math.random()*5;
     }
-    if(state.target!==null)moveToward(state.target,dt,state.follow&&projected.separation<140?100:58);
+    if(state.target!==null)moveToward(state.target,dt,following==='chase'?160:58);
     else state.action='idle';
   }
   function frameData(cursor){
     const placement=currentPlacement();
-    return {utilityBadge:utilities?.badge(),audio:audioState,audioFeedback:Date.now()<audioFeedbackUntil,fileHover:Date.now()<fileHoverUntil,musicReactionElapsed:state.mode==='music'&&!state.paused&&!state.dragging&&state.time-musicReactionAt<1.15?state.time-musicReactionAt:null,time:state.time,character:state.character,mode:state.mode,size:state.size,direction:state.direction,action:state.action,actionElapsed:state.time-state.actionStart,jumpPhase:state.jump?(state.time-state.jump.start)/state.jump.duration:null,pet:state.time<state.petUntil,paused:state.paused,dragging:state.dragging,toast:state.time<state.toastUntil?state.toast:'',...placement,cursor:{x:cursor.x-placement.x,y:cursor.y-placement.y}};
+    return {desktopToy:desktopToy?{...desktopToy,age:state.time-desktopToy.start}:null,dragMotion,utilityBadge:utilities?.badge(),audio:audioState,audioFeedback:Date.now()<audioFeedbackUntil,fileHover:Date.now()<fileHoverUntil,musicReactionElapsed:state.mode==='music'&&!state.paused&&!state.dragging&&state.time-musicReactionAt<1.15?state.time-musicReactionAt:null,time:state.time,character:state.character,mode:cursorFollow.active?'play':state.mode,size:state.size,direction:state.direction,action:state.action,actionElapsed:state.time-state.actionStart,jumpPhase:state.jump?(state.time-state.jump.start)/state.jump.duration:null,pet:state.time<state.petUntil,paused:state.paused,dragging:state.dragging,toast:state.time<state.toastUntil?state.toast:'',...placement,cursor:{x:cursor.x-placement.x,y:cursor.y-placement.y}};
   }
   function tickFrame(){
     if(!win||win.isDestroyed()||!ready||!state.visible||suspended||screenshots?.isCapturing())return;
@@ -383,7 +443,7 @@ else {
     const now=performance.now()/1000,dt=lastTick?Math.min(.1,now-lastTick):0;lastTick=now;
 
     if(ready&&state.visible&&!suspended){
-      const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint();if(wallpaper.active&&(wallpaper.desktop||roomPinned)&&!state.dragging&&!state.paused)state.time+=dt;else advance(dt,cursor);
+      const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint();if(roomOwnsPet&&!state.dragging&&!state.paused)state.time+=dt;else advance(dt,cursor);
       const roomActive=!roomOutside&&wallpaper.active&&(wallpaper.desktop||roomPinned)&&wallpaper.petReady&&!state.dragging&&!screenshots.isBusy()&&(roomPinned||(display.id===screen.getPrimaryDisplay().id&&!screenshots.snapshot().photos.length&&!utilities.badge().count&&!utilities.badge().due));
       if(roomActive!==roomOwnsPet){roomOwnsPet=roomActive;syncMouseInput(false,true);if(roomActive)win.hide();else if(state.visible&&!suspended)win.showInactive();}
       if(roomActive&&win.isVisible())win.hide();
@@ -421,9 +481,9 @@ else {
   ipcMain.on('meo:action',(event,value)=>{
     if(!valid(event))return;
     if(value==='press'){petPressedAt=Date.now();const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint(),placement=currentPlacement();dragOffset={x:cursor.x-placement.x-placement.anchorX,y:cursor.y-placement.y-placement.anchorY};clearTimeout(playerBlurTimer);}
-    else if(value==='menu')popup();else if(value==='pet'){petPressedAt=0;if(utilities?.isOpen()){utilities.hide();if(mediaData.hasSession)openPlayer();else pet();return;}if(playerOpen||state.mode==='music'||(state.autoMedia&&mediaData.hasSession))togglePlayer();else pet();}
-    else if(value==='drag-start'){petPressedAt=0;if(playerOpen)hidePlayer(true);utilities?.hide(true);playBehavior.affection(state.time);state.dragging=true;state.dragAt=Date.now();state.jump=null;state.action='idle';syncMouseInput(true,true);}
-    else if(value==='drag-end'){petPressedAt=0;state.dragging=false;if(state.freePosition){const nearest=route.nearest(state.freePosition);if(nearest.separation<24){state.distance=nearest.distance;state.freePosition=null;}}state.nextWander=state.time+4;persist();}
+    else if(value==='ball')throwDesktopBall();else if(value==='menu')popup();else if(value==='pet'){petPressedAt=0;if(utilities?.isOpen()){utilities.hide();if(mediaData.hasSession)openPlayer();else pet();return;}if(playerOpen||state.mode==='music'||(state.autoMedia&&mediaData.hasSession))togglePlayer();else pet();}
+    else if(value==='drag-start'){petPressedAt=0;if(playerOpen)hidePlayer(true);utilities?.hide(true);playBehavior.affection(state.time);state.dragging=true;dragMotion=0;lastDragPoint=null;desktopToy=null;feedback=null;state.dragAt=Date.now();state.jump=null;state.action='idle';syncMouseInput(true,true);}
+    else if(value==='drag-end'){petPressedAt=0;state.dragging=false;lastDragPoint=null;feedback={kind:'landed',start:state.time,until:state.time+.7};state.action='landed';state.actionStart=state.time;if(state.freePosition){const nearest=route.nearest(state.freePosition);if(nearest.separation<24){state.distance=nearest.distance;state.freePosition=null;}}state.nextWander=state.time+4;persist();}
     else if(value==='error')log('Renderer could not load character assets');
   });
   app.whenReady().then(()=>{
