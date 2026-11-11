@@ -83,24 +83,7 @@
   if(state.showPet&&!state.paused&&!reduced.matches)raf=requestAnimationFrame(render);
  }
  // Wind two bundles across a shaded ball, clipping the strands to its silhouette.
- function drawYarn(x,floor,r,lift,angle){
-  ctx.save();ctx.translate(x,floor);
-  ctx.fillStyle='rgba(64,40,38,.20)';ctx.beginPath();ctx.ellipse(0,1,r*1.15,r*.21,0,0,2*Math.PI);ctx.fill();
-  ctx.scale(r,r);ctx.lineCap='round';ctx.lineWidth=.09;ctx.strokeStyle='#a54e53';
-  ctx.beginPath();ctx.moveTo(-.32,-.25-lift/r);ctx.bezierCurveTo(-1.05,.30,-1.40,-.46,-1.72,-.13);ctx.bezierCurveTo(-1.95,.12,-2.18,.02,-2.35,-.11);ctx.stroke();
-  ctx.translate(0,-1-lift/r);ctx.rotate(angle);
-  ctx.beginPath();ctx.arc(0,0,1,0,Math.PI*2);ctx.fillStyle='#cf7472';ctx.fill();ctx.clip();
-  const strands=()=>{for(let i=-4;i<=4;i++){
-   const offset=i*.23;ctx.beginPath();ctx.moveTo(-1.4,offset+.32);ctx.quadraticCurveTo(-.05,offset-.61,1.4,offset+.14);
-   ctx.strokeStyle='#a95758';ctx.lineWidth=.14;ctx.stroke();ctx.strokeStyle='#f4b39d';ctx.lineWidth=.055;ctx.stroke();
-  }};
-  ctx.rotate(-.58);strands();
-  ctx.save();ctx.beginPath();ctx.ellipse(.57,.22,.79,1.22,-.58,0,Math.PI*2);ctx.clip();ctx.fillStyle='#cd706e';ctx.fillRect(-2,-2,4,4);ctx.rotate(1.45);strands();ctx.restore();
-  ctx.restore();
-  ctx.save();const cy=floor-r-lift,shade=ctx.createRadialGradient(x-r*.35,cy-r*.42,0,x,cy,r);
-  shade.addColorStop(0,'rgba(255,231,196,.40)');shade.addColorStop(.60,'rgba(255,226,194,0)');shade.addColorStop(1,'rgba(91,41,51,.44)');
-  ctx.fillStyle=shade;ctx.beginPath();ctx.arc(x,cy,r,0,Math.PI*2);ctx.fill();ctx.restore();
- }
+ const drawYarn=(...args)=>window.DRAW_YARN(ctx,...args);
  // Both silhouettes face left, with the touching fingertip at the local origin.
  const pokeHand=new Path2D('M 1 -2 Q -2 0 1 2 L 13 3 L 11 4 Q 9 6 12 8 Q 11 11 15 12 Q 15 15 20 15 Q 24 15 28 12 L 33 12 L 33 -2 L 28 -2 Q 24 -6 20 -6 Q 16 -6 14 -3 Z');
  const strokeHand=new Path2D('M 1 -2 Q -2 -1 0 2 L 10 6 L 2 4 Q -1 4 1 7 L 12 11 L 6 10 Q 3 10 5 13 L 16 17 Q 22 20 28 15 L 34 13 L 31 -1 L 26 0 Q 21 -2 17 -7 Q 13 -11 12 -8 Q 11 -6 15 -1 L 5 -5 Q 2 -6 2 -4 L 9 0 Z');

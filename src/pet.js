@@ -35,9 +35,23 @@
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   function resize(){width=innerWidth;height=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
   function blink(t){const p=t%4.8;return p>4.33&&p<4.42?1:p>=4.42&&p<4.55?2:p>=4.55&&p<4.64?1:0;}
+  const coatRow={classic:0,mit:1,may:2,muc:3};
+  atlas.lift={baseHeight:390,frames:Array.from({length:8},(_,i)=>({x:(i%4)*440,y:Math.floor(i/4)*440,w:440,h:440}))};
+  atlas.yarn={baseHeight:292,frames:Array.from({length:16},(_,i)=>({x:(i%4)*360,y:Math.floor(i/4)*300,w:360,h:300}))};
+  function specialPose(p,f){
+    if(f.dragging)return {...p,sheet:'lift',index:(coatRow[f.character]||0)+(Math.sin(f.time*5)>0?4:0),rotation:reducedMotion.matches?0:-f.dragMotion+Math.sin(f.time*5)*.025,altitude:0,sx:1,sy:1};
+    if(f.action==='yarn'){
+      const sequence=[0,1,2,3,2,3,2,0,1,2,3,2,3,2],age=f.actionElapsed;
+      return {...p,sheet:'yarn',index:(coatRow[f.character]||0)*4+sequence[Math.min(13,Math.floor(age/5*14))],rotation:reducedMotion.matches?0:Math.sin(age*9)*.06,altitude:0,sx:1,sy:1};
+    }
+    return p;
+  }
   function pose(f){
     let sheet='core',index=0,altitude=0,rotation=0,sx=1,sy=1;
-    if(f.jumpPhase!==null){const p=f.jumpPhase;if(p<.18){index=8;sy=.97;sx=1.02;}else if(p<.65){index=9;altitude=Math.sin((p-.18)/.47*Math.PI)*Math.min(64,displaySize*.45);}else if(p<.81){index=10;sx=1.02;sy=.97;}else index=11;}
+    if(f.action==='landed'){index=f.actionElapsed<.28?10:0;const t=clamp(f.actionElapsed/.7,0,1);sy=1-Math.sin(t*Math.PI)*.15;sx=1+Math.sin(t*Math.PI)*.07;}
+    else if(f.action==='caught'){index=f.actionElapsed<.65?11:2;rotation=Math.sin(f.actionElapsed*4)*.04;}
+    else if(f.action==='missed'){if(f.actionElapsed<.8){index=3;rotation=Math.sin(f.actionElapsed*8)*.10;}else{sheet='actions';index=10;}}
+    else if(f.jumpPhase!==null){const p=f.jumpPhase;if(p<.18){index=8;sy=.97;sx=1.02;}else if(p<.65){index=9;altitude=Math.sin((p-.18)/.47*Math.PI)*Math.min(64,displaySize*.45);}else if(p<.81){index=10;sx=1.02;sy=.97;}else index=11;}
     else if(f.pet){sheet=f.mode==='music'||f.mode==='sleep'?'moods':'core';index=f.mode==='music'?0:f.mode==='sleep'?10:2;const affection=Math.min(1,f.actionElapsed/.35);rotation=Math.sin(f.actionElapsed*3.4)*.075*affection;sx=1+Math.sin(f.actionElapsed*3.4)*.025;sy=1-Math.sin(f.actionElapsed*3.4)*.018;altitude=(Math.sin(f.actionElapsed*3.4)+1)*1.2;}
     else if(f.action==='stalk'){index=8;sx=1.04+Math.sin(f.actionElapsed*22)*.012;sy=.94;rotation=Math.sin(f.actionElapsed*22)*.018;}
     else if(f.action==='look-away'){index=f.actionElapsed<.45?11:3;rotation=-.07;sx=f.actionElapsed>.4?-1:1;}
@@ -83,7 +97,7 @@
   function render(f){
     const dt=previousTime===null?0:clamp(f.time-previousTime,0,.12);previousTime=f.time;
     displaySize+= (f.size-displaySize)*(1-Math.exp(-Math.max(dt,.016)*6));
-    frame=f;const activity=window.CAT_PROPS.update(f,photoState),visualFrame=reducedMotion.matches?{...f,time:0,actionElapsed:0,musicReactionElapsed:null,jumpPhase:null,pet:false}:f,target=characters.resolve(window.CAT_PROPS.pose(pose(visualFrame),activity,visualFrame),f.character,visualFrame);
+    frame=f;const activity=window.CAT_PROPS.update(f,photoState),visualFrame=reducedMotion.matches?{...f,time:0,actionElapsed:0,musicReactionElapsed:null,jumpPhase:null,pet:false}:f,target=specialPose(characters.resolve(window.CAT_PROPS.pose(pose(visualFrame),activity,visualFrame),f.character,visualFrame),visualFrame);
     const group=[f.character,f.mode,f.action,!!f.pet,f.jumpPhase!==null,target.logicalSheet,target.logicalSheet==='actions'?target.logicalIndex:''].join(':');
     const p=transition.sample(target,group,performance.now(),f.paused||f.dragging||reducedMotion.matches),source=atlas[p.sheet].frames[p.index];renderedPose=p;renderCount++;lastActivity=activity;if(activity.event!=='throw'&&!photoState.busy)flightPhotos=[];seen.add(p.sheet+':'+p.index);
     const unit=characters.unit(p.sheet,displaySize),drawWidth=source.w*unit,drawHeight=source.h*unit;
@@ -98,6 +112,11 @@
     ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(transform.sx,transform.sy);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
     ctx.globalAlpha=p.opacity;ctx.drawImage(images[p.sheet],source.x,source.y,source.w,source.h,-drawWidth/2,-drawHeight,drawWidth,drawHeight);
     const photoImages=activity.event==='throw'&&flightPhotos.length?flightPhotos:carried;if(!characters.details(ctx,p,source,unit,drawWidth,drawHeight,activity,photoImages))window.CAT_PROPS.drawDetails(ctx,p,source,unit,drawWidth,drawHeight,activity,photoImages);ctx.restore();
+    if(f.desktopToy&&f.desktopToy.phase!=='play'){
+      const toy=f.desktopToy;
+      const lift=toy.phase==='drop'&&!reducedMotion.matches?(1-Math.min(1,toy.age/.45)**2)*displaySize*.65:0;
+      window.DRAW_YARN(ctx,toy.x-f.x,toy.y-f.y,displaySize*.12,lift,0);
+    }
     pocket.hidden=!photoState.photos.length||f.fileHover||f.audioFeedback||audioHover;const px=f.anchorX+Math.cos(f.rotation)*displaySize*.54,py=f.anchorY+Math.sin(f.rotation)*displaySize*.54-displaySize*.40;pocket.style.left=clamp(px+88>width?f.anchorX-displaySize*.54-88:px,5,width-93)+'px';pocket.style.top=clamp(py,5,height-30)+'px';
     if(f.pet&&!window.__wasPet)emit(clamp(x,25,width-25),clamp(y-displaySize*.8,25,height-25),'heart');window.__wasPet=f.pet;
     if(previousMode!==null&&previousMode!==f.mode)emit(clamp(x,25,width-25),clamp(y-displaySize*.6,25,height-25),'spark',4);previousMode=f.mode;
@@ -143,10 +162,10 @@
   document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(raf);raf=0;}});
   addEventListener('resize',resize);resize();
   window.meoPet={snapshot:()=>({renderedPose,renderCount,transitioning:transition.active,frame,activity:lastActivity,pose:frame?pose(frame):null,displaySize,hit,seen:[...seen],width,height}),hitAt:point=>sampleHit(point)};
-  Promise.all(['core','moods','actions','walk','mit','may','muc','mit-walk','may-walk','muc-walk'].map(name=>new Promise((resolve,reject)=>{
+  Promise.all(['core','moods','actions','walk','mit','may','muc','mit-walk','may-walk','muc-walk','yarn','lift'].map(name=>new Promise((resolve,reject)=>{
     const img=new Image();img.onload=()=>{
       images[name]=img;const buffer=document.createElement('canvas');buffer.width=img.naturalWidth;buffer.height=img.naturalHeight;
       const context=buffer.getContext('2d',{willReadFrequently:true});context.drawImage(img,0,0);pixels[name]=context.getImageData(0,0,buffer.width,buffer.height);resolve();
-    };img.onerror=reject;img.src=`../assets/${name}.png`;
+    };img.onerror=reject;img.src=name==='yarn'?'../assets/room/yarn-play.webp':name==='lift'?'../assets/lift.webp':`../assets/${name}.png`;
   }))).then(()=>{window.meo.onFrame(receiveFrame);window.meo.ready();}).catch(()=>window.meo.action('error'));
 })();

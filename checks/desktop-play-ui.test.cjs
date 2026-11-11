@@ -1,0 +1,24 @@
+const {_electron}=require('playwright'),path=require('path'),assert=require('assert/strict');
+(async()=>{const env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
+const app=await _electron.launch({executablePath:path.resolve('.cache/electron-dist-45.0.0-win32-x64/electron.exe'),args:[process.cwd(),'--meo-test'],env});
+try{
+const page=await app.firstWindow(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.waitForFunction(()=>window.meoPet?.snapshot().frame);
+await app.evaluate(()=>{global.__meo.setMode('music');global.__meo.setPaused(false);global.__meo.move(400);global.__meo.cursor={x:500,y:500};});
+await page.evaluate(()=>window.meo.action('press'));await page.evaluate(()=>window.meo.action('drag-start'));
+await page.waitForTimeout(500);await page.waitForFunction(()=>window.meoPet.snapshot().renderedPose.sheet==='lift');
+await app.evaluate(()=>global.__meo.cursor={x:650,y:450});await page.waitForTimeout(100);
+assert.ok(Math.abs(await page.evaluate(()=>window.meoPet.snapshot().frame.dragMotion))>.01);
+await page.screenshot({path:'.cache/lift-desktop.png'});
+await page.evaluate(()=>window.meo.action('drag-end'));
+await page.waitForFunction(()=>window.meoPet.snapshot().frame.action==='landed');
+await page.waitForTimeout(900);
+await page.evaluate(()=>window.meo.action('ball'));
+await page.waitForFunction(()=>window.meoPet.snapshot().frame.desktopToy?.phase==='drop');
+await page.waitForFunction(()=>window.meoPet.snapshot().renderedPose.sheet==='yarn');
+await page.waitForTimeout(1100);
+await page.screenshot({path:'.cache/yarn-desktop.png'});
+await page.waitForFunction(()=>!window.meoPet.snapshot().frame.desktopToy);
+assert.equal(await app.evaluate(()=>global.__meo.state().mode),'music');
+assert.deepEqual(errors,[]);console.log('Lift, movement sway, landing and desktop yarn passed');
+}finally{await app.close()}})().catch(e=>{console.error(e);process.exitCode=1});

@@ -8,5 +8,5 @@ contextBridge.exposeInMainWorld('meo',{
   hit:value=>{if(typeof value==='boolean')ipcRenderer.send('meo:hit',value);},
   fileHover:value=>ipcRenderer.send('meo:files:hover',value===true),
   dropFiles:files=>ipcRenderer.invoke('meo:files:drop',Array.from(files).map(file=>webUtils.getPathForFile(file))),
-  action:value=>{if(['menu','press','pet','drag-start','drag-end','error'].includes(value))ipcRenderer.send('meo:action',value);}
+  action:value=>{if(['ball','menu','press','pet','drag-start','drag-end','error'].includes(value))ipcRenderer.send('meo:action',value);}
 });

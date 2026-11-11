@@ -48,15 +48,15 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 
 ## Tải xuống và cài ứng dụng
 
-**Bản hiện tại: 1.0.5. Người dùng cài app không cần Node.js hay công cụ lập trình.**
+**Bản hiện tại: 1.1.0. Người dùng cài app không cần Node.js hay công cụ lập trình.**
 
 | Máy của bạn | Bấm để tải | Yêu cầu |
 | --- | --- | --- |
-| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.5/Meo-Desktop-Setup-1.0.5-x64.exe)** | Windows 10/11, x64 |
-| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.5/Meo-Desktop-1.0.5-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
-| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.0.5/Meo-Desktop-1.0.5-mac-x64.dmg)** | macOS 13 Ventura trở lên |
+| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.1.0/Meo-Desktop-Setup-1.1.0-x64.exe)** | Windows 10/11, x64 |
+| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.1.0/Meo-Desktop-1.1.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
+| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.1.0/Meo-Desktop-1.1.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
 
-[Xem Release 1.0.5 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.0.5) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+[Xem Release 1.1.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.1.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 1. Chọn đúng bộ cài trong bảng. Trên Mac, xem loại chip tại menu Apple → **About This Mac** nếu chưa biết chọn bản nào.
 2. **Windows:** mở `.exe` và làm theo trình cài đặt. **Mac:** mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app từ đó.
@@ -68,7 +68,7 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 
 ## Tính năng chính
 
-**Mới trong 1.0.5:** Kéo nút Thả bóng tới sàn để chọn điểm rơi. Mèo chạy tới ôm cuộn len và đạp bằng chân sau, đôi khi cuộn len lăn theo khi mèo bước đi. Vuốt ve và Chọc mèo có hoạt ảnh bàn tay. Các tương tác trong phòng hỗ trợ Windows.
+**Mới trong 1.1.0:** Mèo co chân và đung đưa khi được nhấc lên, đáp chân nhún nhẹ khi thả xuống. Chuột phải lên mèo → Thả bóng để chơi len ngay ngoài desktop. Giữ con trỏ gần 2 giây để mèo rình và đuổi ở mọi chế độ. Mỗi lượt mèo chỉ vồ một lần, tiếp tục đuổi trong tầm và dừng khi chuột đi xa. Bắt kịp thì giơ chân rồi ngồi đắc ý, đuổi hụt thì nhìn quanh và liếm chân trước khi trở lại chế độ cũ.
 
 **Bản vá 1.0.2:** sửa mèo giữ trạng thái nghe nhạc sau khi dừng/đóng trình phát. Túi giữ bản sao độc lập của file/thư mục, có nút Sao chép file để dán vào app hỗ trợ. Liên kết cũ có nút Giữ bản sao; bỏ khỏi túi chỉ xóa bản sao. Tối đa 20 món, 250 MB/món, 1 GB/túi.
 
