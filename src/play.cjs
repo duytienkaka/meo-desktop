@@ -32,7 +32,10 @@ function createCursorFollow(){
   const wasChasing=chasing;
   if(distance>Math.max(300,size*3.4)){reset();hasPounced=false;finished=false;return wasChasing?'stopped':null;}
   if(!enabled){reset();return wasChasing?'stopped':null;}
-  if(finished)return null;
+  if(finished){
+   if(distance<=size*.85)return null;
+   finished=false;chasing=true;
+  }
   if(hasPounced){chasing=true;return 'chase';}
   if(chasing)return 'chase';
   if(distance>Math.max(150,size*1.8)){since=null;return null;}
