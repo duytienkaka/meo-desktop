@@ -5,7 +5,7 @@
   "electronVersion": "45.0.0",
   "asar": false,
   "directories": {"output": "outputs/mac", "buildResources": "assets"},
-  "files": ["src/**/*", "assets/**/*", "package.json", "!src/native/*.exe", "!src/native/*.cs", "!src/native/*.ps1"],
+  "files": ["src/**/*", "assets/**/*", "package.json", "!src/native/*.exe", "!src/native/*.cs", "!src/native/*.ps1", "!src/native/taskbar-engine/**/*"],
   "mac": {
     "category": "public.app-category.utilities",
     "icon": "assets/meo-mac.png",

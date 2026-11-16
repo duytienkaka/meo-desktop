@@ -30,3 +30,11 @@ test('idle motion cannot interrupt an active receive animation',()=>{
  const props=fixture(),f={time:1,mode:'play',action:'idle',utilityBadge:{count:0}},photos={photos:[]};props.update(f,photos);f.time=100;f.utilityBadge.count=1;assert.equal(props.update(f,photos).event,'store');
  const original={sheet:'core',index:0,altitude:0,rotation:0,sx:1,sy:1};assert.deepEqual(props.pose({...original},props.motion('store',.6),{action:'walk'}),original);
 });
+
+test('removing the final carried photo cancels its receive animation immediately',()=>{
+ const props=fixture(),frame={time:1,mode:'play',action:'idle',utilityBadge:{count:0}};
+ props.update(frame,{photos:[]});
+ frame.time=2;assert.equal(props.update(frame,{photos:[{}]}).event,'photos');
+ frame.time=2.1;const activity=props.update(frame,{photos:[]});
+ assert.equal(activity.event,'');assert.equal(activity.photos,0);
+});

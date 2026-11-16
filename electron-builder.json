@@ -12,7 +12,7 @@
     "src/**/*",
     "assets/**/*",
     "package.json",
-    "!src/native/*.cs"
+    "!src/native/{AudioControl,MediaWatcher,OverlayWatcher,ScreenshotBridge,WallpaperHost}.cs"
   ],
   "win": {
     "target": [

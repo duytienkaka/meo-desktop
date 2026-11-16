@@ -181,3 +181,5 @@ footer { grid-column: 1/-1; display: flex; align-items: center; gap: 20px; paddi
 .room-clock-control{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:18px;color:#b9b4aa;font-size:12px}.room-clock-control select{max-width:200px}
 
 .room-enter{margin-top:20px;width:100%;padding:13px 18px;border-radius:12px}
+
+.glass-slider{display:flex;align-items:center;gap:12px;min-width:210px}.glass-slider input{width:160px;accent-color:#c3b1e8}.glass-slider output{width:36px;text-align:right;font-variant-numeric:tabular-nums;color:#d4cce2}.glass-control:has(input:disabled){opacity:.5}

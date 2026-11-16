@@ -31,6 +31,50 @@ internal static class AudioControl {
   [PreserveSig] int SetMute([MarshalAs(UnmanagedType.Bool)] bool mute,ref Guid context);
   [PreserveSig] int GetMute([MarshalAs(UnmanagedType.Bool)] out bool mute);
  }
+
+ [ComImport,Guid("C02216F6-8C67-4B5B-9D00-D008E73E0064"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] interface Meter {
+  [PreserveSig] int GetPeakValue(out float value);
+  [PreserveSig] int GetMeteringChannelCount(out uint count);
+  [PreserveSig] int GetChannelsPeakValues(uint count,[Out,MarshalAs(UnmanagedType.LPArray,SizeParamIndex=0)] float[] values);
+  [PreserveSig] int QueryHardwareSupport(out uint mask);
+ }
+ static int WatchMeter(int parentId){
+  object enumerator=null,meterObject=null,volumeObject=null;
+  Device device=null;
+  try{
+   using(var parent=Process.GetProcessById(parentId)){
+    DateTime bindAt=DateTime.MinValue,parentAt=DateTime.MinValue;
+    Meter meter=null;Volume volume=null;
+    while(true){
+     if(DateTime.UtcNow>=parentAt){if(parent.HasExited)return 0;parentAt=DateTime.UtcNow.AddSeconds(1);}
+     try{
+      if(meter==null||DateTime.UtcNow>=bindAt){
+       if(meterObject!=null){Marshal.ReleaseComObject(meterObject);meterObject=null;}
+       if(volumeObject!=null){Marshal.ReleaseComObject(volumeObject);volumeObject=null;}
+       if(device!=null){Marshal.ReleaseComObject(device);device=null;}
+       if(enumerator==null)enumerator=Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")));
+       Marshal.ThrowExceptionForHR(((Enumerator)enumerator).GetDefaultAudioEndpoint(0,1,out device));
+       Guid meterId=typeof(Meter).GUID,volumeId=typeof(Volume).GUID;
+       Marshal.ThrowExceptionForHR(device.Activate(ref meterId,23,IntPtr.Zero,out meterObject));
+       Marshal.ThrowExceptionForHR(device.Activate(ref volumeId,23,IntPtr.Zero,out volumeObject));
+       meter=(Meter)meterObject;volume=(Volume)volumeObject;bindAt=DateTime.UtcNow.AddSeconds(2);
+      }
+      float peak;bool muted;
+      Marshal.ThrowExceptionForHR(meter.GetPeakValue(out peak));
+      Marshal.ThrowExceptionForHR(volume.GetMute(out muted));
+      Console.WriteLine((muted?0:Math.Max(0,Math.Min(1,peak))).ToString("0.0000",CultureInfo.InvariantCulture));
+     }catch{meter=null;volume=null;Console.WriteLine("0.0000");Thread.Sleep(500);}
+     Thread.Sleep(40);
+    }
+   }
+  }catch{return 0;}
+  finally{
+   if(meterObject!=null)Marshal.ReleaseComObject(meterObject);
+   if(volumeObject!=null)Marshal.ReleaseComObject(volumeObject);
+   if(device!=null)Marshal.ReleaseComObject(device);
+   if(enumerator!=null)Marshal.ReleaseComObject(enumerator);
+  }
+ }
  static readonly JavaScriptSerializer Json=new JavaScriptSerializer();
  static object Sample(string action,double amount,int requestId) {
   object enumerator=null,endpoint=null;Device device=null;
@@ -50,6 +94,7 @@ internal static class AudioControl {
   finally{if(endpoint!=null)Marshal.ReleaseComObject(endpoint);if(device!=null)Marshal.ReleaseComObject(device);if(enumerator!=null)Marshal.ReleaseComObject(enumerator);}
  }
  public static int Main(string[] args) {
+  int meterParent;if(args.Length==2&&args[0]=="meter"&&int.TryParse(args[1],out meterParent))return WatchMeter(meterParent);
   int parentId;if(args.Length!=1||!int.TryParse(args[0],out parentId))return 2;Console.OutputEncoding=new UTF8Encoding(false);
   var queue=new BlockingCollection<string>(64);bool closed=false;
   var reader=new Thread(()=>{try{string line;while((line=Console.ReadLine())!=null){if(line.Length<2048)queue.TryAdd(line);}}catch{}finally{closed=true;}});reader.IsBackground=true;reader.Start();

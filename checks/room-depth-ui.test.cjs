@@ -6,7 +6,9 @@ const root=path.resolve(__dirname,'..'),env={...process.env};delete env.ELECTRON
  await app.evaluate(()=>{global.__meo.setMode('play');global.__meo.setPaused(false);global.__meo.setVisible(true);global.__meo.screenshots.clear();global.__meo.utilities.badge=()=>({count:0,due:0});Object.defineProperty(global.__meo.wallpaper,'desktop',{get:()=>true});});
  const opened=app.waitForEvent('window');await app.evaluate(()=>global.__meo.openSettings());const settings=await opened;await settings.waitForSelector('#wallpaper');
  await settings.evaluate(()=>window.settings.update({roomLighting:'afternoon'}));await settings.evaluate(()=>window.settings.update({roomSpot:'bed'}));await settings.evaluate(()=>window.settings.update({wallpaper:true}));
- const room=app.windows().find(w=>w.url().endsWith('/room.html')),errors=[];room.on('pageerror',e=>errors.push(e.message));
+ const candidates=app.windows().filter(w=>w.url().endsWith('/room.html'));
+ let room;for(const candidate of candidates){if(await candidate.evaluate(()=>!document.querySelector('.room-controls').hidden)){room=candidate;break;}}
+ const errors=[];room.on('pageerror',e=>errors.push(e.message));
  await room.waitForFunction(()=>window.meoRoom?.snapshot().ready&&window.meoRoom.snapshot().state.showPet);
  assert.equal(await app.evaluate(()=>global.__meo.window().isVisible()),false,'floating cat hidden while scene owns cat');
  await room.waitForFunction(()=>window.meoRoom.snapshot().pose?.phase==='sleep',{},{timeout:20000});

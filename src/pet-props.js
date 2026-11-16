@@ -8,6 +8,7 @@
  function update(f,photos){
   const b=f.utilityBadge||{},current={count:b.count||0,due:b.due||0,pulse:b.pulseId,photos:photos.photos.length,busy:!!photos.busy};let next='';
   if(previous){if(current.count>previous.count)next='store';if(current.pulse!==previous.pulse&&b.pulse)next=({download:'catch',bag:'store',charging:'charge',battery:'low',reminder:'remind'})[b.kind]||'';if(current.photos>previous.photos)next='photos';if(current.busy&&!previous.busy)next='throw';if(current.due>previous.due)next='remind';if(current.due<previous.due)next='done';}
+  if(previous?.photos&&!current.photos&&['photos','throw'].includes(event))event='';
   previous=current;
   if(!nextIdle)nextIdle=f.time+40+Math.random()*30;
   if(f.time>=nextIdle){nextIdle=f.time+45+Math.random()*40;if(!next&&f.time-started>3&&!current.count&&!current.photos&&!current.due&&f.mode==='play'&&!f.pet&&!f.dragging&&f.action==='idle')next=idleIndex++%2?'yawn':'groom';}

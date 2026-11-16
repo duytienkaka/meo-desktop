@@ -57,11 +57,17 @@ function createScreenshotFeature({electron,getPet,getPlacement,getWindows,canUse
    await bridge.paste(destination);status('Đã đưa '+photos.length+' ảnh tới '+destination.name+'. Kiểm tra bản nháp và bỏ ảnh không muốn trước khi gửi.');
   }finally{busy=false;publish();}
  }
+ function remove(id){
+  if(busy||capturing)throw new Error('Hãy chờ thao tác ảnh hoàn tất.');
+  store.remove(id);
+  if(!store.list().length){bridge.stop();target=null;}
+  status(store.list().length?'Đã bỏ ảnh khỏi tay mèo.':'Mèo đã bỏ các ảnh đang giữ.');
+ }
  function clear(){if(busy)return;store.clear();bridge.stop();target=null;status('Mèo đã bỏ các ảnh đang giữ.');}
  ipcMain.handle('meo:shots:get',event=>{requirePet(event);return snapshot();});
  ipcMain.handle('meo:shots:pet',async(event,value)=>{requirePet(event);try{if(value?.action==='capture')return await capture();if(value?.action==='send-all'){await sendAll();return snapshot();}throw new Error('Thao tác ảnh không hợp lệ.');}catch(error){status(error.message);throw error;}});
  function hide(){if(capturing)cancelCapture();for(const window of flightWindows)if(!window.isDestroyed())window.destroy();flightWindows=[];}
  function dispose(){captureRevision++;closeOverlays();bridge.stop();store.clear();for(const window of flightWindows)if(window&&!window.isDestroyed())window.destroy();for(const file of leasedFiles)try{fs.unlinkSync(file);}catch{}leasedFiles.clear();try{fs.rmdirSync(temporary);}catch{}}
- return {capture,clear,sendAll,hide,dispose,snapshot,addImage,receiveTarget,bridge,store,isBusy:()=>capturing||busy,isCapturing:()=>capturing,captureWindows:()=>overlays.map(o=>o.window)};
+ return {capture,clear,remove,sendAll,hide,dispose,snapshot,addImage,receiveTarget,bridge,store,isBusy:()=>capturing||busy,isCapturing:()=>capturing,captureWindows:()=>overlays.map(o=>o.window)};
 }
 module.exports={createScreenshotFeature};
