@@ -34,3 +34,5 @@
 .room-controls{bottom:auto;top:50%;left:auto;right:18px;transform:translateY(-50%);flex-direction:column}.controls-left .room-controls{right:auto;left:18px}.room-controls button{min-width:116px}
 
 .room-controls [data-play="room-toggle"]{border-top:1px solid #f7e7d926;margin-top:3px}.room-controls .room-toggle-label{font-size:13px;line-height:20px;color:inherit}
+
+.room-controls[hidden]{display:none}

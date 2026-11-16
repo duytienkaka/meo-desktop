@@ -1,5 +1,7 @@
 const {BrowserWindow,screen,ipcMain}=require('electron'),{execFile,spawn}=require('node:child_process'),path=require('node:path');
-function createWallpaper(){let window=null,watcher=null,desktop=false,petReady=false,input=null,targets=[],lastTargets='',pendingInteraction=null,draggingBall=false,onRoomToggle=()=>{};ipcMain.on('meo:room:ready',event=>{if(window&&event.sender.id===window.webContents.id){petReady=true;if(pendingInteraction){window.webContents.send('room:interaction',pendingInteraction);pendingInteraction=null;}}});ipcMain.on('room:targets',(event,value)=>{if(!window||event.sender.id!==window.webContents.id||!Array.isArray(value))return;targets=value.filter(t=>['pet','bed','ball','tease','room-toggle'].includes(t.kind)&&['x','y','width','height'].every(k=>Number.isFinite(t[k]))&&t.width>0&&t.height>0).slice(0,6);});
+function createWallpaper(){
+ const backgrounds=new Map();let generation=0,refreshQueue=Promise.resolve(),primaryKey='';
+let window=null,watcher=null,desktop=false,petReady=false,input=null,targets=[],lastTargets='',pendingInteraction=null,draggingBall=false,onRoomToggle=()=>{};ipcMain.on('meo:room:ready',event=>{if(window&&event.sender.id===window.webContents.id){petReady=true;if(pendingInteraction){window.webContents.send('room:interaction',pendingInteraction);pendingInteraction=null;}}});ipcMain.on('room:targets',(event,value)=>{if(!window||event.sender.id!==window.webContents.id||!Array.isArray(value))return;targets=value.filter(t=>['pet','bed','ball','tease','room-toggle'].includes(t.kind)&&['x','y','width','height'].every(k=>Number.isFinite(t[k]))&&t.width>0&&t.height>0).slice(0,6);});
  ipcMain.on('room:input',(event,action)=>{
   if(!input||event.sender.id!==input.webContents.id||!input.isVisible())return;
   if(action==='ball-start'){draggingBall=true;return;}
@@ -12,7 +14,60 @@ function createWallpaper(){let window=null,watcher=null,desktop=false,petReady=f
   const drop=kind==='ball'&&Number.isFinite(action.x)&&Number.isFinite(action.y);
   window?.webContents.send('room:interaction',drop?{kind,x:action.x,y:action.y}:kind);
  });
- return{setRoomToggle(callback){onRoomToggle=callback;},async open(){if(window){window.showInactive();return;}const b=screen.getPrimaryDisplay().bounds;window=new BrowserWindow({...b,frame:false,show:false,skipTaskbar:true,focusable:false,resizable:false,webPreferences:{preload:path.join(__dirname,'room-preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true}});window.setIgnoreMouseEvents(true);await window.loadFile(path.join(__dirname,'room.html'));if(process.platform==='win32'){const pixels=screen.dipToScreenRect(null,b);const h=window.getNativeWindowHandle().readBigUInt64LE().toString();try{await new Promise((resolve,reject)=>execFile(path.join(__dirname,'native/MeoWallpaperHost.exe'),[h,String(pixels.x),String(pixels.y),String(pixels.width),String(pixels.height)],{windowsHide:true,timeout:8000},e=>e?reject(e):resolve()));}catch(e){window.destroy();window=null;throw new Error('Chưa gắn được nền vào desktop Windows: '+e.code+' '+e.message+'');}}else{window.destroy();window=null;throw new Error('Bản thử hình nền hiện hỗ trợ Windows.');}window.setBounds(b,false);window.setContentSize(b.width,b.height);window.showInactive();input=new BrowserWindow({...b,frame:false,transparent:true,backgroundColor:'#00000000',show:false,focusable:false,skipTaskbar:true,resizable:false,hasShadow:false,webPreferences:{preload:path.join(__dirname,'room-input-preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false}});input.setIgnoreMouseEvents(true,{forward:true});input.setAlwaysOnTop(true,'screen-saver');await input.loadFile(path.join(__dirname,'room-input.html'));watcher=spawn(path.join(__dirname,'native/MeoWallpaperHost.exe'),['watch'],{windowsHide:true});watcher.stdout.on('data',data=>{desktop=data.toString().trim().endsWith('desktop');});watcher.on('error',()=>{});},update(state){if(window&&!window.isDestroyed())window.webContents.send('room:state',state);if(input&&!input.isDestroyed()){const active=!state.paused&&state.interactive===true;if(active){if(!input.isVisible())input.showInactive();const cursor=state.cursor||{x:-1,y:-1},hit=targets.some(t=>cursor.x>=t.x&&cursor.x<=t.x+t.width&&cursor.y>=t.y&&cursor.y<=t.y+t.height);if(hit||draggingBall)input.setIgnoreMouseEvents(false);else input.setIgnoreMouseEvents(true,{forward:true});const key=JSON.stringify(targets);if(key!==lastTargets){lastTargets=key;input.webContents.send('room:targets',targets);}}else{draggingBall=false;input.hide();}}},interact(kind){if(!['ball','tease','pet'].includes(kind))return;if(petReady)window?.webContents.send('room:interaction',kind);else pendingInteraction=kind;},get desktop(){return desktop;},get petReady(){return petReady;},close(){draggingBall=false;input?.destroy();input=null;targets=[];lastTargets='';watcher?.kill();watcher=null;desktop=false;petReady=false;pendingInteraction=null;window?.destroy();window=null;},get active(){return !!window;}};}
+
+ async function attach(scene,bounds){
+  const pixels=screen.dipToScreenRect(null,bounds);
+  const handle=scene.getNativeWindowHandle().readBigUInt64LE().toString();
+  await new Promise((resolve,reject)=>execFile(path.join(__dirname,'native/MeoWallpaperHost.exe'),[handle,String(pixels.x),String(pixels.y),String(pixels.width),String(pixels.height)],{windowsHide:true,timeout:8000},error=>error?reject(error):resolve()));
+
+
+ }
+ async function syncBackgrounds(){
+  const token=generation,primary=screen.getPrimaryDisplay(),displays=screen.getAllDisplays();
+  for(const [id,entry] of backgrounds){
+   if(id===primary.id||!displays.some(display=>display.id===id)){
+    entry.window.destroy();backgrounds.delete(id);
+   }
+  }
+  for(const display of displays){
+   if(!window||token!==generation)return;
+   if(display.id===primary.id)continue;
+   const key=JSON.stringify(display);
+   const existing=backgrounds.get(display.id);
+   if(existing?.key===key)continue;
+   if(existing){existing.window.destroy();backgrounds.delete(display.id);}
+   const scene=new BrowserWindow({...display.bounds,frame:false,show:false,skipTaskbar:true,focusable:false,resizable:false,webPreferences:{preload:path.join(__dirname,'room-preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false}});
+   backgrounds.set(display.id,{window:scene,key});
+   scene.setIgnoreMouseEvents(true);
+   try{
+    await scene.loadFile(path.join(__dirname,'room.html'));
+    if(token!==generation||scene.isDestroyed())return;
+    await attach(scene,display.bounds);
+    if(token!==generation||scene.isDestroyed())return;
+    scene.webContents.send('room:state',{paused:true,showPet:false,controlsVisible:false});
+    scene.showInactive();
+   }catch(error){
+    if(!scene.isDestroyed())scene.destroy();
+    backgrounds.delete(display.id);
+    if(token===generation)throw error;
+   }
+  }
+ }
+ function queueRefresh(){
+  const pending=refreshQueue.catch(()=>{}).then(async()=>{
+   if(!window||window.isDestroyed())return;
+   const primary=screen.getPrimaryDisplay(),key=JSON.stringify(primary);
+   if(key!==primaryKey){
+    await attach(window,primary.bounds);
+    if(input&&!input.isDestroyed()){input.setBounds(primary.bounds,false);lastTargets='';}
+    primaryKey=key;
+   }
+   await syncBackgrounds();
+  });
+  refreshQueue=pending;
+  return pending;
+ }
+ return{get displayCount(){return backgrounds.size+(window?1:0);},refresh:queueRefresh,setRoomToggle(callback){onRoomToggle=callback;},async open(){if(window){window.showInactive();return;}const b=screen.getPrimaryDisplay().bounds;primaryKey=JSON.stringify(screen.getPrimaryDisplay());window=new BrowserWindow({...b,frame:false,show:false,skipTaskbar:true,focusable:false,resizable:false,webPreferences:{preload:path.join(__dirname,'room-preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true}});window.setIgnoreMouseEvents(true);await window.loadFile(path.join(__dirname,'room.html'));if(process.platform==='win32'){const pixels=screen.dipToScreenRect(null,b);const h=window.getNativeWindowHandle().readBigUInt64LE().toString();try{await new Promise((resolve,reject)=>execFile(path.join(__dirname,'native/MeoWallpaperHost.exe'),[h,String(pixels.x),String(pixels.y),String(pixels.width),String(pixels.height)],{windowsHide:true,timeout:8000},e=>e?reject(e):resolve()));}catch(e){window.destroy();window=null;throw new Error('Chưa gắn được nền vào desktop Windows: '+e.code+' '+e.message+'');}}else{window.destroy();window=null;throw new Error('Bản thử hình nền hiện hỗ trợ Windows.');}window.showInactive();input=new BrowserWindow({...b,frame:false,transparent:true,backgroundColor:'#00000000',show:false,focusable:false,skipTaskbar:true,resizable:false,hasShadow:false,webPreferences:{preload:path.join(__dirname,'room-input-preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false}});input.setIgnoreMouseEvents(true,{forward:true});input.setAlwaysOnTop(true,'screen-saver');await input.loadFile(path.join(__dirname,'room-input.html'));watcher=spawn(path.join(__dirname,'native/MeoWallpaperHost.exe'),['watch'],{windowsHide:true});watcher.stdout.on('data',data=>{desktop=data.toString().trim().endsWith('desktop');});watcher.on('error',()=>{});await queueRefresh();},update(state){for(const entry of backgrounds.values()){if(!entry.window.isDestroyed())entry.window.webContents.send('room:state',{...state,paused:true,showPet:false,controlsVisible:false});}if(window&&!window.isDestroyed())window.webContents.send('room:state',state);if(input&&!input.isDestroyed()){const active=!state.paused&&state.interactive===true;if(active){if(!input.isVisible())input.showInactive();const cursor=state.cursor||{x:-1,y:-1},hit=targets.some(t=>cursor.x>=t.x&&cursor.x<=t.x+t.width&&cursor.y>=t.y&&cursor.y<=t.y+t.height);if(hit||draggingBall)input.setIgnoreMouseEvents(false);else input.setIgnoreMouseEvents(true,{forward:true});const key=JSON.stringify(targets);if(key!==lastTargets){lastTargets=key;input.webContents.send('room:targets',targets);}}else{draggingBall=false;input.hide();}}},interact(kind){if(!['ball','tease','pet'].includes(kind))return;if(petReady)window?.webContents.send('room:interaction',kind);else pendingInteraction=kind;},get desktop(){return desktop;},get petReady(){return petReady;},close(){generation++;for(const entry of backgrounds.values())entry.window.destroy();backgrounds.clear();primaryKey='';draggingBall=false;input?.destroy();input=null;targets=[];lastTargets='';watcher?.kill();watcher=null;desktop=false;petReady=false;pendingInteraction=null;window?.destroy();window=null;},get active(){return !!window;}};}
 module.exports={createWallpaper};
 
 

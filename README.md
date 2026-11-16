@@ -48,15 +48,15 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 
 ## Tải xuống và cài ứng dụng
 
-**Bản hiện tại: 1.1.1. Người dùng cài app không cần Node.js hay công cụ lập trình.**
+**Bản hiện tại: 1.2.0. Người dùng cài app không cần Node.js hay công cụ lập trình.**
 
 | Máy của bạn | Bấm để tải | Yêu cầu |
 | --- | --- | --- |
-| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.1.1/Meo-Desktop-Setup-1.1.1-x64.exe)** | Windows 10/11, x64 |
-| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.1.1/Meo-Desktop-1.1.1-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
-| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.1.1/Meo-Desktop-1.1.1-mac-x64.dmg)** | macOS 13 Ventura trở lên |
+| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.2.0/Meo-Desktop-Setup-1.2.0-x64.exe)** | Windows 10/11, x64 |
+| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.2.0/Meo-Desktop-1.2.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
+| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.2.0/Meo-Desktop-1.2.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
 
-[Xem Release 1.1.1 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.1.1) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+[Xem Release 1.2.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.2.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 1. Chọn đúng bộ cài trong bảng. Trên Mac, xem loại chip tại menu Apple → **About This Mac** nếu chưa biết chọn bản nào.
 2. **Windows:** mở `.exe` và làm theo trình cài đặt. **Mac:** mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app từ đó.
@@ -68,19 +68,25 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 
 ## Tính năng chính
 
-**Mới trong 1.1.1:** Sửa lỗi mèo dừng đuổi sau khi vồ và bắt được con trỏ. Sau nhịp ngồi đắc ý, mèo tiếp tục chạy theo khi chuột di chuyển trong tầm. Giữ trạng thái đã vồ để tránh vồ lặp; chuột ra ngoài tầm sẽ kết thúc lượt đuổi.
+**Mới trong 1.2.0:**
+
+- **Túi ảnh:** xóa từng ảnh bằng nút × hoặc **Xóa hết** ngay trong mục Ảnh mèo đang cầm. Xóa ảnh cuối sẽ kết thúc tư thế cầm ảnh; bản sao đã giữ vào túi vẫn còn.
+- **Windows 11:** hai tùy chọn độc lập **Kính taskbar** và **Sóng nhạc + đĩa xoay** trong Cài đặt → Tự động, mặc định tắt. Kính đổi màu theo giao diện sáng/tối, có thanh chỉnh độ đậm 20–80%. Sóng rainbow phản ứng theo mức âm thanh đầu ra hệ thống; đĩa ảnh bìa xoay và bấm để mở/đóng card nhạc. Sóng nằm sau các biểu tượng khi bật kính, giảm độ nổi ở vùng đồng hồ và pin.
+- **Nhiều màn hình trên Windows:** phòng được hiển thị trên các màn hình kết nối, xử lý tọa độ âm và tỷ lệ hiển thị khác nhau. Mèo và bảng điều khiển phòng vẫn ở màn hình chính.
+
+Sóng nhạc đo mức âm thanh chung của thiết bị đầu ra, có thể phản ứng với âm thanh từ ứng dụng khác; không thu hoặc lưu bản ghi âm. Khi tắt tùy chọn, app dừng các cửa sổ và tiến trình hỗ trợ tương ứng. Thành phần ExplorerTAP đã nạp trong Explorer có thể còn trong bộ nhớ đến khi Explorer khởi động lại; giao diện taskbar được khôi phục khi tắt kính. Các tính năng taskbar không áp dụng cho Windows 10 hoặc macOS.
 
 **Bản vá 1.0.2:** sửa mèo giữ trạng thái nghe nhạc sau khi dừng/đóng trình phát. Túi giữ bản sao độc lập của file/thư mục, có nút Sao chép file để dán vào app hỗ trợ. Liên kết cũ có nút Giữ bản sao; bỏ khỏi túi chỉ xóa bản sao. Tối đa 20 món, 250 MB/món, 1 GB/túi.
 
 **Bản vá 1.0.1:** sửa tư thế nghe nhạc bị túi đồ che; thêm tab Lời bài hát có hiệu ứng trượt trong card nhạc. Lời từ [LRCLIB](https://lrclib.net), chỉ tra cứu khi mở tab (gửi tên bài, nghệ sĩ và thời lượng), lưu đệm tạm trong RAM. Có đồng bộ theo thời gian nếu nguồn có LRC; không phải bài nào cũng có lời. Sửa cập nhật Windows trong app qua GitHub Assets API, cho tải lại khi lỗi mạng và khởi động lại để cài.
 
-**Mới trong 1.0.0 — Không gian sống cho mèo:** Trên Windows, mèo được vẽ trong cảnh 2.5D, có bóng và bị mép ổ/ghế che theo chiều sâu. Mèo đi trên sàn, dùng ghế để lên bàn, chuẩn bị trước khi nhảy xuống. Đệm lún, rèm và lá cây phản ứng khi mèo chạm. Bấm/vuốt ve mèo, bấm phần trống của ổ để gọi về ngủ; có thói quen vươn vai, liếm chân, ngắm cửa sổ và đuổi bướm với khoảng nghỉ. Ánh sáng thay đổi theo giờ máy, tối đèn ấm hơn; chọn xem thử sáng/chiều/tối trong Cài đặt. Đi dạo tự động ưu tiên cửa sổ buổi sáng và ổ ngủ ban đêm. Khi chuyển ứng dụng, mèo trở lại dạng nổi. Không gian hiện hỗ trợ Windows trên màn hình chính; macOS vẫn hỗ trợ mèo nổi và các tiện ích, chưa có không gian tương tác. Bật lại hình nền sau khi mở app.
+**Mới trong 1.0.0 — Không gian sống cho mèo:** Trên Windows, mèo được vẽ trong cảnh 2.5D, có bóng và bị mép ổ/ghế che theo chiều sâu. Mèo đi trên sàn, dùng ghế để lên bàn, chuẩn bị trước khi nhảy xuống. Đệm lún, rèm và lá cây phản ứng khi mèo chạm. Bấm/vuốt ve mèo, bấm phần trống của ổ để gọi về ngủ; có thói quen vươn vai, liếm chân, ngắm cửa sổ và đuổi bướm với khoảng nghỉ. Ánh sáng thay đổi theo giờ máy, tối đèn ấm hơn; chọn xem thử sáng/chiều/tối trong Cài đặt. Đi dạo tự động ưu tiên cửa sổ buổi sáng và ổ ngủ ban đêm. Khi chuyển ứng dụng, mèo trở lại dạng nổi. Không gian hiện hỗ trợ nhiều màn hình trên Windows; mèo và bảng điều khiển ở màn hình chính; macOS vẫn hỗ trợ mèo nổi và các tiện ích, chưa có không gian tương tác. Bật lại hình nền sau khi mở app.
 
 - **Mèo trên desktop:** đi dạo theo mép, rình/vồ con trỏ, phản ứng khi vuốt ve; giữ và kéo để đặt ở vị trí bạn muốn.
 - **Nghe nhạc cùng bạn:** nhấp mèo để mở/đóng card nhạc, phát/dừng/chuyển bài, tua khi được hỗ trợ và mở trình phát.
 - **Điều khiển âm lượng:** cuộn trên mèo để tăng/giảm âm lượng hệ thống, bấm nút loa để bật/tắt tiếng.
 - **Dùng công cụ chụp của hệ thống:** bật Cài đặt → Tiện ích → Nhận ảnh chụp từ công cụ hệ thống. Windows dùng `Win + Shift + S`; Mac dùng `Control + Shift + ⌘ + 4` để chụp vào clipboard. Khi bật, mèo cũng nhận ảnh mới copy từ app khác; không đọc chữ, không nhận lại ảnh cũ khi bật.
-- **Giữ tối đa 3 ảnh:** chụp vùng màn hình, để mèo cầm xấp ảnh rồi đưa cả bộ vào bản nháp bằng một nút.
+- **Giữ tối đa 3 ảnh:** chụp vùng màn hình, để mèo cầm xấp ảnh rồi đưa cả bộ vào bản nháp bằng một nút; xóa từng ảnh hoặc xóa hết ngay trong túi.
 - **Túi đồ:** giữ tối đa 20 file, thư mục, ảnh và đoạn chữ; kéo tên / ảnh ra app khác, sao chép chữ, mở file hoặc tìm vị trí. Túi giữ bản sao độc lập, không di chuyển file gốc. Mỗi món tối đa 250 MB, cả túi 1 GB.
 - **Nhắc việc:** nhập thời gian bằng tiếng Việt, mèo cầm biển khi đến giờ; hoàn thành hoặc nhắc lại sau 10 phút. Lưu qua lần mở app.
 - **Pin và file mới:** mèo ôm pin khi còn 20% hoặc thấp hơn, phản ứng khi cắm sạc; nhận file mới ổn định trong Downloads vào túi. Có thể tắt hoặc chọn thư mục khác.
@@ -141,7 +147,7 @@ Thay đổi trong 0.13.0: Sửa mèo bị cắt ở mép/góc khi xoay và ở m
 3. Bấm vào ô nhận ảnh trong ứng dụng đích, rồi bấm **Đưa N ảnh ↗** bên cạnh mèo.
 4. Mèo có hoạt ảnh ném ảnh và dán cả bộ vào bản nháp. Bạn tự bỏ ảnh không muốn và tự bấm gửi; app **không tự nhấn Enter**.
 
-Chuột phải → **Bỏ ảnh mèo đang giữ** để dọn xấp ảnh. Khả năng nhận nhiều file từ clipboard tùy ứng dụng; nếu cần, dán thủ công bằng `Ctrl + V` / `⌘ + V` hoặc đính kèm trong app đích.
+Trong **Túi & việc → Ảnh mèo đang cầm**, bấm **×** trên ảnh để xóa riêng hoặc **Xóa hết** để dọn xấp ảnh. Mèo bỏ tư thế cầm khi không còn ảnh. Các bản sao đã chọn **Giữ vào túi** vẫn được giữ riêng. Cũng có thể dùng chuột phải → **Bỏ ảnh mèo đang giữ**. Khả năng nhận nhiều file từ clipboard tùy ứng dụng; nếu cần, dán thủ công bằng `Ctrl + V` / `⌘ + V` hoặc đính kèm trong app đích.
 
 ### Quyền và khác biệt trên Mac
 
@@ -209,7 +215,7 @@ Phần này dành cho **người phát triển**. Nếu chỉ muốn dùng app, 
    npm start -- --background
    ```
 
-Mã tương ứng với bộ cài 0.13.0 nằm ở [tag v0.13.0](https://github.com/duytienkaka/meo-desktop/tree/v0.13.0). Dùng `git switch --detach v0.13.0` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
+Mã tương ứng với bộ cài 1.2.0 nằm ở [tag v1.2.0](https://github.com/duytienkaka/meo-desktop/tree/v1.2.0). Dùng `git switch --detach v1.2.0` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
 
 ### Kiểm tra và đóng gói
 
@@ -221,7 +227,7 @@ npm test
 | Đầu ra | Lệnh | Vị trí |
 | --- | --- | --- |
 | Bộ cài Windows x64 | `npm run setup:win` | `outputs/setup/` |
-| Portable Windows | `npm run package:win` | `../outputs/Meo-Desktop-0.9-win-x64/` |
+| Portable Windows | `npm run package:win` | `../outputs/Meo-Desktop-1.2-win-x64/` |
 | Bộ cài Mac Apple Silicon | `npm run setup:mac -- arm64` | `outputs/mac/` |
 | Bộ cài Mac Intel | `npm run setup:mac -- x64` | `outputs/mac/` |
 
@@ -234,6 +240,8 @@ Giữ cả thư mục khi dùng bản portable. Build Mac tự biên dịch help
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-media.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-audio.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-screenshot.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-wallpaper.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-taskbar.ps1
 ```
 
 </details>
@@ -279,3 +287,7 @@ Repository hiện **chưa có tệp `LICENSE`**; giấy phép cho mã nguồn v�
 - [Các thành viên đóng góp](https://github.com/duytienkaka/meo-desktop/graphs/contributors).
 - Nền tảng và công cụ: [Electron](https://www.electronjs.org/), [electron-builder / electron-updater](https://github.com/electron-userland/electron-builder), [Playwright](https://github.com/microsoft/playwright) và [Node.js](https://nodejs.org/).
 - Nhân vật và biểu tượng được đóng gói trong thư mục `assets/` của dự án.
+
+### Thành phần taskbar Windows 11
+
+Nền taskbar trong suốt sử dụng ExplorerTAP 2026.2 từ [TranslucentTB](https://github.com/TranslucentTB/TranslucentTB/releases/tag/2026.2), giấy phép GPL-3.0. Helper độc lập MeoTaskbarTransparency.exe và mã nguồn src/native/TaskbarTransparency.cs được cung cấp theo GPL-3.0-or-later. Giấy phép và địa chỉ mã nguồn tương ứng nằm trong src/native/taskbar-engine/2026.2.

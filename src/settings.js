@@ -56,7 +56,23 @@
   document.querySelector('#room-enter').onclick=()=>update({roomPinned:!snapshot?.roomPinned});
   document.querySelector('#wallpaper').onchange=e=>update({wallpaper:e.target.checked});
   document.querySelectorAll('[data-room-play]').forEach(b=>b.onclick=()=>update({roomPlay:b.dataset.roomPlay}));
+  const glassSlider=document.querySelector('#taskbar-glass-opacity');
+  let glassEditing=false,glassTimer;
+  glassSlider.onpointerdown=()=>{glassEditing=true;};
+  glassSlider.onpointerup=()=>{glassEditing=false;};
+  glassSlider.onpointercancel=()=>{glassEditing=false;};
+  glassSlider.oninput=()=>{
+    document.querySelector('#taskbar-glass-value').textContent=glassSlider.value+'%';
+    clearTimeout(glassTimer);
+    const opacity=Number(glassSlider.value);
+    glassTimer=setTimeout(()=>update({taskbarGlassOpacity:opacity}),100);
+  };
+  glassSlider.onchange=()=>{glassEditing=false;clearTimeout(glassTimer);update({taskbarGlassOpacity:Number(glassSlider.value)});};
   function render(value){
+    if(!glassEditing)glassSlider.value=String(value.taskbarGlassOpacity??40);glassSlider.disabled=!value.taskbarSupported||!value.taskbarTransparent;
+    document.querySelector('#taskbar-glass-value').textContent=glassSlider.value+'%';
+    document.querySelector('#taskbarTransparent').checked=!!value.taskbarTransparent;document.querySelector('#taskbarTransparent').disabled=!value.taskbarSupported;document.querySelector('#taskbar-transparency-status').textContent=value.taskbarTransparency?.message||'Windows 11 · Nền trong suốt thật.';
+    document.querySelector('#taskbarMusic').checked=!!value.taskbarMusic;document.querySelector('#taskbarMusic').disabled=!value.taskbarSupported;
     document.querySelector('#room-controls-side').value=value.roomControlsSide||'right';document.querySelector('#room-controls-side').disabled=value.platform==='darwin';
     document.querySelector('#room-lighting').value=value.roomLighting||'auto';document.querySelector('#room-lighting').disabled=value.platform==='darwin';
     document.querySelector('#wallpaper').checked=!!value.wallpaper;document.querySelectorAll('[data-room-play]').forEach(b=>b.disabled=value.platform!=='win32');

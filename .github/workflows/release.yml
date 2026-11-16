@@ -43,7 +43,10 @@ jobs:
       - name: Compile Windows wallpaper helper
         if: matrix.platform == 'windows'
         shell: pwsh
-        run: ./scripts/build-wallpaper.ps1
+        run: |
+          ./scripts/build-wallpaper.ps1
+          ./scripts/build-audio.ps1
+          ./scripts/build-taskbar.ps1
       - name: Build Windows installer and validate update metadata
         if: matrix.platform == 'windows'
         run: npm run setup:win

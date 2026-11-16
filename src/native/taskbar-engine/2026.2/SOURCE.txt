@@ -1,0 +1,10 @@
+ExplorerTAP from TranslucentTB 2026.2 (unmodified)
+License: GNU GPL v3, see LICENSE.md
+Corresponding source: https://github.com/TranslucentTB/TranslucentTB/tree/2026.2
+Source archive: https://github.com/TranslucentTB/TranslucentTB/archive/refs/tags/2026.2.zip
+Binary release: https://github.com/TranslucentTB/TranslucentTB/releases/tag/2026.2
+ExplorerTAP.dll SHA-256: c48f1a06168acd7839269dde0d15ccf5d09c702512b94dd6ba9a05df1b153dc2
+
+MeoTaskbarTransparency.exe is a separate GPL-3.0-or-later helper.
+Its complete source is ../../TaskbarTransparency.cs.
+Build with scripts/build-taskbar.ps1.
