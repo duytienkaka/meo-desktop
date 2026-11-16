@@ -9,6 +9,10 @@ if(fs.existsSync(path.join(local,'electron.exe')))config.electronDist=local;
  await require('./prepare-build-tools.cjs').prepareBuildTools();
  config.electronDownload={...(config.electronDownload||{}),checksums:require('electron/checksums.json')};
  const artifacts=await build({config,publish:'never'});
+ for(const relative of ['TaskbarTransparency.cs','taskbar-engine/2026.2/ExplorerTAP.dll','taskbar-engine/2026.2/LICENSE.md','taskbar-engine/2026.2/SOURCE.txt']){
+  const source=path.join(root,'src/native',relative),packaged=path.join(root,config.directories.output,'win-unpacked/resources/app/src/native',relative);
+  if(!fs.existsSync(packaged)||!fs.readFileSync(source).equals(fs.readFileSync(packaged)))throw new Error('Taskbar engine source/license missing or changed in package: '+relative);
+ }
  const installer=artifacts.find(file=>file.endsWith('.exe'));if(!installer)throw new Error('Installer was not produced.');
  const hash=crypto.createHash('sha256');for await(const chunk of fs.createReadStream(installer))hash.update(chunk);
  const digest=hash.digest('hex');fs.writeFileSync(installer+'.sha256',digest+'  '+path.basename(installer)+'\n');

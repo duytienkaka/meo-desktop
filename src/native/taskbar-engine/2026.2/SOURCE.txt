@@ -8,3 +8,6 @@ ExplorerTAP.dll SHA-256: c48f1a06168acd7839269dde0d15ccf5d09c702512b94dd6ba9a05d
 MeoTaskbarTransparency.exe is a separate GPL-3.0-or-later helper.
 Its complete source is ../../TaskbarTransparency.cs.
 Build with scripts/build-taskbar.ps1.
+Helper source: https://github.com/duytienkaka/meo-desktop/blob/v1.2.0/src/native/TaskbarTransparency.cs
+Build script: https://github.com/duytienkaka/meo-desktop/blob/v1.2.0/scripts/build-taskbar.ps1
+Complete source archive: https://github.com/duytienkaka/meo-desktop/archive/refs/tags/v1.2.0.zip
