@@ -10,7 +10,8 @@
 
 .room-object{position:absolute;display:block;pointer-events:none;user-select:none;object-fit:fill}
 #object-shell{left:0%;top:0%;width:100%;height:100%;z-index:0}
-#object-window{left:28%;top:6%;width:31%;height:53.5%;z-index:1}
+#object-window,#window-weather{left:28%;top:6%;width:31%;height:53.5%}
+#object-window{z-index:1}
 #object-print{left:75%;top:14%;width:9.6%;height:21%;z-index:2}
 #object-rug{left:13%;top:76%;width:45%;height:19%;z-index:3}
 #object-desk{left:55%;top:63%;width:41%;height:32%;z-index:6}
@@ -36,3 +37,94 @@
 .room-controls [data-play="room-toggle"]{border-top:1px solid #f7e7d926;margin-top:3px}.room-controls .room-toggle-label{font-size:13px;line-height:20px;color:inherit}
 
 .room-controls[hidden]{display:none}
+
+#music-table{
+ position:absolute;left:max(8%,calc(50% - 47vw));bottom:23%;width:17%;z-index:4;
+ pointer-events:none;filter:drop-shadow(.18vw .3vw .22vw #48372248)
+}
+#music-table img{position:static;width:100%;height:auto}
+.music-notes{position:absolute;top:8%;left:44%;width:20%;height:1px;display:none}
+.notes-playing .music-notes{display:block}
+.music-notes i{
+ position:absolute;bottom:0;left:var(--origin,0%);font:600 clamp(16px,1.6vw,32px)/1 Georgia,"Segoe UI Symbol",serif;
+ color:var(--ink,#815142);text-shadow:0 1px 2px #fff0cd;opacity:0;
+ animation:music-note-rise var(--period,3.2s) var(--delay,0s) ease-out infinite;
+}
+.music-notes i:nth-child(2){--origin:42%;--drift:1.4em;--tilt:18deg;--delay:-1.8s;--period:4.2s;--ink:#486557}
+.music-notes i:nth-child(3){--origin:8%;--drift:-1.6em;--tilt:-24deg;--delay:-.7s;--period:3.7s;font-size:clamp(13px,1.2vw,24px)}
+.music-notes i:nth-child(4){--origin:76%;--drift:1em;--tilt:9deg;--delay:-3.2s;--period:4.7s;--ink:#94662c}
+.music-notes i:nth-child(5){--origin:25%;--drift:.35em;--tilt:-9deg;--delay:-1.1s;--period:5.1s;--ink:#6e687e}
+.paused.notes-playing .music-notes i{animation-play-state:running!important}
+@keyframes music-note-rise{
+ 0%{opacity:0;transform:translateY(0) rotate(-8deg) scale(.7)}
+ 18%,45%{opacity:.95}
+ 85%,100%{opacity:0;transform:translate(var(--drift,-.8em),-4.2em) rotate(var(--tilt,-16deg)) scale(1.05)}
+}
+@media(prefers-reduced-motion:reduce){.notes-playing .music-notes i:first-child{opacity:.85}}
+
+#window-weather{position:absolute;clip-path:url(#window-panes);z-index:2;pointer-events:none;overflow:hidden;transition:background 2s}
+#window-weather.weather-cloud{background:#63758440}
+#window-weather.weather-rain{background:repeating-linear-gradient(113deg,transparent 0 22px,#c6e3ef70 23px 24px,transparent 25px 49px),#4f697d50;background-size:80px 150px;animation:window-rain 1s linear infinite}
+#window-weather.weather-night{background-color:#101e46dd;box-shadow:inset 0 0 60px #111c3c}
+@keyframes window-rain{to{background-position:-30px 150px}}
+.room-lamp-off .lamp-glow{opacity:0!important}
+.room-lamp-on .lamp-glow{opacity:1!important;animation:none}
+.room-lamp-off #object-lamp{filter:brightness(.8) saturate(.7)}
+.room-lamp-on #object-lamp{filter:drop-shadow(0 0 12px #ffd187)}
+#souvenir-card,#water-reminder{position:fixed;z-index:29;background:#201e24ed;color:#f6eee3;border:1px solid #ffffff26;border-radius:18px;padding:16px;font:14px/1.5 "Segoe UI",sans-serif;box-shadow:0 10px 30px #0003}
+#souvenir-card{left:7%;top:26%;width:280px;white-space:pre-line}
+#water-reminder{left:65%;top:50%;display:flex;gap:8px;flex-wrap:wrap;width:290px}
+#water-reminder span{width:100%}
+#water-reminder button{border:1px solid #ffffff20;background:#ffffff10;color:inherit;padding:7px 12px;border-radius:10px}
+#water-reminder[hidden],#souvenir-card[hidden]{display:none}
+
+#held-water-cup{position:fixed;z-index:19;width:28px;pointer-events:none;transform:rotate(-12deg);filter:drop-shadow(0 2px 2px #4325)}#held-water-cup[hidden]{display:none}
+
+#souvenir-card{top:18%;max-height:22vh;overflow:auto}
+
+
+#souvenir-shelf{
+ position:absolute;left:max(7%,calc(50% - 48vw));bottom:56%;width:18.5%;z-index:3;
+ display:grid;gap:.9vw;filter:drop-shadow(-.12vw .28vw .2vw #5337204a)
+}
+.keepsake-tier{position:relative}
+.keepsake-tier:first-child{width:100%;justify-self:center}
+.keepsake-tier:last-child{width:86%;justify-self:center}
+.keepsake-tier:first-child::before{content:"";position:absolute;inset:-70% 2% 22%;background:radial-gradient(ellipse,#ffe6a259,transparent 70%);pointer-events:none}
+.keepsake-slot.yarn,.keepsake-slot.bell{left:19%}
+.keepsake-slot.daisies{left:50%}
+.keepsake-slot.boat,.keepsake-slot.fish{left:81%}
+.keepsake-tier:last-child .keepsake-slot{height:64%}
+.keepsake-tier:first-child .star:not(.locked) img{filter:drop-shadow(0 0 .24vw #ffd477)}
+.keepsake-rail{display:block;width:100%}
+.keepsake-slot{position:absolute;bottom:56%;height:76%;transform:translateX(-50%)}
+.keepsake-slot img{display:block;height:100%}
+.keepsake-slot.star{left:50%}
+
+.keepsake-slot.fish{height:65%}
+.keepsake-slot.locked img,.keepsake-row.locked img{filter:grayscale(1) sepia(.3);opacity:.48}
+.keepsake-slot.locked::after,.keepsake-slot.locked::before{content:"";position:absolute;right:-2px;box-sizing:border-box}
+.keepsake-slot.locked::after{bottom:0;width:10px;height:8px;border-radius:2px;background:#574537;border:1px solid #ead7b8}
+.keepsake-slot.locked::before{bottom:5px;width:8px;height:8px;right:-1px;border:2px solid #574537;border-radius:5px}
+#souvenir-card{position:absolute;left:max(7%,calc(50% - 48vw));top:45%;width:min(275px,85vw);max-height:none;white-space:normal}
+.keepsake-row{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;margin-top:9px}
+.keepsake-row img{width:28px;height:24px;object-fit:contain}
+.keepsake-row small{color:#dbcfb8}
+#souvenir-card p{color:#cec1ac;font-size:12px;margin:10px 0 0}
+#food-bowl{position:absolute;width:5%;height:auto;transform:translate(-50%,-70%);z-index:17;pointer-events:none;filter:drop-shadow(0 3px 3px #49312144)}
+#cat-hunger{position:fixed;z-index:21;transform:translateX(-50%);background:#272027ed;color:#f6d7b0;border-radius:12px;padding:5px 9px;font:12px "Segoe UI",sans-serif}
+#food-bowl[hidden],#cat-hunger[hidden]{display:none}
+.rose-room #object-shell,.rose-room #object-window{filter:sepia(.15) hue-rotate(325deg) saturate(.85)}
+.rose-room .time-warm{background:#f2a4a0;opacity:.35}
+
+#souvenir-card{width:min(390px,94vw);display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+#souvenir-card[hidden]{display:none}
+#souvenir-card>strong,#souvenir-card>p{grid-column:1/-1}
+#souvenir-card section>strong{font-size:12px;color:#cebd9f}
+#souvenir-card section:first-of-type>strong{color:#edc477}
+#souvenir-card .keepsake-row{grid-template-columns:24px 1fr;gap:0 7px;font-size:13px}
+#souvenir-card .keepsake-row img{grid-row:span 2;width:24px}
+#souvenir-card .keepsake-row small{font-size:10px}
+
+#cat-hunger{border:1px solid #ffffff29;cursor:pointer;min-width:76px;height:30px;background:linear-gradient(135deg,#292932,#151519);color:#f2eff5;box-shadow:0 3px 10px #0003}
+#cat-hunger:hover{background:#373740}

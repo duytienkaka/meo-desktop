@@ -52,7 +52,12 @@
   document.querySelector('#utility-downloads').onchange=e=>request(()=>api.utilityConfigure({downloads:e.target.checked}));
   document.querySelector('#utility-folder').onclick=()=>request(()=>api.utilityFolder());
   document.querySelector('#room-controls-side').onchange=e=>update({roomControlsSide:e.target.value});
-  document.querySelector('#room-lighting').onchange=e=>update({roomLighting:e.target.value});
+  document.querySelector('#room-lamp').onchange=e=>update({roomFeatures:{lamp:e.target.value}});
+ document.querySelector('#room-break').onchange=e=>update({roomFeatures:{breakMinutes:Number(e.target.value)}});
+ document.querySelector('#care-feed').onclick=()=>update({roomFeed:true});
+ document.querySelector('#care-theme').onchange=e=>update({roomFeatures:{roomTheme:e.target.value}});
+ document.querySelector('#room-city-form').onsubmit=e=>{e.preventDefault();update({roomFeatures:{city:document.querySelector('#room-city').value}});};
+ document.querySelector('#room-lighting').onchange=e=>update({roomLighting:e.target.value});
   document.querySelector('#room-enter').onclick=()=>update({roomPinned:!snapshot?.roomPinned});
   document.querySelector('#wallpaper').onchange=e=>update({wallpaper:e.target.checked});
   document.querySelectorAll('[data-room-play]').forEach(b=>b.onclick=()=>update({roomPlay:b.dataset.roomPlay}));
@@ -74,7 +79,18 @@
     document.querySelector('#taskbarTransparent').checked=!!value.taskbarTransparent;document.querySelector('#taskbarTransparent').disabled=!value.taskbarSupported;document.querySelector('#taskbar-transparency-status').textContent=value.taskbarTransparency?.message||'Windows 11 · Nền trong suốt thật.';
     document.querySelector('#taskbarMusic').checked=!!value.taskbarMusic;document.querySelector('#taskbarMusic').disabled=!value.taskbarSupported;
     document.querySelector('#room-controls-side').value=value.roomControlsSide||'right';document.querySelector('#room-controls-side').disabled=value.platform==='darwin';
-    document.querySelector('#room-lighting').value=value.roomLighting||'auto';document.querySelector('#room-lighting').disabled=value.platform==='darwin';
+    const care=value.roomFeatures?.care||{level:1,xp:0,nextLevel:100,highest:1};
+ document.querySelector('#care-status').textContent='Mèo cấp '+care.level;
+ document.querySelector('#care-xp').max=care.nextLevel;document.querySelector('#care-xp').value=care.xp;
+ document.querySelector('#care-hunger').textContent=care.hungry?'Mèo đang đói':'Mèo đang no · Thức ăn miễn phí';
+ document.querySelector('#care-theme').value=value.roomFeatures?.roomTheme||'classic';
+ document.querySelector('#care-theme option[value="rose"]').disabled=care.highest<5;
+ document.querySelector('#room-lamp').value=value.roomFeatures?.lamp||'auto';
+ document.querySelector('#room-break').value=String(value.roomFeatures?.breakMinutes||0);
+ const cityField=document.querySelector('#room-city');
+ const savedCity=value.roomFeatures?.city?.name||'';
+ if(cityField.dataset.savedCity!==savedCity){cityField.dataset.savedCity=savedCity;cityField.value=savedCity.split(',')[0];}
+ document.querySelector('#room-lighting').value=value.roomLighting||'auto';document.querySelector('#room-lighting').disabled=value.platform==='darwin';
     document.querySelector('#wallpaper').checked=!!value.wallpaper;document.querySelectorAll('[data-room-play]').forEach(b=>b.disabled=value.platform!=='win32');
     const utility=value.utilities;if(utility){document.querySelector('#utility-clipboard-photos').checked=utility.settings.clipboardPhotos;document.querySelector('#utility-count').textContent=utility.count+'/20 món · Ctrl / ⌘ + Alt + B để mở túi';document.querySelector('#utility-battery').checked=utility.settings.battery;document.querySelector('#utility-downloads').checked=utility.settings.downloads;document.querySelector('#utility-battery-status').textContent=utility.batteryStatus;document.querySelector('#utility-download-path').textContent=utility.settings.downloadDirectory;document.querySelector('#utility-download-status').textContent=utility.downloadStatus;document.querySelector('#utility-profile').textContent='Đang chọn: '+({work:'Làm việc',relax:'Thư giãn'}[utility.activeProfile]||'Chưa chọn');}
 
@@ -98,7 +114,7 @@
     document.querySelector('#startup-status').textContent=startup.message;
     const mac=value.platform==='darwin';
     document.querySelector('#wallpaper').disabled=mac;
-    document.querySelector('.room-hint').textContent=mac?'Hình nền tương tác đang thử nghiệm trên Windows; chưa hỗ trợ macOS.':'Tự nghỉ khi bạn chuyển sang ứng dụng khác · Hoàn toàn im lặng';
+    document.querySelector('.room-hint').hidden=!mac;document.querySelector('.room-hint').textContent=mac?'Hình nền tương tác đang thử nghiệm trên Windows; chưa hỗ trợ macOS.':'';
     document.querySelector('kbd').textContent=value.shortcut||'Ctrl + Alt + M';
     document.querySelector('#platform-note').textContent=mac?'macOS: nhạc hỗ trợ Apple Music và Spotify. Cho phép Automation khi được hỏi; nhạc trong trình duyệt chưa hỗ trợ.':'Nhận diện nhạc tự động hiện hỗ trợ Windows và macOS.';
     document.querySelector('#platform-note').hidden=!mac&&value.autoSupported;

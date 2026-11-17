@@ -2,9 +2,28 @@
 <html lang="vi"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="room.css"><title>Chiều bên cửa sổ</title></head>
 <body class="paused"><main id="scene" aria-label="Phòng đọc sách trong ánh nắng chiều">
 <img id="object-shell" class="room-object" src="../assets/room/shell.webp" alt="" draggable="false">
+<svg width="0" height="0" aria-hidden="true"><defs><clipPath id="window-panes" clipPathUnits="objectBoundingBox" transform="scale(.001 .001003)">
+<path d="M203 271 L798 269 V774 H203 Z"/>
+<path d="M168 239 Q215 175 285 131 L433 239 Z"/>
+<path d="M312 115 Q404 76 489 73 V237 H464 Z"/>
+<path d="M513 73 Q611 78 690 114 L535 237 H512 Z"/>
+<path d="M568 238 L709 130 Q783 179 822 238 Z"/>
+<path d="M85 249 L120 272 V390 L84 383 Z M135 281 L168 309 V399 L135 392 Z"/>
+<path d="M84 405 L120 413 V570 L84 581 V532 Q91 531 98 533 L97 563 Q94 574 101 576 Q111 578 109 561 L111 532 Q111 517 98 517 L84 516 Z"/>
+<path d="M135 414 L168 421 V555 L135 566 Z"/>
+<path d="M84 607 L120 594 V752 L84 774 Z M135 589 L168 577 V727 L135 748 Z"/>
+<path transform="translate(1000 0) scale(-1 1)" d="M85 249 L120 272 V390 L84 383 Z M135 281 L168 309 V399 L135 392 Z"/>
+<path transform="translate(1000 0) scale(-1 1)" d="M84 405 L120 413 V570 L84 581 V532 Q91 531 98 533 L97 563 Q94 574 101 576 Q111 578 109 561 L111 532 Q111 517 98 517 L84 516 Z"/>
+<path transform="translate(1000 0) scale(-1 1)" d="M135 414 L168 421 V555 L135 566 Z"/>
+<path transform="translate(1000 0) scale(-1 1)" d="M84 607 L120 594 V752 L84 774 Z M135 589 L168 577 V727 L135 748 Z"/>
+</clipPath></defs></svg>
 <img id="object-window" class="room-object" src="../assets/room/window.webp" alt="" draggable="false">
 <img id="object-print" class="room-object" src="../assets/room/print.webp" alt="" draggable="false">
 <img id="object-rug" class="room-object" src="../assets/room/rug.webp" alt="" draggable="false">
+<div id="music-table">
+  <img class="room-object" src="../assets/room/music-table.webp" alt="Bàn phát nhạc" draggable="false">
+  <div class="music-notes" aria-hidden="true"><i>♪</i><i>♫</i><i>♩</i><i>♬</i><i>♪</i></div>
+</div>
 <img id="object-desk" class="room-object" src="../assets/room/desk.webp" alt="" draggable="false">
 <img id="object-books" class="room-object" src="../assets/room/books.webp" alt="" draggable="false">
 <img id="object-lamp" class="room-object" src="../assets/room/lamp.webp" alt="" draggable="false">
@@ -14,4 +33,4 @@
 <img id="object-chair" class="room-object" src="../assets/room/chair.webp" alt="" draggable="false">
 <img id="object-nest" class="room-object" src="../assets/room/nest.webp" alt="" draggable="false">
 <img id="object-nest-rim" class="room-object" src="../assets/room/throw.webp" alt="" draggable="false">
-<canvas id="room-pet" aria-label="Mèo trong căn phòng"></canvas><div class="sunlight"></div><div class="time-shade"></div><div class="time-warm"></div><div class="lamp-glow"></div><div class="tea-steam"><i></i><i></i><i></i></div><div class="dust" aria-hidden="true"></div><svg class="butterfly" viewBox="0 0 48 40" aria-hidden="true"><g class="left-wing"><path d="M24 24C-6 12 5-5 19 10Z" fill="#f4d28e"/><path d="M24 24C1 14 9 39 22 30Z" fill="#d99e6c"/></g><g class="right-wing"><path d="M24 24C54 12 43-5 29 10Z" fill="#f8dfaa"/><path d="M24 24C47 14 39 39 26 30Z" fill="#e6b07e"/></g><path d="M24 12v19" stroke="#735347" stroke-width="2" stroke-linecap="round"/></svg><div class="vignette"></div></main><nav class="room-controls" aria-label="Chơi với mèo"><button data-play="ball" title="Thả bóng"><span aria-hidden="true">◉</span>Thả bóng</button><button data-play="tease" title="Chọc mèo"><span aria-hidden="true">✧</span>Chọc mèo</button><button data-play="pet" title="Vuốt ve"><span aria-hidden="true">♡</span>Vuốt ve</button><button data-play="room-toggle" title="Ra phòng"><span aria-hidden="true">↗</span><span class="room-toggle-label">Ra phòng</span></button></nav><script src="room-layout.js"></script><script src="sprites.js"></script><script src="character-sprites.js"></script><script src="actions-sprites.js"></script><script src="characters.js"></script><script src="room-pet.js"></script><script src="room-reactions.js"></script><script src="room-clock.js"></script><script src="room-life.js"></script><script src="yarn.js"></script><script src="head-rub.js"></script><script src="pet-gesture.js"></script><script src="room.js"></script></body></html>
+<canvas id="room-pet" aria-label="Mèo trong căn phòng"></canvas><div class="sunlight"></div><div class="time-shade"></div><div class="time-warm"></div><div class="lamp-glow"></div><div class="tea-steam"><i></i><i></i><i></i></div><div class="dust" aria-hidden="true"></div><svg class="butterfly" viewBox="0 0 48 40" aria-hidden="true"><g class="left-wing"><path d="M24 24C-6 12 5-5 19 10Z" fill="#f4d28e"/><path d="M24 24C1 14 9 39 22 30Z" fill="#d99e6c"/></g><g class="right-wing"><path d="M24 24C54 12 43-5 29 10Z" fill="#f8dfaa"/><path d="M24 24C47 14 39 39 26 30Z" fill="#e6b07e"/></g><path d="M24 12v19" stroke="#735347" stroke-width="2" stroke-linecap="round"/></svg><div class="vignette"></div></main><nav class="room-controls" aria-label="Chơi với mèo"><button data-play="ball" title="Thả bóng"><span aria-hidden="true">◉</span>Thả bóng</button><button data-play="tease" title="Chọc mèo"><span aria-hidden="true">✧</span>Chọc mèo</button><button data-play="pet" title="Vuốt ve"><span aria-hidden="true">♡</span>Vuốt ve</button><button data-play="room-toggle" title="Ra phòng"><span aria-hidden="true">↗</span><span class="room-toggle-label">Ra phòng</span></button></nav><script src="room-layout.js"></script><script src="sprites.js"></script><script src="character-sprites.js"></script><script src="actions-sprites.js"></script><script src="characters.js"></script><script src="room-pet.js"></script><script src="room-reactions.js"></script><script src="room-clock.js"></script><script src="room-life.js"></script><script src="yarn.js"></script><script src="head-rub.js"></script><script src="pet-gesture.js"></script><script src="keepsakes.js"></script><script src="room-features.js"></script><script src="room-level-up.js"></script><script src="room.js"></script></body></html>
