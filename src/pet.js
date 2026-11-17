@@ -5,6 +5,9 @@
   let incoming=null,receivedAt=0,raf=0,renderedPose=null,renderCount=0;
   let width=320,height=320,dpr=1,frame=null,previousTime=null,displaySize=112,previousMode=null,lastPounce=false,held=null,hit=false,transform=null;
   const particles=[],seen=new Set();let fileHover=false,fileHoverTimer;
+  let rubUntil = 0, rubLean = 0;
+  const headRub = createHeadRubTracker();
+  const sampleHeadRub = window.CAT_HEAD_RUB.createPlayer();
   const pocket=document.querySelector('#photo-pocket'),sendPhotos=document.querySelector('#send-photos');let photoState={photos:[]},carried=[],flightPhotos=[],lastActivity=null,pocketKey='';
   function onPocket(point){if(pocket.hidden)return false;const r=pocket.getBoundingClientRect();return point.x>=r.left&&point.x<=r.right&&point.y>=r.top&&point.y<=r.bottom;}
   function receivePhotos(value){if(value.busy&&!photoState.busy)flightPhotos=carried.slice();photoState=value;sendPhotos.disabled=value.busy||!value.target;sendPhotos.textContent=value.busy?'Đang đưa…':'Đưa '+value.photos.length+' ảnh ↗';sendPhotos.title=value.target?'Đưa toàn bộ ảnh vào ô vừa chọn trong '+value.target.name+'; bạn tự bấm gửi.':'Bấm vào ô nhận ảnh trong ứng dụng trước.';const key=JSON.stringify(value.photos.map(p=>p.id));if(key===pocketKey)return;pocketKey=key;carried=[];value.photos.forEach((photo,index)=>{const image=new Image();image.onload=()=>{if(pocketKey===key)carried[index]=image;};image.src=photo.thumb;});}
@@ -94,11 +97,44 @@
     return data.data[(py*data.width+px)*4+3]>48;
   }
 
+  function nearCat(point) {
+    if (!transform) return false;
+    const t = transform, dx = point.x-t.x, dy = point.y-t.y;
+    const x = (dx*Math.cos(t.angle)+dy*Math.sin(t.angle))/t.sx;
+    const y = (-dx*Math.sin(t.angle)+dy*Math.cos(t.angle))/t.sy;
+    const padding = displaySize*.2;
+    return Math.abs(x) <= t.drawWidth/2+padding && y >= -t.drawHeight-padding && y <= padding;
+  }
+
   function render(f){
     const dt=previousTime===null?0:clamp(f.time-previousTime,0,.12);previousTime=f.time;
     displaySize+= (f.size-displaySize)*(1-Math.exp(-Math.max(dt,.016)*6));
-    frame=f;const activity=window.CAT_PROPS.update(f,photoState),visualFrame=reducedMotion.matches?{...f,time:0,actionElapsed:0,musicReactionElapsed:null,jumpPhase:null,pet:false}:f,target=specialPose(characters.resolve(window.CAT_PROPS.pose(pose(visualFrame),activity,visualFrame),f.character,visualFrame),visualFrame);
-    const group=[f.character,f.mode,f.action,!!f.pet,f.jumpPhase!==null,target.logicalSheet,target.logicalSheet==='actions'?target.logicalIndex:''].join(':');
+    frame=f;
+    const now = performance.now();
+    const headX = f.anchorX + Math.sin(f.rotation) * displaySize * 0.72;
+    const headY = f.anchorY - Math.cos(f.rotation) * displaySize * 0.72;
+    if (held || f.dragging || fileHover || f.fileHover || audioHover || !nearCat(f.cursor) || onPocket(f.cursor) || onAudioHud(f.cursor)) {
+      headRub.reset();
+    } else {
+      const cursor = {x:f.x + f.cursor.x, y:f.y + f.cursor.y};
+      if (headRub.sample(cursor, now, displaySize)) {
+        window.meo.action('rub');
+        rubUntil = now + 1200;
+      }
+      if (now < rubUntil) rubLean = clamp((f.cursor.x - headX) / (displaySize * 0.28), -1, 1);
+    }
+    const activity=window.CAT_PROPS.update(f,photoState);
+    const visualFrame=reducedMotion.matches?{...f,time:0,actionElapsed:0,musicReactionElapsed:null,jumpPhase:null,pet:false}:f;
+    const rubbing = held?.gesture.mode === 'rub' || performance.now() < rubUntil;
+    let target;
+    const stroke = sampleHeadRub((rubbing || f.pet) && !f.dragging, now, f.character, reducedMotion.matches || f.paused);
+    if (stroke) {
+      const lean = reducedMotion.matches || f.paused ? 0 : rubLean;
+      target = {...stroke, rotation:rubbing ? lean * .025 : 0};
+    } else {
+      target = specialPose(characters.resolve(window.CAT_PROPS.pose(pose(visualFrame),activity,visualFrame),f.character,visualFrame),visualFrame);
+    }
+    const group=[f.character,f.mode,f.action,rubbing,!!f.pet,f.jumpPhase!==null,target.logicalSheet,target.logicalSheet==='actions'?target.logicalIndex:''].join(':');
     const p=transition.sample(target,group,performance.now(),f.paused||f.dragging||reducedMotion.matches),source=atlas[p.sheet].frames[p.index];renderedPose=p;renderCount++;lastActivity=activity;if(activity.event!=='throw'&&!photoState.busy)flightPhotos=[];seen.add(p.sheet+':'+p.index);
     const unit=characters.unit(p.sheet,displaySize),drawWidth=source.w*unit,drawHeight=source.h*unit;
     const angle=f.rotation+p.rotation,c=Math.cos(f.rotation),s=Math.sin(f.rotation);
@@ -111,7 +147,13 @@
     if(f.fileHover){ctx.save();ctx.translate(f.anchorX,f.anchorY);ctx.rotate(f.rotation);ctx.fillStyle='#b8dba02b';ctx.strokeStyle='#a2c18a';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.beginPath();ctx.roundRect(-displaySize*.65,-displaySize*1.1,displaySize*1.3,displaySize*1.2,18);ctx.fill();ctx.stroke();ctx.restore();}
     ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(transform.sx,transform.sy);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
     ctx.globalAlpha=p.opacity;ctx.drawImage(images[p.sheet],source.x,source.y,source.w,source.h,-drawWidth/2,-drawHeight,drawWidth,drawHeight);
-    const photoImages=activity.event==='throw'&&flightPhotos.length?flightPhotos:carried;if(!characters.details(ctx,p,source,unit,drawWidth,drawHeight,activity,photoImages))window.CAT_PROPS.drawDetails(ctx,p,source,unit,drawWidth,drawHeight,activity,photoImages);ctx.restore();
+    if (p.sheet === 'head-rub') {
+      window.CAT_HEAD_RUB.drawHand(ctx,p,drawWidth,drawHeight);
+    } else {
+      const photoImages=activity.event==='throw'&&flightPhotos.length?flightPhotos:carried;
+      if(!characters.details(ctx,p,source,unit,drawWidth,drawHeight,activity,photoImages))window.CAT_PROPS.drawDetails(ctx,p,source,unit,drawWidth,drawHeight,activity,photoImages);
+    }
+    ctx.restore();
     if(f.desktopToy&&f.desktopToy.phase!=='play'){
       const toy=f.desktopToy;
       const lift=toy.phase==='drop'&&!reducedMotion.matches?(1-Math.min(1,toy.age/.45)**2)*displaySize*.65:0;
@@ -137,32 +179,60 @@
   canvas.addEventListener('drop',event=>{event.preventDefault();const accept=nearPet(event);setFileHover(false);if(accept)window.meo.utilities.drop([...event.dataTransfer.files],(event.dataTransfer.getData('text/plain')||event.dataTransfer.getData('text/uri-list'))).catch(error=>window.meo.utilities.error(error.message));});
   canvas.addEventListener('contextmenu',event=>{event.preventDefault();if(hit)window.meo.action('menu');});
   canvas.addEventListener('pointerdown',event=>{
-    if(event.button!==0||!sampleHit({x:event.clientX,y:event.clientY}))return;event.preventDefault();
+    if(held||event.button!==0||!sampleHit({x:event.clientX,y:event.clientY}))return;event.preventDefault();
     hit=true;window.meo.hit(true);
     window.meo.action('press');
-    held={x:event.screenX,y:event.screenY,drag:false,id:event.pointerId};canvas.setPointerCapture(event.pointerId);
+    rubUntil=0;
+    held={id:event.pointerId, x:event.screenX, y:event.screenY, gesture:createPetGesture(event.screenX,event.screenY,displaySize)};
+    canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener('pointermove',event=>{
     if(!frame)return;
     hit=sampleHit({x:event.clientX,y:event.clientY});window.meo.hit(hit||!!held);
-    if(held&&!held.drag&&Math.hypot(event.screenX-held.x,event.screenY-held.y)>7){held.drag=true;window.meo.action('drag-start');}
+    if(!held || held.id!==event.pointerId)return;
+    const samples=event.getCoalescedEvents?.() ?? [];
+    for(const point of [...samples,event]){
+      const previous=held.gesture.mode;
+      const mode=held.gesture.move(point.screenX,point.screenY);
+      if(mode==='drag' && previous!==mode)window.meo.action('drag-start');
+      if(mode==='rub'){
+        rubLean=clamp((point.clientX-transform.x)/(displaySize*.36),-1,1);
+        if(previous!==mode)emit(point.clientX,point.clientY-displaySize*.15,'heart',3);
+      }
+    }
   });
-  function release(){if(!held)return;window.meo.action(held.drag?'drag-end':'pet');held=null;}
-  canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',()=>{if(held){window.meo.action('drag-end');held=null;}});
-  canvas.addEventListener('lostpointercapture',()=>{if(held){window.meo.action('drag-end');held=null;}});
+  function finishPress(event, cancelled=false){
+    if(!held || (event?.pointerId!==undefined && event.pointerId!==held.id))return;
+    const {gesture,x,y}=held;
+    held=null;
+    if(gesture.mode==='drag')window.meo.action('drag-end');
+    else if(!cancelled && gesture.mode==='pending' && !gesture.moved)window.meo.action('pet');
+    else if(!cancelled && gesture.mode==='pending' && Math.hypot(event.screenX-x,event.screenY-y)>7){
+      window.meo.action('drag-start');
+      window.meo.action('drag-end');
+    } else {
+      if(!cancelled && gesture.mode==='rub'){rubUntil=performance.now()+420;rubLean=0;}
+      window.meo.action('release-press');
+    }
+  }
+  canvas.addEventListener('pointerup',event=>{if(event.button===0)finishPress(event);});
+  canvas.addEventListener('pointercancel',event=>finishPress(event,true));
+  canvas.addEventListener('lostpointercapture',event=>finishPress(event,true));
+  addEventListener('blur',()=>finishPress(null,true));
   function animate(now){
     raf=0;if(!incoming||document.hidden)return;
-    const age=now-receivedAt;
+    // The frame timestamp can precede an IPC sample delivered in the same tick.
+    const age=Math.max(0,now-receivedAt);
     if(age>150)return; // No renderer loop while the native pet is hidden/suspended.
     const extra=incoming.paused||reducedMotion.matches?0:Math.min(age,34)/1000;
     render({...incoming,time:incoming.time+extra,actionElapsed:incoming.actionElapsed+extra});
     if(!incoming.paused&&!reducedMotion.matches)raf=requestAnimationFrame(animate);
   }
   function receiveFrame(value){incoming=value;receivedAt=performance.now();if(value.paused||reducedMotion.matches){cancelAnimationFrame(raf);raf=0;render(value);}else if(!raf)raf=requestAnimationFrame(animate);}
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(raf);raf=0;}});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){finishPress(null,true);headRub.reset();rubUntil=0;cancelAnimationFrame(raf);raf=0;}});
   addEventListener('resize',resize);resize();
-  window.meoPet={snapshot:()=>({renderedPose,renderCount,transitioning:transition.active,frame,activity:lastActivity,pose:frame?pose(frame):null,displaySize,hit,seen:[...seen],width,height}),hitAt:point=>sampleHit(point)};
-  Promise.all(['core','moods','actions','walk','mit','may','muc','mit-walk','may-walk','muc-walk','yarn','lift'].map(name=>new Promise((resolve,reject)=>{
+  window.meoPet={snapshot:()=>({rubbing:held?.gesture.mode === 'rub' || performance.now() < rubUntil,renderedPose,renderCount,transitioning:transition.active,frame,activity:lastActivity,pose:frame?pose(frame):null,displaySize,hit,seen:[...seen],width,height}),hitAt:point=>sampleHit(point)};
+  Promise.all(['core','moods','actions','walk','mit','may','muc','mit-walk','may-walk','muc-walk','yarn','lift','head-rub'].map(name=>new Promise((resolve,reject)=>{
     const img=new Image();img.onload=()=>{
       images[name]=img;const buffer=document.createElement('canvas');buffer.width=img.naturalWidth;buffer.height=img.naturalHeight;
       const context=buffer.getContext('2d',{willReadFrequently:true});context.drawImage(img,0,0);pixels[name]=context.getImageData(0,0,buffer.width,buffer.height);resolve();

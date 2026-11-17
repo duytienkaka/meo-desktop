@@ -1,0 +1,17 @@
+{
+  "generator": "Built-in imagegen",
+  "reference": "lift.webp",
+  "columns": [
+    "classic",
+    "mit",
+    "may",
+    "muc"
+  ],
+  "rows": [
+    "look up",
+    "head dips and ears fold",
+    "cheek nuzzle",
+    "chin up"
+  ],
+  "prompt": "Create a production transparent 2D petting animation atlas for the attached desktop kitten cast. Reference is ONLY the character identity and watercolor/chibi line-art design, not the lifted pose. ONE square sheet, strictly 4 columns by 4 rows, exactly 16 separate full-body sprites on transparent alpha. Each COLUMN is always ONE kitten: 1 cream calico with taupe patches, 2 golden tabby, 3 silver tabby, 4 black-and-white tuxedo; match the respective supplied kittens. Each ROW is the same animation beat for all four. All kittens are seated, front paws side by side planted and hind legs naturally tucked under haunches, one fluffy tail curling at viewer left, looking 3/4 viewer right. Fixed body and feet registration per cell. Show a BIG visible change in head and ear silhouette between EACH row, from an invisible hand stroking the crown: row 1 curious upward glance, tall ears, soft half-open eyes as touch begins; row 2 chin dips low toward chest, forehead tuft compressed, ears relax sideways, eyes closing; row 3 strong sideways cheek nuzzle, head tipped ~20 degrees toward the stroke, closed crescent eyes, smiling muzzle and squished cheek, tail curling up; row 4 chin stretches up into the touch, nose raised and smiling, eyes squeezed shut and whiskers fanned, ears perk back slightly. Absolutely no hand in the drawing (the live app animates it separately), no heart/sparkle/props, no ground shadows. Exactly 4 legs per kitten, no extra paws. Soft warm outline, gentle blush and expressive face readable at 100px. Each full body individually separated by generous TRANSPARENT gutters on all sides, centered in its own uniform square 4x4 grid cell. No grid lines, letters, numbers or labels. High quality transparent PNG."
+}
