@@ -176,7 +176,7 @@ else {
   }
   const mediaMonitor=mac?createMacMonitor({kind:'media',onSample:receiveMedia,onError:log}):createMediaMonitor({onSample:receiveMedia,onError:log});
   const taskbarSupported=process.platform==='win32'&&Number(require('node:os').release().split('.')[2])>=22000;
-  const taskbarMusic=require('./taskbar-music.cjs').createTaskbarMusic({supported:taskbarSupported,onOpen:togglePlayer,onError:log,onWindowsChanged:windows=>taskbarTransparency.setWindows(windows)});
+  const taskbarMusic=require('./taskbar-music.cjs').createTaskbarMusic({supported:taskbarSupported,onError:log,onWindowsChanged:windows=>taskbarTransparency.setWindows(windows)});
   const taskbarTransparency=require('./taskbar-transparency.cjs').createTaskbarTransparency({
    directory:app.getPath('userData'),opacity:state.taskbarGlassOpacity,onChange:value=>{taskbarMusic.setBehind(value.ready);publishSettings();},onLayered:handle=>taskbarMusic.setLayered(handle),onError:log
   });
@@ -211,7 +211,7 @@ else {
     state.nextWander=state.time+4;note(modeLabels[mode]);persist();refreshMenu();tickFrame();
   }
   function setVisible(visible){
-    state.visible=!!visible;state.interactive=false;state.dragging=false;
+    petPressedAt=0;state.visible=!!visible;state.interactive=false;state.dragging=false;
     if(!visible){wallpaper.update({showPet:false,paused:true});hidePlayer(true);screenshots?.hide();utilities?.hide(true);}
     if(win&&!win.isDestroyed()){syncMouseInput(false,true);if(state.visible&&!suspended&&ready&&!roomOwnsPet){win.showInactive();}else win.hide();}
     lastTick=0;persist();refreshMenu();
@@ -340,7 +340,7 @@ else {
     tray.setContextMenu(buildMenu());tray.setToolTip('Mèo Desktop');
   }
   function popup(){if(win&&!win.isDestroyed())buildMenu().popup({window:win,callback:()=>syncMouseInput(false,true)});}
-  function pet(){if(state.paused)return;state.petUntil=state.time+2.3;state.target=null;state.jump=null;state.action='pet';state.actionStart=state.time;state.nextWander=state.time+5;playBehavior.affection(state.time);}
+  function pet(){if(state.paused)return;state.petUntil=state.time+2.3;state.target=null;state.jump=null;state.action='pet';state.actionStart=state.time;state.nextWander=state.time+3;playBehavior.affection(state.time);}
   function startJump(destination){state.jump={from:state.distance,to:destination,start:state.time,duration:1.12};state.action='pounce';state.actionStart=state.time;state.nextPounce=state.time+6;state.nextWander=state.time+5;}
   function moveToward(target,dt,speed){
     const difference=route.delta(state.distance,target);
@@ -362,6 +362,7 @@ else {
   function advance(dt,cursor){
     if(suspended){cursorFollow.reset();return;}
     if(!state.paused)state.time+=dt;
+    if(petPressedAt){cursorFollow.reset();return;}
     if(screenshots?.isBusy()||utilities?.isOpen()||fileMenuOpen||Date.now()<fileHoverUntil||playerVisible()||playerWindow?.isVisible()){cursorFollow.reset();state.target=null;state.action='idle';return;}
     if(state.dragging){
       cursorFollow.reset();desktopToy=null;feedback=null;
@@ -466,7 +467,7 @@ else {
 
     if(ready&&state.visible&&!suspended){
       const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint();if(roomOwnsPet&&!state.dragging&&!state.paused)state.time+=dt;else advance(dt,cursor);
-      const roomActive=!roomOutside&&wallpaper.active&&(wallpaper.desktop||roomPinned)&&wallpaper.petReady&&!state.dragging&&!screenshots.isBusy()&&(roomPinned||(display.id===screen.getPrimaryDisplay().id&&!screenshots.snapshot().photos.length&&!utilities.badge().count&&!utilities.badge().due));
+      const roomActive=!roomOutside&&wallpaper.active&&(wallpaper.desktop||roomPinned)&&wallpaper.petReady&&!petPressedAt&&!state.dragging&&!screenshots.isBusy()&&(roomPinned||(display.id===screen.getPrimaryDisplay().id&&!screenshots.snapshot().photos.length&&!utilities.badge().count&&!utilities.badge().due));
       if(roomActive!==roomOwnsPet){roomOwnsPet=roomActive;syncMouseInput(false,true);if(roomActive)win.hide();else if(state.visible&&!suspended)win.showInactive();}
       if(roomActive&&win.isVisible())win.hide();
       if(roomActive&&!state.paused)roomTime+=dt;
@@ -489,7 +490,7 @@ else {
     win.webContents.on('will-navigate',event=>event.preventDefault());
     win.webContents.on('render-process-gone',(_event,details)=>{log('Renderer stopped: '+details.reason);if(!quitting){win.destroy();setTimeout(createWindow,300);}});
     win.webContents.on('did-fail-load',(_e,code,description)=>log(`Load failure ${code}: ${description}`));
-    win.on('closed',()=>{overlayGuard.stop();ready=false;});
+    win.on('closed',()=>{petPressedAt=0;overlayGuard.stop();ready=false;});
     win.loadFile(path.join(__dirname,'pet.html'));
   }
   function valid(event){return win&&!win.isDestroyed()&&event.sender.id===win.webContents.id;}
@@ -503,9 +504,28 @@ else {
   ipcMain.on('meo:action',(event,value)=>{
     if(!valid(event))return;
     if(value==='press'){petPressedAt=Date.now();const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint(),placement=currentPlacement();dragOffset={x:cursor.x-placement.x-placement.anchorX,y:cursor.y-placement.y-placement.anchorY};clearTimeout(playerBlurTimer);}
+    else if(value==='rub'){pet();}
+    else if(value==='release-press'){petPressedAt=0;}
     else if(value==='ball')throwDesktopBall();else if(value==='menu')popup();else if(value==='pet'){petPressedAt=0;if(utilities?.isOpen()){utilities.hide();if(mediaData.hasSession)openPlayer();else pet();return;}if(playerOpen||state.mode==='music'||(state.autoMedia&&mediaData.hasSession))togglePlayer();else pet();}
     else if(value==='drag-start'){petPressedAt=0;if(playerOpen)hidePlayer(true);utilities?.hide(true);playBehavior.affection(state.time);state.dragging=true;dragMotion=0;lastDragPoint=null;desktopToy=null;feedback=null;state.dragAt=Date.now();state.jump=null;state.action='idle';syncMouseInput(true,true);}
-    else if(value==='drag-end'){petPressedAt=0;state.dragging=false;lastDragPoint=null;feedback={kind:'landed',start:state.time,until:state.time+.7};state.action='landed';state.actionStart=state.time;if(state.freePosition){const nearest=route.nearest(state.freePosition);if(nearest.separation<24){state.distance=nearest.distance;state.freePosition=null;}}state.nextWander=state.time+4;persist();}
+    else if(value==='drag-end'){
+      petPressedAt=0;
+      if(!state.dragging)return;
+      // A short drag can start and end between two animation ticks.
+      const cursor=testMode&&global.__meo?.cursor?global.__meo.cursor:screen.getCursorScreenPoint();
+      advance(0,cursor);
+      state.dragging=false;
+      lastDragPoint=null;
+      feedback={kind:'landed',start:state.time,until:state.time+.7};
+      state.action='landed';
+      state.actionStart=state.time;
+      if(state.freePosition){
+        const nearest=route.nearest(state.freePosition);
+        if(nearest.separation<24){state.distance=nearest.distance;state.freePosition=null;}
+      }
+      state.nextWander=state.time+4;
+      persist();
+    }
     else if(value==='error')log('Renderer could not load character assets');
   });
   app.whenReady().then(()=>{

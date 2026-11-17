@@ -48,15 +48,15 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 
 ## Tải xuống và cài ứng dụng
 
-**Bản hiện tại: 1.2.0. Người dùng cài app không cần Node.js hay công cụ lập trình.**
+**Bản hiện tại: 1.2.1. Người dùng cài app không cần Node.js hay công cụ lập trình.**
 
 | Máy của bạn | Bấm để tải | Yêu cầu |
 | --- | --- | --- |
-| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.2.0/Meo-Desktop-Setup-1.2.0-x64.exe)** | Windows 10/11, x64 |
-| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.2.0/Meo-Desktop-1.2.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
-| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.2.0/Meo-Desktop-1.2.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
+| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.2.1/Meo-Desktop-Setup-1.2.1-x64.exe)** | Windows 10/11, x64 |
+| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.2.1/Meo-Desktop-1.2.1-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
+| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.2.1/Meo-Desktop-1.2.1-mac-x64.dmg)** | macOS 13 Ventura trở lên |
 
-[Xem Release 1.2.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.2.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+[Xem Release 1.2.1 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.2.1) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 1. Chọn đúng bộ cài trong bảng. Trên Mac, xem loại chip tại menu Apple → **About This Mac** nếu chưa biết chọn bản nào.
 2. **Windows:** mở `.exe` và làm theo trình cài đặt. **Mac:** mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app từ đó.
@@ -68,11 +68,12 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 
 ## Tính năng chính
 
-**Mới trong 1.2.0:**
+**Mới trong 1.2.1:**
 
-- **Túi ảnh:** xóa từng ảnh bằng nút × hoặc **Xóa hết** ngay trong mục Ảnh mèo đang cầm. Xóa ảnh cuối sẽ kết thúc tư thế cầm ảnh; bản sao đã giữ vào túi vẫn còn.
-- **Windows 11:** hai tùy chọn độc lập **Kính taskbar** và **Sóng nhạc + đĩa xoay** trong Cài đặt → Tự động, mặc định tắt. Kính đổi màu theo giao diện sáng/tối, có thanh chỉnh độ đậm 20–80%. Sóng rainbow phản ứng theo mức âm thanh đầu ra hệ thống; đĩa ảnh bìa xoay và bấm để mở/đóng card nhạc. Sóng nằm sau các biểu tượng khi bật kính, giảm độ nổi ở vùng đồng hồ và pin.
-- **Nhiều màn hình trên Windows:** phòng được hiển thị trên các màn hình kết nối, xử lý tọa độ âm và tỷ lệ hiển thị khác nhau. Mèo và bảng điều khiển phòng vẫn ở màn hình chính.
+- **Vuốt ve toàn thân:** rê chuột vòng tròn trên đầu, thân, bụng hoặc đuôi để mèo phản ứng. Có thể giữ chuột trái và xoa. Vòng xoa có thời gian hồi 3 giây; kéo thẳng để đổi vị trí.
+- **Hoạt ảnh riêng cho bốn mèo:** mèo hạ đầu, cụp tai, nghiêng má và rướn cằm theo bàn tay. Nút Vuốt ve trong phòng cũng dùng bộ hình mới.
+- **Sóng nhạc taskbar trên Windows 11:** sóng mở từ giữa sang hai bên khi bật và thu về giữa khi tắt. Sửa sóng bị che khi bấm taskbar và gỡ đĩa xoay. Tùy chọn mới tên Sóng nhạc taskbar.
+- Giữ các cải tiến túi ảnh, kính taskbar và hình nền nhiều màn hình của bản 1.2.0. Mèo và điều khiển phòng vẫn ở màn hình chính.
 
 Sóng nhạc đo mức âm thanh chung của thiết bị đầu ra, có thể phản ứng với âm thanh từ ứng dụng khác; không thu hoặc lưu bản ghi âm. Khi tắt tùy chọn, app dừng các cửa sổ và tiến trình hỗ trợ tương ứng. Thành phần ExplorerTAP đã nạp trong Explorer có thể còn trong bộ nhớ đến khi Explorer khởi động lại; giao diện taskbar được khôi phục khi tắt kính. Các tính năng taskbar không áp dụng cho Windows 10 hoặc macOS.
 
@@ -82,7 +83,7 @@ Sóng nhạc đo mức âm thanh chung của thiết bị đầu ra, có thể p
 
 **Mới trong 1.0.0 — Không gian sống cho mèo:** Trên Windows, mèo được vẽ trong cảnh 2.5D, có bóng và bị mép ổ/ghế che theo chiều sâu. Mèo đi trên sàn, dùng ghế để lên bàn, chuẩn bị trước khi nhảy xuống. Đệm lún, rèm và lá cây phản ứng khi mèo chạm. Bấm/vuốt ve mèo, bấm phần trống của ổ để gọi về ngủ; có thói quen vươn vai, liếm chân, ngắm cửa sổ và đuổi bướm với khoảng nghỉ. Ánh sáng thay đổi theo giờ máy, tối đèn ấm hơn; chọn xem thử sáng/chiều/tối trong Cài đặt. Đi dạo tự động ưu tiên cửa sổ buổi sáng và ổ ngủ ban đêm. Khi chuyển ứng dụng, mèo trở lại dạng nổi. Không gian hiện hỗ trợ nhiều màn hình trên Windows; mèo và bảng điều khiển ở màn hình chính; macOS vẫn hỗ trợ mèo nổi và các tiện ích, chưa có không gian tương tác. Bật lại hình nền sau khi mở app.
 
-- **Mèo trên desktop:** đi dạo theo mép, rình/vồ con trỏ, phản ứng khi vuốt ve; giữ và kéo để đặt ở vị trí bạn muốn.
+- **Mèo trên desktop:** đi dạo theo mép, rình/vồ con trỏ, phản ứng khi rê chuột xoa vòng tròn trên toàn thân; giữ và kéo để đặt ở vị trí bạn muốn.
 - **Nghe nhạc cùng bạn:** nhấp mèo để mở/đóng card nhạc, phát/dừng/chuyển bài, tua khi được hỗ trợ và mở trình phát.
 - **Điều khiển âm lượng:** cuộn trên mèo để tăng/giảm âm lượng hệ thống, bấm nút loa để bật/tắt tiếng.
 - **Dùng công cụ chụp của hệ thống:** bật Cài đặt → Tiện ích → Nhận ảnh chụp từ công cụ hệ thống. Windows dùng `Win + Shift + S`; Mac dùng `Control + Shift + ⌘ + 4` để chụp vào clipboard. Khi bật, mèo cũng nhận ảnh mới copy từ app khác; không đọc chữ, không nhận lại ảnh cũ khi bật.
@@ -215,7 +216,7 @@ Phần này dành cho **người phát triển**. Nếu chỉ muốn dùng app, 
    npm start -- --background
    ```
 
-Mã tương ứng với bộ cài 1.2.0 nằm ở [tag v1.2.0](https://github.com/duytienkaka/meo-desktop/tree/v1.2.0). Dùng `git switch --detach v1.2.0` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
+Mã tương ứng với bộ cài 1.2.1 nằm ở [tag v1.2.1](https://github.com/duytienkaka/meo-desktop/tree/v1.2.1). Dùng `git switch --detach v1.2.1` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
 
 ### Kiểm tra và đóng gói
 

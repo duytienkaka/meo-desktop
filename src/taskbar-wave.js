@@ -57,6 +57,12 @@ window.taskbarMusic.onLevel(level=>{
  if(reduced.matches&&visible&&playing&&performance.now()-last>250)raf=requestAnimationFrame(draw);
 });
 window.taskbarMusic.onTrack(track=>{playing=track.playing;update();});
-window.taskbarMusic.onMotion(value=>{visible=value;document.body.classList.toggle('shown',visible);update();});
+window.taskbarMusic.onMotion(value=>{
+ visible=value;
+ if(visible)canvas.getBoundingClientRect();
+ document.body.classList.toggle('shown',visible);
+ if(visible)update();
+ else{cancelAnimationFrame(raf);raf=0;last=0;}
+});
 addEventListener('resize',()=>{protectIcons();gradient=null;canvas.width=0;update();});reduced.addEventListener('change',update);
 window.taskbarMusic.ready();
