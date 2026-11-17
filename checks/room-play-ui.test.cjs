@@ -3,7 +3,7 @@ const root=path.resolve(__dirname,'..'),env={...process.env};delete env.ELECTRON
 (async()=>{
  app=await _electron.launch({executablePath:path.join(root,'.cache/electron-dist-45.0.0-win32-x64/electron.exe'),args:[root,'--meo-test'],env});
  const pet=await app.firstWindow();await pet.waitForFunction(()=>window.meoPet?.snapshot().frame);
- await app.evaluate(()=>{global.__meo.setMode('play');global.__meo.setPaused(false);global.__meo.setVisible(true);global.__meo.screenshots.clear();global.__meo.utilities.badge=()=>({count:0,due:0});Object.defineProperty(global.__meo.wallpaper,'desktop',{get:()=>true});});
+ await app.evaluate(()=>{global.__meo.setMode('play');global.__meo.setPaused(false);global.__meo.setVisible(true);global.__meo.screenshots.clear();global.__meo.utilities.badge=()=>({count:0,due:0});Object.defineProperty(global.__meo.wallpaper,'desktop',{get:()=>global.__meo.desktopFocused!==false});});
  const opened=app.waitForEvent('window');await app.evaluate(()=>global.__meo.openSettings());const settings=await opened;await settings.waitForSelector('#wallpaper');
  await settings.evaluate(()=>window.settings.update({roomLighting:'afternoon'}));await settings.evaluate(()=>window.settings.update({roomSpot:'bed'}));await settings.evaluate(()=>window.settings.update({wallpaper:true}));
  const candidates=app.windows().filter(w=>w.url().endsWith('/room.html'));
@@ -35,14 +35,82 @@ const root=path.resolve(__dirname,'..'),env={...process.env};delete env.ELECTRON
  assert.ok(Math.abs(position.y+position.height/2-viewport.height/2)<2);
  assert.ok(side==='left'?position.x<25:position.x>viewport.width-position.width-25);
  }
+ // The wallpaper follows playback even when automatic cat moods are off.
+ await app.evaluate(()=>{
+  const app=global.__meo;
+  app.setAutoMedia(false);
+  app.roomOpenCalls=[];
+  app.mediaTransport.command=async(action,source)=>app.roomOpenCalls.push([action,source]);
+  app.receiveMedia({available:true,playing:true,hasSession:true,sourceAppId:'Spotify.exe'});
+ });
+ const notes=room.locator('.music-notes');
+ await notes.waitFor({state:'visible'});
+ await app.evaluate(()=>{global.__meo.desktopFocused=false;});
+ await room.waitForFunction(()=>!window.meoRoom.snapshot().state.interactive);
+ const firstNote=notes.locator('i').first();
+ const readTime=()=>firstNote.evaluate(el=>el.getAnimations()[0]?.currentTime);
+ const firstTime=await readTime();
+ await room.waitForTimeout(220);
+ assert.ok(await notes.isVisible()&&(await readTime())>firstTime,'notes keep moving while another app has focus');
+ await app.evaluate(()=>{global.__meo.desktopFocused=true;});
+ await room.waitForFunction(()=>window.meoRoom.snapshot().state.interactive);
+ assert.ok(new Set(await notes.locator('i').allTextContents()).size>=3);
+ const table=await room.locator('#music-table').boundingBox();
+ const clickTable=()=>input.mouse.click(table.x+table.width/2,table.y+table.height/2);
+ await input.waitForFunction(()=>targets.some(t=>t.kind==='music-table'));
+ await clickTable();
+ await room.waitForTimeout(150);
+ assert.deepEqual(await app.evaluate(()=>global.__meo.roomOpenCalls),[['open','Spotify.exe']]);
  const toggle=room.locator('[data-play="room-toggle"]');
  for(const inside of [false,true]){
  await input.waitForTimeout(300);const button=await toggle.boundingBox();await input.mouse.click(button.x+button.width/2,button.y+button.height/2);
  await room.waitForFunction(inside=>window.meoRoom.snapshot().state.showPet===inside,inside);
+ if(!inside){
+  await clickTable();
+  assert.equal(await app.evaluate(()=>global.__meo.roomOpenCalls.length),1);
+  assert.equal(await notes.isVisible(),true);
+ }
  assert.equal(await toggle.innerText(),inside?'↗\nRa phòng':'↗\nVào phòng');
  }
+ await app.evaluate(({powerMonitor})=>{powerMonitor.isOnBatteryPower=()=>true;});
+ await room.waitForFunction(()=>window.meoRoom.snapshot().state.paused);
+ assert.equal(await notes.isVisible(),true);
+ await input.waitForFunction(()=>targets.some(t=>t.kind==='music-table'));
+ await clickTable();
+ await room.waitForTimeout(150);
+ assert.equal(await app.evaluate(()=>global.__meo.roomOpenCalls.length),2);
+ await app.evaluate(()=>global.__meo.receiveMedia({available:true,playing:false,hasSession:true,sourceAppId:'Spotify.exe'}));
+ await notes.waitFor({state:'hidden'});
+ await clickTable();
+ assert.equal(await app.evaluate(()=>global.__meo.roomOpenCalls.length),2);
  assert.equal(await settings.locator('[data-room]').count(),0);
  assert.equal(await settings.locator('[data-room-play]').count(),3);
+ await app.evaluate(({powerMonitor})=>{powerMonitor.isOnBatteryPower=()=>false;});
+ await settings.evaluate(()=>window.settings.update({roomFeed:true}));
+ await room.waitForFunction(()=>!document.querySelector('#food-bowl').hidden&&window.meoRoom.snapshot().pose?.target==='food');
+ await input.waitForFunction(()=>targets.some(t=>t.kind==='food'));
+ const foodBox=await room.locator('#food-bowl').boundingBox();
+ await input.mouse.move(foodBox.x+foodBox.width/2,foodBox.y+foodBox.height/2);await input.mouse.down();
+ await input.mouse.move(scene.x+scene.width*.4,scene.y+scene.height*.94,{steps:5});await input.mouse.up();
+ await room.waitForFunction(()=>window.meoRoom.snapshot().mealAge!==null&&document.querySelector('#food-bowl').hidden,null,{timeout:24000});
+ await input.waitForFunction(()=>!targets.some(t=>t.kind==='food'));
+ await room.screenshot({path:path.join(root,'.cache/room-eating.png')});
+ await room.waitForFunction(()=>window.meoRoom.snapshot().mealAge===null&&document.querySelector('#food-bowl').hidden,null,{timeout:10000});
+ await room.emulateMedia({reducedMotion:'no-preference'});
+ await app.evaluate(({powerMonitor})=>{
+  powerMonitor.isOnBatteryPower=()=>false;
+  const features=global.__meo.roomFeatures;
+  features.snapshot=()=>({lamp:'on',due:true,unlocked:['bell','fish','star'],weather:{kind:'rain',night:true}});
+ });
+ await room.waitForFunction(()=>document.body.classList.contains('room-lamp-on')&&!document.querySelector('#water-reminder').hidden);
+ await room.waitForFunction(()=>window.meoRoom.snapshot().pose?.target==='desk');
+ assert.equal(await room.locator('#window-weather').getAttribute('class'),'weather-night weather-rain');
+ await input.waitForFunction(()=>targets.some(t=>t.kind==='break-snooze'));
+ const shelf=await room.locator('#souvenir-shelf').boundingBox();
+ await input.mouse.click(shelf.x+shelf.width/2,shelf.y+shelf.height/2);
+ await room.waitForFunction(()=>!document.querySelector('#souvenir-card').hidden);
+ assert.match(await room.locator('#souvenir-card').innerText(),/Chuông nhỏ/);
+ await room.screenshot({path:path.join(root,'.cache/room-features-preview.png')});
  assert.deepEqual(errors,[]);
- console.log('PASS: Settings ball, visible pounce, tease, affection, automatic room entry and no renderer errors.');
+ console.log('PASS: Settings ball, visible pounce, tease, affection, automatic room entry music table playback, room-only player opening, battery mode and no renderer errors.');
 })().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{await app?.close();});

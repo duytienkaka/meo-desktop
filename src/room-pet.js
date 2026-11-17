@@ -1,9 +1,9 @@
 (function(root){
  'use strict';
- const spots={bed:{x:.315,y:.855,depth:.93,surface:'bed'},desk:{x:.71,y:.658,depth:.82,surface:'desk'},sill:{x:.555,y:.522,depth:.76,surface:'sill'}},chair={x:.73,y:.851,depth:.94,surface:'chair'},floor=x=>({x,y:.95,depth:1,surface:'floor'});
+ const spots={food:{x:.45,y:.94,depth:1,surface:'floor'},record:{x:.22,y:.84,depth:.92,surface:'floor'},bed:{x:.315,y:.855,depth:.93,surface:'bed'},desk:{x:.71,y:.658,depth:.82,surface:'desk'},sill:{x:.555,y:.522,depth:.76,surface:'sill'}},chair={x:.73,y:.851,depth:.94,surface:'chair'},floor=x=>({x,y:.95,depth:1,surface:'floor'});
  const yarnX=.56, pawOffset=.026;
  const mix=(a,b,t)=>a+(b-a)*t;
- function create(){let landing=floor(yarnX),surprise=false;let position={...floor(.49)},target='',queue=[],age=0,elapsed=0,phase='idle',surface='floor',facing=1;
+ function create(){let lastFood=null;let landing=floor(yarnX),surprise=false;let position={...floor(.49)},target='',queue=[],age=0,elapsed=0,phase='idle',surface='floor',facing=1;
   function travel(key){const to=key==='play'?floor(.50):spots[key]||spots.bed;queue=[];age=0;
    const add=(name,duration,to,extra={})=>queue.push({name,duration,to:{...to},...extra});
    const jump=(to)=>{add('look',.55,queue.at(-1)?.to||position);add('crouch',.32,queue.at(-1)?.to||position);add('jump',.85,to,{arc:.07});add('land',.38,to);};
@@ -25,6 +25,8 @@
      add('trail',.85,finish,{direction:-direction});
      add('peek',.9,finish,{direction});
     }
+   }else if(key==='food'){walk(spots.food);
+   }else if(key==='record'){walk({...floor(.22),y:.84});
    }else if(key==='bed'){// Approach the opening from the front of the bed.
     walk(floor(.47));walk(floor(.315));jump(to);
    }else{ // The open aisle in front of the chair avoids its feet and backrest.
@@ -34,7 +36,13 @@
    if(key!=='play')add('settle',1.1,to);if(key==='desk'){walk({...to,x:.865});add('touch',1.8,{...to,x:.865});walk(to);}else if(key==='sill')add('touch',1.8,to);if(key!=='play')add('rest',3,to);
    for(let i=0;i<queue.length;i++)queue[i].from=i?queue[i-1].to:{...position};target=key;
   }
-  return {play(point=floor(yarnX),roll=false){landing={...floor(point.x),y:point.y};surprise=roll;travel('play');},step(dt,key='bed',quiet=false){if(!spots[key]&&key!=='play')key='bed';if(key!==target)travel(key);
+  return {food(point,standOff=0){
+   if(lastFood&&Math.hypot(lastFood.x-point.x,lastFood.y-point.y)<.001&&lastFood.standOff===standOff)return;
+   const direction=position.x<=point.x?1:-1;
+   lastFood={...point,standOff};
+   spots.food={...spots.food,x:point.x-direction*standOff,y:point.y};
+   if(target==='food')target='';
+  },play(point=floor(yarnX),roll=false){landing={...floor(point.x),y:point.y};surprise=roll;travel('play');},step(dt,key='bed',quiet=false){if(!spots[key]&&key!=='play')key='bed';if(key!==target)travel(key);
    if(quiet){position={...(key==='play'?{...landing,x:landing.x-facing*pawOffset}:spots[key])};surface=position.surface;queue=[];phase=key==='play'?'yarn':key==='bed'?'sleep':'idle';return {...position,phase,altitude:0,sy:1,sx:1,direction:facing,elapsed,target:key,progress:1,surface,contact:key==='bed'?1:0,touch:0};}
    elapsed+=dt;age+=dt;while(queue.length&&age>=queue[0].duration){age-=queue[0].duration;position={...queue.shift().to};surface=position.surface;}
    let altitude=0,sy=1,sx=1,progress=1,touch=0;

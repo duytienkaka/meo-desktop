@@ -13,6 +13,7 @@
  ];
  const yarnRows={classic:0,mit:1,may:2,muc:3};
  const reduced=matchMedia('(prefers-reduced-motion:reduce)');
+ const celebration=window.ROOM_LEVEL_UP.create();
  const headRub=createHeadRubTracker();
  const sampleHeadRub=window.CAT_HEAD_RUB.createPlayer();
  function strokeNearCat(next){
@@ -36,9 +37,12 @@
  function render(now){raf=0;const w=scene.clientWidth,h=scene.clientHeight,dpr=Math.min(devicePixelRatio||1,2);if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
   const dt=last?Math.min(.05,(now-last)/1000):0;last=now;
   if(ready&&state.showPet){
-   const stepTime=state.paused?0:dt;
+   const canCelebrate=window.ROOM_FEATURES.mealAge===null&&!playing&&!teaseRemaining&&pose&&pose.phase!=='jump'&&state.interactive;
+   const presenting=celebration.step(state.paused||!state.interactive?0:dt,canCelebrate);
+   const stepTime=state.paused||presenting?0:dt;
    if(playRemaining)dropAge+=stepTime;
-   teaseRemaining=Math.max(0,teaseRemaining-stepTime);lifeState=life.step(state.paused?0:dt,pose,{roam:state.roam,night:state.lighting?.phase==='night',quiet:reduced.matches});pose=controller.step(teaseRemaining?0:stepTime,playing?'play':lifeState.destination||state.destination,reduced.matches);
+   teaseRemaining=Math.max(0,teaseRemaining-stepTime);lifeState=life.step(state.paused?0:dt,pose,{roam:state.roam,night:state.lighting?.phase==='night',quiet:reduced.matches});controller.food(window.ROOM_FEATURES.foodPoint(),clamp(state.size,70,180)*.40/1536);if(!presenting)pose=controller.step(teaseRemaining?0:stepTime,playing?'play':window.ROOM_FEATURES.destination(state,pose)||lifeState.destination||state.destination,reduced.matches);
+   const meal=!presenting&&window.ROOM_FEATURES.stepMeal(pose,stepTime);
    const batting=playRemaining&&pose.phase==='yarn';
    if(batting)playRemaining=Math.max(0,playRemaining-stepTime);
    if(playing&&(pose.phase==='idle'||(reduced.matches&&!playRemaining))){playing=false;playRemaining=0;}
@@ -46,8 +50,8 @@
    if(teaseRemaining)pose={...pose,phase:'touch',sx:1+(reduced.matches?0:Math.sin(teaseRemaining*15)*.045)};
    if(lifeState.routine==='chase'&&['idle','rest'].includes(pose.phase)){pose={...pose,x:pose.x+Math.sin(lifeState.progress*Math.PI*2)*.025,altitude:Math.sin(lifeState.progress*Math.PI)**2*.025,phase:'touch'};}const time=pose.elapsed,breath=state.paused||reduced.matches?0:Math.sin(time*1.7)*.008;
    reactionState=reactions.update(pose,state.paused?0:dt,reduced.matches);
-   canvas.style.zIndex=String(petLayer(pose));
-   let sheet='core',index=0;if(pose.phase==='walk'||pose.phase==='trail'){sheet='walk';index=Math.floor(time*14)%8;}else if(pose.phase==='jump')index=9;else if(pose.phase==='look'||pose.phase==='peek')index=3;else if(pose.phase==='touch'||pose.phase==='pounce')index=11;else if(pose.phase==='crouch')index=8;else if(pose.phase==='land')index=10;else if(pose.phase==='sleep'){sheet='moods';index=9;}else if(pose.phase==='settle')index=2;else if(state.music){sheet='moods';index=Math.floor(time*3.3)%4;}else index=time%4.8>4.5?2:0;
+   canvas.style.zIndex=String(presenting?19:petLayer(pose));
+   let sheet='core',index=0;if(pose.phase==='walk'||pose.phase==='trail'){sheet='walk';index=Math.floor(time*14)%8;}else if(pose.phase==='jump')index=9;else if(pose.phase==='look'||pose.phase==='peek')index=3;else if(pose.phase==='touch'||pose.phase==='pounce')index=11;else if(pose.phase==='crouch')index=8;else if(pose.phase==='land')index=10;else if(pose.phase==='sleep'){sheet='moods';index=9;}else if(pose.phase==='settle')index=2;else if(state.features?.care?.hungry){sheet='core';index=8;}else if(state.musicPlaying&&pose.target==='record'){sheet='moods';index=Math.floor(time*3.3)%4;}else index=time%4.8>4.5?2:0;
    if(['sleep','idle','rest'].includes(pose.phase)){if(lifeState.routine==='stretch'){sheet='core';index=lifeState.progress<.35?3:8;}else if(lifeState.routine==='groom'){sheet='actions';index=10;}else if(lifeState.routine==='watch'){sheet='core';index=3;}}
    const stroke=sampleHeadRub(lifeState.affection>0&&!teaseRemaining&&!playRemaining,now,state.character,reduced.matches||state.paused);
    let p=stroke;
@@ -58,6 +62,12 @@
    const cursor=state.cursor||{x:-1000,y:-1000},follow=pose.surface==='sill'&&Math.abs(cursor.x-(sceneBox.left+x))<w*.25&&['idle','rest'].includes(pose.phase),lean=follow?Math.max(-.055,Math.min(.055,(cursor.x-(sceneBox.left+x))/w*.3)):0;
    ctx.save();
    ctx.translate(x,y-altitude+(pose.phase==='sleep'?2:0));
+   if(meal){
+    ctx.translate(-x,-y+altitude);
+    drawMeal(ctx,w,h,size,pose,state.character);
+   }else if(presenting){
+    celebration.draw(ctx,size,state.character,reduced.matches);
+   }else{
    ctx.rotate(lean);
    ctx.scale(pose.direction*pose.sx,pose.sy+breath);
    if(batting){
@@ -76,6 +86,7 @@
     ctx.drawImage(images[p.sheet],source.x,source.y,source.w,source.h,-sw/2,-sh,sw,sh);
     if(stroke)window.CAT_HEAD_RUB.drawHand(ctx,stroke,sw,sh);
    }
+   }
    ctx.restore();
 
   }
@@ -87,15 +98,44 @@
    const offset=trailing?direction*.032*(pose.phase==='peek'?1:pose.progress):0;
    drawYarn((landing.x+offset)*w,landing.y*h,Math.max(9,w*.012),lift,offset*40);
   }
-  if(pose&&state.showPet&&hitTargets.length&&!playRemaining&&(teaseRemaining||lifeState.affection)){
+  if(window.ROOM_FEATURES.mealAge===null&&!celebration.active&&pose&&state.showPet&&hitTargets.length&&!playRemaining&&(teaseRemaining||lifeState.affection)){
    const box=hitTargets[0],bounds=scene.getBoundingClientRect();
    const teasing=teaseRemaining>0,progress=teasing?1-teaseRemaining/2:1-lifeState.affection;
    drawReaction(box.x-bounds.left+box.width*.5,box.y-bounds.top,Math.max(7,box.width*.105),progress,teasing,pose.direction);
    if(teasing)drawPokeHand(box,bounds,progress,pose.direction);
   }
-  window.room.targets([...(state.showPet?hitTargets:[]),...Array.from(document.querySelectorAll('[data-play]'),button=>{const r=button.getBoundingClientRect();return{kind:button.dataset.play,x:r.x,y:r.y,width:r.width,height:r.height};})]);
+  const tableTargets=[];
+  if(state.roomInside&&state.showPet&&state.interactive&&state.canOpenMusic){
+   const {x,y,width,height}=document.getElementById('music-table').getBoundingClientRect();
+   tableTargets.push({kind:'music-table',x,y,width,height});
+  }
+  window.ROOM_FEATURES.render(state,pose,hitTargets[0],dt);
+  window.room.targets([...(state.showPet?hitTargets:[]),...Array.from(document.querySelectorAll('[data-play]'),button=>{const r=button.getBoundingClientRect();return{kind:button.dataset.play,x:r.x,y:r.y,width:r.width,height:r.height};}),...tableTargets,...window.ROOM_FEATURES.targets(state)]);
   if(!state.showPet)reactions.reset();
   if(state.showPet&&!state.paused&&!reduced.matches)raf=requestAnimationFrame(render);
+ }
+ function drawMeal(ctx,width,height,size,pose,character){
+  const features=window.ROOM_FEATURES;
+  const bowl=features.bowl,point=features.foodPoint(),age=features.mealAge;
+  const bowlWidth=width*.05,bowlHeight=bowlWidth*bowl.naturalHeight/bowl.naturalWidth;
+  const center=point.x*width,top=point.y*height-bowlHeight*.7;
+  const left=center-bowlWidth/2;
+  ctx.drawImage(bowl,left,top,bowlWidth,bowlHeight);
+  const beat=(age-.35)%1.32;
+  let row=age<.35?0:beat<.82?1:2;
+  if(age>4.55)row=2;
+  if(reduced.matches)row=1;
+  const catWidth=size*1.22,catHeight=catWidth*162/256;
+  const nod=reduced.matches?0:Math.sin(Math.PI*2*age*2)*size*.012;
+  ctx.save();
+  ctx.translate(center,top+bowlHeight*.33+nod);
+  ctx.scale(point.x>=pose.x?1:-1,1);
+  ctx.drawImage(eatingSheet,(yarnRows[character]||0)*256,row*162,256,162,-catWidth*.84,-catHeight*.96,catWidth,catHeight);
+  ctx.restore();
+  // Paint the ceramic front over the muzzle; keep the same image and orientation on both approaches.
+  const lip=Math.round(bowl.naturalHeight*.53);
+  const fraction=lip/bowl.naturalHeight;
+  ctx.drawImage(bowl,0,lip,bowl.naturalWidth,bowl.naturalHeight-lip,left,top+bowlHeight*fraction,bowlWidth,bowlHeight*(1-fraction));
  }
  // Wind two bundles across a shaded ball, clipping the strands to its silhouette.
  const drawYarn=(...args)=>window.DRAW_YARN(ctx,...args);
@@ -147,6 +187,9 @@
  function draw(){if(!raf)raf=requestAnimationFrame(render);}
  window.room.onInteraction(action=>{
   const kind=typeof action==='string'?action:action.kind;
+  if(kind.startsWith('food')){window.ROOM_FEATURES.food(action);draw();return;}
+  if(window.ROOM_FEATURES.mealAge!==null&&['ball','tease','bed','pet'].includes(kind))return;
+  if(kind==='souvenirs'){window.ROOM_FEATURES.inspect();return;}
   playing=false;
   if(kind==='ball'){const box=scene.getBoundingClientRect();
    landing=typeof action==='object'?{x:clamp((action.x-box.left)/box.width,.07,.93),y:clamp((action.y-box.top)/box.height,.90,.97)}:{x:window.ROOM_PET.yarnX,y:.95};
@@ -155,9 +198,10 @@
   else {playRemaining=0;teaseRemaining=0;life.interact(kind);}
   draw();
  });
- window.room.onState(s=>{strokeNearCat(s);if(s.destination!==state.destination)life.interact('release');state={...state,...s};document.querySelector('.room-controls').hidden=state.controlsVisible===false;const toggle=document.querySelector('[data-play="room-toggle"]');toggle.title=state.roomInside?'Ra phòng':'Vào phòng';toggle.querySelector('.room-toggle-label').textContent=toggle.title;document.body.classList.toggle("controls-left",state.controlsSide==="left");if(s.lighting){const light=s.lighting;document.body.classList.toggle('night',light.phase==='night');for(const k of ['dark','warm','lamp','sun'])scene.style.setProperty('--time-'+k,light[k]);}document.body.classList.toggle('paused',s.paused);document.body.classList.toggle('music',s.music);document.body.classList.toggle('near-plant',s.nearPlant);if(!s.showPet||s.paused)last=0;draw();});
+ window.room.onState(s=>{if(s.controlsVisible!==false)celebration.observe(s.features);strokeNearCat(s);if(s.destination!==state.destination)life.interact('release');state={...state,...s};document.querySelector('.room-controls').hidden=state.controlsVisible===false;const toggle=document.querySelector('[data-play="room-toggle"]');toggle.title=state.roomInside?'Ra phòng':'Vào phòng';toggle.querySelector('.room-toggle-label').textContent=toggle.title;document.body.classList.toggle("controls-left",state.controlsSide==="left");if(s.lighting){const light=s.lighting;document.body.classList.toggle('night',light.phase==='night');for(const k of ['dark','warm','lamp','sun'])scene.style.setProperty('--time-'+k,light[k]);}document.body.classList.toggle('paused',s.paused);document.body.classList.toggle('music',s.music);document.body.classList.toggle('notes-playing',!!s.animateNotes);document.body.classList.toggle('near-plant',s.nearPlant);if(!s.showPet||s.paused)last=0;draw();});
  addEventListener('resize',draw);reduced.addEventListener('change',draw);
- window.meoRoom={snapshot:()=>({ready,state,pose,reactionState,lifeState,hitTargets,playRemaining,teaseRemaining,landing})};
+ window.meoRoom={snapshot:()=>({ready,presentation:celebration.active,mealAge:window.ROOM_FEATURES.mealAge,state,pose,reactionState,lifeState,hitTargets,playRemaining,teaseRemaining,landing})};
  const yarn=new Image();yarn.src='../assets/room/yarn-play.webp';images.yarn=yarn;
- Promise.all([yarn.decode(),...Array.from(document.querySelectorAll('.room-object'),object=>object.decode()),...['actions','core','moods','walk','mit','may','muc','mit-walk','may-walk','muc-walk','head-rub'].map(name=>new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>{images[name]=image;resolve();};image.onerror=reject;image.src='../assets/'+name+'.png';}))]).then(()=>{ready=true;window.room.ready();draw();});
+ const eatingSheet=new Image();eatingSheet.src="../assets/room/eating.webp";
+ Promise.all([eatingSheet.decode(),window.ROOM_FEATURES.bowl.decode(),celebration.ready,yarn.decode(),...Array.from(document.querySelectorAll('.room-object'),object=>object.decode()),...['actions','core','moods','walk','mit','may','muc','mit-walk','may-walk','muc-walk','head-rub'].map(name=>new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>{images[name]=image;resolve();};image.onerror=reject;image.src='../assets/'+name+'.png';}))]).then(()=>{ready=true;window.room.ready();draw();});
 })();

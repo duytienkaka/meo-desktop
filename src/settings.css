@@ -183,3 +183,13 @@ footer { grid-column: 1/-1; display: flex; align-items: center; gap: 20px; paddi
 .room-enter{margin-top:20px;width:100%;padding:13px 18px;border-radius:12px}
 
 .glass-slider{display:flex;align-items:center;gap:12px;min-width:210px}.glass-slider input{width:160px;accent-color:#c3b1e8}.glass-slider output{width:36px;text-align:right;font-variant-numeric:tabular-nums;color:#d4cce2}.glass-control:has(input:disabled){opacity:.5}
+
+.room-info .room-clock-control{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,202px);gap:12px}
+.room-info .room-clock-control select,.city-entry{width:100%;max-width:none;height:38px;box-sizing:border-box}
+.city-entry{display:flex;align-items:center;gap:4px;border:1px solid #424148;border-radius:11px;background:#1e1e23;padding:3px}
+.city-entry:focus-within{border-color:#b8a88b}
+.city-entry input{background:transparent;border:0;color:#f2efec;font:inherit;padding:0 8px;min-width:0;flex:1;outline:none}
+.city-entry button{border:0;border-radius:8px;background:#37353a;color:#f6eee1;font-size:12px;font-weight:600;font-family:inherit;padding:0 12px;height:30px;cursor:pointer}
+.city-entry button:hover{background:#474247}
+
+.care-panel{display:grid;gap:12px;margin-top:24px;padding:18px;background:#ffffff05;border:1px solid #ffffff12;border-radius:16px;color:#ddd5c8;font-size:13px}.care-panel progress{width:100%;height:6px;accent-color:#c9b795}.care-panel button{padding:12px;border-radius:12px}
