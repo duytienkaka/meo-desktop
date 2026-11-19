@@ -87,16 +87,29 @@ delete env.ELECTRON_RUN_AS_NODE;
   await app.evaluate(()=>global.__wave.setEnabled(true));
   await new Promise(resolve=>setTimeout(resolve,420));
   assert.equal(await app.evaluate(()=>global.__wave.waveWindow.isVisible()),true);
-  await app.evaluate(()=>global.__watcher.stdout.emit('data',Buffer.from('0 0 1920 48 0\n')));
-  await new Promise(resolve=>setTimeout(resolve,160));
-  assert.equal(await app.evaluate(()=>global.__wave.waveWindow.isVisible()),false);
-  await app.evaluate(()=>global.__watcher.stdout.emit('data',Buffer.from(global.__visibleSample)));
+  const expected=await app.evaluate(()=>{
+   const wave=global.__wave.waveWindow,bounds=wave.getBounds();
+   // Full-screen transitions may move the overlay while the taskbar itself keeps its bounds.
+   global.__watcher.stdout.emit('data',Buffer.from(global.__visibleSample.replace(/1\n$/,'0\n')));
+   if(wave.isVisible())throw Error('Wave overlay should hide as soon as the taskbar is hidden');
+   wave.setBounds({...bounds,y:bounds.y-bounds.height});
+   global.__watcher.stdout.emit('data',Buffer.from(global.__visibleSample));
+   return bounds;
+  });
+  assert.deepEqual(await app.evaluate(()=>global.__wave.waveWindow.getBounds()),expected);
   assert.equal(await app.evaluate(()=>global.__wave.waveWindow.isVisible()),true);
+  await app.evaluate(async (_,bounds)=>{
+   const wave=global.__wave.waveWindow;
+   wave.setBounds({...bounds,y:bounds.y-bounds.height});
+   // Allow the coalesced move/resize correction to run without a new taskbar sample.
+   await new Promise(resolve=>setTimeout(resolve,80));
+  },expected);
+  assert.deepEqual(await app.evaluate(()=>global.__wave.waveWindow.getBounds()),expected);
   await app.evaluate(()=>global.__wave.setEnabled(false));
   await new Promise(resolve=>setTimeout(resolve,420));
   assert.equal(await app.evaluate(()=>global.__wave.waveWindow),null);
   assert.equal(await app.evaluate(()=>global.__meterActive),false);
-  console.log('PASS: waveform only, real audio drawing, taskbar activation, reveal/exit, horizontal and vertical icon masks, rapid toggles, auto-hide and cleanup'+(process.argv.includes('--glass')?', native glass layering and restore':''));
+  console.log('PASS: waveform only, real audio drawing, taskbar activation, reveal/exit, horizontal and vertical icon masks, full-screen return, displaced overlay recovery, rapid toggles, auto-hide and cleanup'+(process.argv.includes('--glass')?', native glass layering and restore':''));
  }finally{
   await app.evaluate(()=>{global.__glass?.dispose();global.__wave?.dispose();}).catch(()=>{});
   await app.close();

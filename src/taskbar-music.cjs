@@ -10,7 +10,8 @@ function createTaskbarMusic({supported,onError,onWindowsChanged=()=>{},
  let options={};
  let enabled=false,watcher=null,waveWindow=null,loaded=false,geometry=null,track=null;
  let behind=false,layered=false,suspended=false,shown=false,buffer='';
- let regions=[],boundsKey='',protectionKey='',trackKey='';
+ let regions=[],protectionKey='',trackKey='';
+ let alignment=null;
  let hideTimer=null,disableTimer=null,retryTimer=null;
  const meter=createMeter({onLevel:level=>{
   if(loaded&&waveWindow&&!waveWindow.isDestroyed())waveWindow.webContents.send('taskbar:level',level);
@@ -21,7 +22,8 @@ function createTaskbarMusic({supported,onError,onWindowsChanged=()=>{},
  function destroyWindow(){
   clearTimeout(hideTimer);hideTimer=null;
   const old=waveWindow;waveWindow=null;loaded=false;layered=false;shown=false;
-  boundsKey='';protectionKey='';trackKey='';
+  clearImmediate(alignment);alignment=null;
+  protectionKey='';trackKey='';
   old?.destroy();onWindowsChanged({wave:null,disc:null});
  }
  function show(value,immediate=false,delay=110){
@@ -29,12 +31,28 @@ function createTaskbarMusic({supported,onError,onWindowsChanged=()=>{},
   if(shown===value&&!immediate)return;
   shown=value;clearTimeout(hideTimer);hideTimer=null;
   waveWindow.webContents.send('taskbar:motion',value);
-  if(value)waveWindow.showInactive();
+  if(value){waveWindow.showInactive();queueAlignment();}
   else if(immediate)waveWindow.hide();
   else hideTimer=setTimeout(()=>{
    hideTimer=null;
    if(!shown&&waveWindow&&!waveWindow.isDestroyed())waveWindow.hide();
   },delay);
+ }
+ function alignBounds(bar){
+  const current=waveWindow.getBounds();
+  if(current.x!==bar.x||current.y!==bar.y||current.width!==bar.width||current.height!==bar.height){
+   waveWindow.setBounds(bar,false);
+  }
+ }
+ function queueAlignment(){
+  if(!shown||alignment)return;
+  const current=waveWindow;
+  alignment=setImmediate(()=>{
+   alignment=null;
+   if(enabled&&shown&&geometry?.visible&&waveWindow===current&&!current.isDestroyed()){
+    alignBounds(screen.screenToDipRect(null,geometry));
+   }
+  });
  }
  function prepareWindow(){
   if(waveWindow)return;
@@ -44,6 +62,8 @@ function createTaskbarMusic({supported,onError,onWindowsChanged=()=>{},
    show:false,focusable:false,skipTaskbar:true,hasShadow:false,resizable:false,title:'Mèo · Sóng nhạc',
    webPreferences:{backgroundThrottling:false,preload:path.join(__dirname,'taskbar-music-preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false}
   });
+  waveWindow.on('move',queueAlignment);
+  waveWindow.on('resize',queueAlignment);
   waveWindow.setAlwaysOnTop(true,'screen-saver');waveWindow.setIgnoreMouseEvents(true);
   waveWindow.setMenu(null);
   waveWindow.webContents.setWindowOpenHandler(()=>({action:'deny'}));
@@ -57,9 +77,9 @@ function createTaskbarMusic({supported,onError,onWindowsChanged=()=>{},
   meter.setActive(active&&!!track?.playing);
   prepareWindow();
   if(!loaded)return;
-  if(!active||(behind&&!layered)){show(false,suspended);return;}
-  const bar=screen.screenToDipRect(null,geometry),key=JSON.stringify(bar);
-  if(key!==boundsKey){boundsKey=key;waveWindow.setBounds(bar,false);}
+  if(!active||(behind&&!layered)){show(false,suspended||!geometry?.visible);return;}
+  const bar=screen.screenToDipRect(null,geometry);
+  alignBounds(bar);
   const protection=regions.map(rect=>{
    const dip=screen.screenToDipRect(null,rect);return {x:dip.x-bar.x,y:dip.y-bar.y,width:dip.width,height:dip.height};
   });
