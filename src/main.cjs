@@ -29,7 +29,7 @@ app.setPath('userData',testMode?path.resolve(__dirname,'../checks/user-data'):pa
 if(!app.requestSingleInstanceLock()){app.quit();}
 else {
   const roomFeatures=require('./room-features.cjs').createRoomFeatures(app.getPath('userData'));
-  const wallpaper=createWallpaper({onMusicTable:openRoomMusic,onFeature:kind=>applyCare(kind)});
+  const wallpaper=createWallpaper({onMusicTable:openRoomMusic,onFeature:kind=>applyCare(kind),onError:error=>log(error.detail||error.message)});
   const startup=createStartup({app,testMode});
   const updates=createUpdates({app,testMode,openExternal:url=>shell.openExternal(url),onChange:()=>publishSettings(),beforeInstall:()=>{if(screenshots?.isBusy())throw new Error('Hãy chờ thao tác ảnh hoàn tất trước khi cài.');if(!saveSettings())throw new Error('Chưa lưu được cài đặt. Hãy thử lại trước khi cập nhật.');}});
   const desktopActions=createDesktopActions({directory:app.getPath('userData'),shell,clipboard}),pinIcons=new Map();
@@ -202,7 +202,8 @@ else {
     if(!wallpaperOpening){
       wallpaperOpening=wallpaper.open().then(syncMediaMonitor).catch(error=>{
         wallpaper.close();
-        throw error;
+        log('Wallpaper: '+(error.detail||error.message));
+        throw new Error('Chưa mở được hình nền trên máy này.');
       }).finally(()=>{wallpaperOpening=null;});
     }
     return wallpaperOpening;
@@ -515,10 +516,22 @@ else {
     if(state.target!==null)moveToward(state.target,dt,following==='chase'?160:58);
     else state.action='idle';
   }
-  async function feedCat(){
-    if(mac){applyCare('food-eaten');return;}
+  let feeding=null;
+  function feedCat(){
+    if(mac){applyCare('food-eaten');return Promise.resolve();}
+    if(!feeding)feeding=feedInWindows().finally(()=>{feeding=null;});
+    return feeding;
+  }
+  async function feedInWindows(){
+    try{await openWallpaper();}catch{
+      if(quitting)return;
+      roomOutside=true;roomPinned=false;
+      setVisible(true);setPaused(false);
+      applyCare('food-eaten');
+      return;
+    }
+    if(quitting)return;
     roomOutside=false;roomPinned=true;
-    await openWallpaper();
     setVisible(true);setPaused(false);wallpaper.food();
   }
   ipcMain.handle('meo:feed',async event=>{
