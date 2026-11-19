@@ -42,6 +42,24 @@ delete env.ELECTRON_RUN_AS_NODE;
    const c=document.querySelector('canvas'),data=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
    return data.some((v,i)=>i%4===3&&v>10);
   });
+  // Exercise the vertical layout available on the classic Windows 10 taskbar.
+  await app.evaluate(({screen})=>{
+   const b=screen.dipToScreenRect(null,screen.getPrimaryDisplay().bounds);
+   const sample='mask '+b.x+','+b.y+',48,75|'+b.x+','+(b.y+b.height-110)+',48,110\n';
+   global.__watcher.stdout.emit('data',Buffer.from(sample+[b.x,b.y,48,b.height,1].join(' ')+'\n'));
+  });
+  await wave.waitForFunction(()=>{
+   if(!document.body.classList.contains('shown')||!document.body.classList.contains('vertical')||!document.body.classList.contains('protected'))return false;
+   const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
+   const mask=getComputedStyle(document.body).clipPath;
+   return ctx.getTransform().b>0&&mask.includes('evenodd');
+  },null,{timeout:5000}).catch(async error=>{console.error(await wave.evaluate(()=>({size:[innerWidth,innerHeight],state:document.body.className,mask:getComputedStyle(document.body).clipPath,transform:document.querySelector('canvas').getContext('2d').getTransform().toString()})));throw error;});
+  await app.evaluate(({screen})=>{
+   const b=screen.dipToScreenRect(null,screen.getPrimaryDisplay().bounds);
+   const sample='mask '+(b.x+600)+','+(b.y+b.height-48)+',500,48\n';
+   global.__watcher.stdout.emit('data',Buffer.from(sample+global.__visibleSample));
+  });
+  await wave.waitForFunction(()=>!document.body.classList.contains('vertical')&&document.body.classList.contains('protected'));
   const raised=await app.evaluate(()=>{
    const w=global.__wave.waveWindow,original=w.moveTop.bind(w);let count=0;
    w.moveTop=()=>{count++;original();};
@@ -78,7 +96,7 @@ delete env.ELECTRON_RUN_AS_NODE;
   await new Promise(resolve=>setTimeout(resolve,420));
   assert.equal(await app.evaluate(()=>global.__wave.waveWindow),null);
   assert.equal(await app.evaluate(()=>global.__meterActive),false);
-  console.log('PASS: waveform only, real audio drawing, taskbar activation, reveal/exit, rapid toggles, auto-hide and cleanup'+(process.argv.includes('--glass')?', native glass layering and restore':''));
+  console.log('PASS: waveform only, real audio drawing, taskbar activation, reveal/exit, horizontal and vertical icon masks, rapid toggles, auto-hide and cleanup'+(process.argv.includes('--glass')?', native glass layering and restore':''));
  }finally{
   await app.evaluate(()=>{global.__glass?.dispose();global.__wave?.dispose();}).catch(()=>{});
   await app.close();

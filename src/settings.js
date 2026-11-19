@@ -134,7 +134,7 @@
   }
   function previewWave(){
     for(const key of ['height','sensitivity','decay'])document.querySelector('#wave-'+key+'-value').textContent=document.querySelector('#wave-'+key).value+'%';
-    waveFrame.contentWindow?.postMessage({type:'wave-preview',options:waveValues(),artwork:snapshot?.waveArtwork||'',active:!document.hidden&&document.querySelector('#page-auto').classList.contains('active')},'*');
+    waveFrame.contentWindow?.postMessage({type:'wave-preview',options:waveValues(),artwork:snapshot?.waveArtwork||'',active:snapshot?.taskbarMusicSupported===true&&!document.hidden&&document.querySelector('#page-auto').classList.contains('active')},'*');
   }
   for(const key of waveKeys){
     const input=document.querySelector('#wave-'+key);
@@ -148,13 +148,13 @@
     const wave=value.waveOptions||{style:'bars',colors:'rainbow',height:70,sensitivity:100,decay:65,peaks:true};
     for(const key of waveKeys){
       const input=document.querySelector('#wave-'+key);
-      input.disabled=!value.taskbarSupported;
+      input.disabled=!value.taskbarMusicSupported;
       if(!waveEditing){if(input.type==='checkbox')input.checked=wave[key];else input.value=wave[key];}
     }
     if(!glassEditing)glassSlider.value=String(value.taskbarGlassOpacity??40);glassSlider.disabled=!value.taskbarSupported||!value.taskbarTransparent;
     document.querySelector('#taskbar-glass-value').textContent=glassSlider.value+'%';
     document.querySelector('#taskbarTransparent').checked=!!value.taskbarTransparent;document.querySelector('#taskbarTransparent').disabled=!value.taskbarSupported;document.querySelector('#taskbar-transparency-status').textContent=value.taskbarTransparency?.message||'Windows 11 · Nền trong suốt thật.';
-    document.querySelector('#taskbarMusic').checked=!!value.taskbarMusic;document.querySelector('#taskbarMusic').disabled=!value.taskbarSupported;
+    document.querySelector('#taskbarMusic').checked=!!value.taskbarMusic;document.querySelector('#taskbarMusic').disabled=!value.taskbarMusicSupported;
     document.querySelector('#room-controls-side').value=value.roomControlsSide||'right';document.querySelector('#room-controls-side').disabled=value.platform==='darwin';
     renderCare(value.roomFeatures,value.platform==='darwin');
  document.querySelector('#room-lamp').value=value.roomFeatures?.lamp||'auto';
@@ -186,6 +186,9 @@
     document.querySelector('#startup-status').textContent=startup.message;
     const mac=value.platform==='darwin';
     document.querySelector('#wallpaper').disabled=mac;
+    const wallpaperStartup=document.querySelector('#wallpaperAtLaunch');
+    wallpaperStartup.checked=value.wallpaperAtLaunch!==false;
+    wallpaperStartup.disabled=value.platform!=='win32';
     document.querySelector('.room-hint').hidden=!mac;document.querySelector('.room-hint').textContent=mac?'Hình nền tương tác đang thử nghiệm trên Windows; chưa hỗ trợ macOS.':'';
     document.querySelector('kbd').textContent=value.shortcut||'Ctrl + Alt + M';
     document.querySelector('#platform-note').textContent=mac?'macOS: nhạc hỗ trợ Apple Music và Spotify. Cho phép Automation khi được hỏi; nhạc trong trình duyệt chưa hỗ trợ.':'Nhận diện nhạc tự động hiện hỗ trợ Windows và macOS.';

@@ -74,7 +74,7 @@ else {
   const modeLabels={play:'Tinh nghịch',music:'Nghe nhạc',focus:'Tập trung',sleep:'Buồn ngủ'};
   const characters=['classic','mit','may','muc'];
   const waveDefaults={style:'bars',height:70,sensitivity:100,decay:65,colors:'rainbow',peaks:true};
-  const defaults={waveOptions:waveDefaults,taskbarGlassOpacity:40,taskbarTransparent:false,taskbarMusic:false,roomControlsSide:'right',roomLighting:'auto',character:'classic',mode:'play',size:112,roam:true,follow:true,displayId:null,autoMedia:!mac,visible:true,paused:false};
+  const defaults={wallpaperAtLaunch:true,waveOptions:waveDefaults,taskbarGlassOpacity:40,taskbarTransparent:false,taskbarMusic:false,roomControlsSide:'right',roomLighting:'auto',character:'classic',mode:'play',size:112,roam:true,follow:true,displayId:null,autoMedia:!mac,visible:true,paused:false};
   let preferences={...defaults};
   try {preferences={...defaults,...JSON.parse(fs.readFileSync(path.join(app.getPath('userData'),'settings.json'),'utf8'))};} catch {}
   if(!['left','right'].includes(preferences.roomControlsSide))preferences.roomControlsSide='right';
@@ -85,7 +85,7 @@ else {
   preferences.roam=preferences.roam!==false;preferences.follow=preferences.follow!==false;
   preferences.waveOptions={...waveDefaults,...preferences.waveOptions};
   preferences.taskbarGlassOpacity=Number.isFinite(preferences.taskbarGlassOpacity)?clamp(Math.round(preferences.taskbarGlassOpacity),20,80):40;
-  const state={...preferences,baseMode:preferences.mode,autoMedia:desktopSupported&&(mac?preferences.autoMedia===true:preferences.autoMedia!==false),mediaStatus:'connecting',mediaPlaying:false,visible:preferences.visible!==false,paused:preferences.paused===true,time:0,distance:0,target:null,direction:1,action:'idle',actionStart:0,jump:null,petUntil:0,nextWander:3,nextPounce:2,interactive:false,dragging:false,dragAt:0,toast:'Chuột phải lên mèo để mở menu',toastUntil:5,closeEnough:false};
+  const state={...preferences,wallpaperAtLaunch:preferences.wallpaperAtLaunch!==false,baseMode:preferences.mode,autoMedia:desktopSupported&&(mac?preferences.autoMedia===true:preferences.autoMedia!==false),mediaStatus:'connecting',mediaPlaying:false,visible:preferences.visible!==false,paused:preferences.paused===true,time:0,distance:0,target:null,direction:1,action:'idle',actionStart:0,jump:null,petUntil:0,nextWander:3,nextPounce:2,interactive:false,dragging:false,dragAt:0,toast:'Chuột phải lên mèo để mở menu',toastUntil:5,closeEnough:false};
   // Listening is transient while automatic detection is enabled, including legacy preferences.
   if(state.autoMedia&&state.baseMode==='music')state.mode=state.baseMode='play';
   const log=message=>{try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.appendFileSync(path.join(app.getPath('userData'),'app.log'),new Date().toISOString()+' '+message+'\n');}catch{}};
@@ -106,7 +106,7 @@ else {
   function currentPlacement(){return fitPlacement(display.workArea,state.freePosition?freePlacement(display.workArea,state.freePosition,state.size):route.windowAt(state.distance),state.size);}
   let desktopToy=null,feedback=null,dragMotion=0,lastDragPoint=null;
   const playBehavior=createPlayBehavior(),cursorFollow=require('./play.cjs').createCursorFollow();
-  function saveSettings(){try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.writeFileSync(path.join(app.getPath('userData'),'settings.json'),JSON.stringify({waveOptions:state.waveOptions,taskbarGlassOpacity:state.taskbarGlassOpacity,taskbarTransparent:state.taskbarTransparent,taskbarMusic:state.taskbarMusic,roomControlsSide:state.roomControlsSide,roomLighting:state.roomLighting,character:state.character,mode:state.baseMode,size:state.size,roam:state.roam,follow:state.follow,visible:state.visible,paused:state.paused,freePosition:state.freePosition,displayId:display.id,autoMedia:state.autoMedia},null,2));return true;}catch(error){log(error.message);return false;}}
+  function saveSettings(){try{fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.writeFileSync(path.join(app.getPath('userData'),'settings.json'),JSON.stringify({wallpaperAtLaunch:state.wallpaperAtLaunch,waveOptions:state.waveOptions,taskbarGlassOpacity:state.taskbarGlassOpacity,taskbarTransparent:state.taskbarTransparent,taskbarMusic:state.taskbarMusic,roomControlsSide:state.roomControlsSide,roomLighting:state.roomLighting,character:state.character,mode:state.baseMode,size:state.size,roam:state.roam,follow:state.follow,visible:state.visible,paused:state.paused,freePosition:state.freePosition,displayId:display.id,autoMedia:state.autoMedia},null,2));return true;}catch(error){log(error.message);return false;}}
   function persist(){clearTimeout(persistTimer);persistTimer=setTimeout(saveSettings,300);}
   function applyAutomaticMode(){const mode=state.autoMedia&&state.mediaPlaying?'music':state.baseMode;if(mode!==state.mode)setMode(mode,{automatic:true});}
   let mediaData=decodeMedia({available:false,playing:false}),lastPlayerKey='',playerOpen=false,playerLoaded=false,playerHideTimer,playerBlurTimer,petPressedAt=0,playerPresentation=null,playerMouseIgnored=null,playerScrubbing=false;
@@ -178,13 +178,15 @@ else {
     mediaDecision.update(sample);refreshMenu();
   }
   const mediaMonitor=mac?createMacMonitor({kind:'media',onSample:receiveMedia,onError:log}):createMediaMonitor({onSample:receiveMedia,onError:log});
-  const taskbarSupported=process.platform==='win32'&&Number(require('node:os').release().split('.')[2])>=22000;
-  const taskbarMusic=require('./taskbar-music.cjs').createTaskbarMusic({supported:taskbarSupported,onError:log,onWindowsChanged:windows=>taskbarTransparency.setWindows(windows)});
+  const [windowsMajor,,windowsBuild]=require('node:os').release().split('.').map(Number);
+  const taskbarMusicSupported=process.platform==='win32'&&windowsMajor>=10;
+  const taskbarSupported=taskbarMusicSupported&&windowsBuild>=22000;
+  const taskbarMusic=require('./taskbar-music.cjs').createTaskbarMusic({supported:taskbarMusicSupported,onError:log,onWindowsChanged:windows=>taskbarTransparency.setWindows(windows)});
   const taskbarTransparency=require('./taskbar-transparency.cjs').createTaskbarTransparency({
    directory:app.getPath('userData'),opacity:state.taskbarGlassOpacity,onChange:value=>{taskbarMusic.setBehind(value.ready);publishSettings();},onLayered:handle=>taskbarMusic.setLayered(handle),onError:log
   });
   state.taskbarTransparent=taskbarSupported&&preferences.taskbarTransparent===true;
-  state.taskbarMusic=taskbarSupported&&preferences.taskbarMusic===true;
+  state.taskbarMusic=taskbarMusicSupported&&preferences.taskbarMusic===true;
   function syncMediaMonitor(){
     if(suspended)return;
     if(!state.autoMedia&&!taskbarMusic.enabled&&!wallpaper.active&&!playerWindow?.isVisible()){
@@ -195,9 +197,15 @@ else {
     if(state.autoMedia&&!mediaMonitor.isRunning())state.mediaStatus='connecting';
     if(!testMode||process.argv.includes('--meo-live-media-test'))mediaMonitor.start();
   }
-  async function openWallpaper(){
-    await wallpaper.open();
-    syncMediaMonitor();
+  let wallpaperOpening=null;
+  function openWallpaper(){
+    if(!wallpaperOpening){
+      wallpaperOpening=wallpaper.open().then(syncMediaMonitor).catch(error=>{
+        wallpaper.close();
+        throw error;
+      }).finally(()=>{wallpaperOpening=null;});
+    }
+    return wallpaperOpening;
   }
   function canUseMusicTable(){
     return !!(roomOwnsPet&&wallpaper.desktop&&state.visible&&!state.paused&&!suspended&&mediaData.playing&&mediaData.hasSession&&mediaData.sourceAppId);
@@ -257,7 +265,7 @@ else {
       {label:'Thoát mèo',click:()=>{quitting=true;app.quit();}}
     ]);
   }
-  function settingsSnapshot(){return{waveArtwork:mediaData.artwork,waveOptions:state.waveOptions,roomFeatures:roomFeatures.snapshot(),taskbarGlassOpacity:state.taskbarGlassOpacity,taskbarTransparent:state.taskbarTransparent,taskbarTransparency:taskbarTransparency.snapshot(),taskbarMusic:state.taskbarMusic,taskbarSupported,roomControlsSide:state.roomControlsSide,roomLighting:state.roomLighting,wallpaper:wallpaper.active,roomPinned,utilities:utilities?.summary(),updates:updates.snapshot(),startup:startup.snapshot(),pinnedApps:desktopActions.pins().map(pin=>({...pin,icon:pinIcons.get(pin.id)?.toDataURL()||''})),pinSupported:['win32','darwin'].includes(process.platform),version:app.getVersion(),character:state.character,mode:state.mode,baseMode:state.baseMode,visible:state.visible,paused:state.paused,size:state.size,roam:state.roam,follow:state.follow,autoMedia:state.autoMedia,mediaStatus:state.mediaStatus,platform:process.platform,shortcut:mac?'⌘ + ⌥ + M':'Ctrl + Alt + M',autoSupported:desktopSupported,displayId:String(display.id),displays:screen.getAllDisplays().map((d,i)=>({id:String(d.id),name:`Màn hình ${i+1} · ${d.size.width} × ${d.size.height}`}))};}
+  function settingsSnapshot(){return{waveArtwork:mediaData.artwork,waveOptions:state.waveOptions,roomFeatures:roomFeatures.snapshot(),taskbarGlassOpacity:state.taskbarGlassOpacity,taskbarTransparent:state.taskbarTransparent,taskbarTransparency:taskbarTransparency.snapshot(),taskbarMusic:state.taskbarMusic,taskbarMusicSupported,taskbarSupported,roomControlsSide:state.roomControlsSide,roomLighting:state.roomLighting,wallpaper:wallpaper.active,wallpaperAtLaunch:state.wallpaperAtLaunch,roomPinned,utilities:utilities?.summary(),updates:updates.snapshot(),startup:startup.snapshot(),pinnedApps:desktopActions.pins().map(pin=>({...pin,icon:pinIcons.get(pin.id)?.toDataURL()||''})),pinSupported:['win32','darwin'].includes(process.platform),version:app.getVersion(),character:state.character,mode:state.mode,baseMode:state.baseMode,visible:state.visible,paused:state.paused,size:state.size,roam:state.roam,follow:state.follow,autoMedia:state.autoMedia,mediaStatus:state.mediaStatus,platform:process.platform,shortcut:mac?'⌘ + ⌥ + M':'Ctrl + Alt + M',autoSupported:desktopSupported,displayId:String(display.id),displays:screen.getAllDisplays().map((d,i)=>({id:String(d.id),name:`Màn hình ${i+1} · ${d.size.width} × ${d.size.height}`}))};}
   let lastSettingsKey='';
   function publishSettings(){
     if(!settingsWindow||settingsWindow.isDestroyed()||!settingsWindow.isVisible())return;
@@ -300,6 +308,7 @@ else {
     requireSettings(event);if(!patch||typeof patch!=='object'||Array.isArray(patch)||Object.keys(patch).length!==1)throw new Error('Thiết lập không hợp lệ.');
     const [key,value]=Object.entries(patch)[0];
     if(key==='waveOptions'){
+      if(!taskbarMusicSupported)throw new Error('Sóng nhạc hỗ trợ Windows 10 và Windows 11.');
       const next={...state.waveOptions,...value};
       if(!value||typeof value!=='object'||!['bars','line','mirror'].includes(next.style)||!['rainbow','cover'].includes(next.colors)||typeof next.peaks!=='boolean'||!['height','sensitivity','decay'].every(k=>Number.isFinite(next[k]))||next.height<20||next.height>95||next.sensitivity<30||next.sensitivity>200||next.decay<20||next.decay>100)throw new Error('Thông số sóng nhạc không hợp lệ.');
       state.waveOptions={style:next.style,height:next.height,sensitivity:next.sensitivity,decay:next.decay,colors:next.colors,peaks:next.peaks};
@@ -314,14 +323,31 @@ else {
       state.taskbarTransparent=value;taskbarTransparency.setEnabled(value);persist();publishSettings();return settingsSnapshot();
     }
     if(key==='taskbarMusic'){
-      if(typeof value!=='boolean'||!taskbarSupported)throw new Error('Tính năng này hỗ trợ Windows 11.');
+      if(typeof value!=='boolean'||!taskbarMusicSupported)throw new Error('Sóng nhạc hỗ trợ Windows 10 và Windows 11.');
       state.taskbarMusic=value;taskbarMusic.setEnabled(value);taskbarMusic.update(mediaData);
       syncMediaMonitor();
       persist();publishSettings();return settingsSnapshot();
     }
     if(key==='roomFeed'){await feedCat();return settingsSnapshot();}
     if(key==='roomFeatures'){await roomFeatures.configure(value);publishSettings();return settingsSnapshot();}
-    if(key==='wallpaper'&&typeof value==='boolean'){if(value){roomTime=0;await openWallpaper();}else{roomPinned=false;wallpaper.close();syncMediaMonitor();}publishSettings();return settingsSnapshot();}
+    if(key==='wallpaperAtLaunch'){
+      if(process.platform!=='win32'||typeof value!=='boolean')throw new Error('Tùy chọn hình nền hỗ trợ Windows.');
+      const previous=state.wallpaperAtLaunch;
+      state.wallpaperAtLaunch=value;
+      if(!saveSettings()){
+        state.wallpaperAtLaunch=previous;
+        throw new Error('Chưa lưu được thiết lập hình nền.');
+      }
+      publishSettings();return settingsSnapshot();
+    }
+    if(key==='wallpaper'&&typeof value==='boolean'){
+      if(value){roomTime=0;await openWallpaper();}
+      else{
+        await wallpaperOpening?.catch(()=>{});
+        roomPinned=false;wallpaper.close();syncMediaMonitor();
+      }
+      publishSettings();return settingsSnapshot();
+    }
     if(key==='roomPinned'&&typeof value==='boolean'){
       if(value){
         if(screenshots.isBusy())throw new Error('Hãy chờ thao tác ảnh hoàn tất.');
@@ -586,7 +612,7 @@ else {
     startup.refresh();
     if(mac){app.dock?.hide();Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'Mèo Desktop',submenu:[{role:'about'},{type:'separator'},{label:'Cài đặt…',accelerator:'Command+,',click:()=>openSettings()},{type:'separator'},{role:'quit'}]},{role:'editMenu'}]));}
     refreshRoute();createWindow();taskbarMusic.configure(state.waveOptions);taskbarMusic.setEnabled(state.taskbarMusic);taskbarTransparency.setEnabled(state.taskbarTransparent);
-    screenshots=createScreenshotFeature({electron:require('electron'),getPet:()=>win,getPlacement:currentPlacement,getWindows:()=>[win,playerWindow,settingsWindow,utilities?.window()],canUse:()=>state.visible&&!suspended&&!quitting,onStatus:text=>{note(text);lastMenuKey='';refreshMenu();},onCapture:()=>{utilities?.hide(true);hidePlayer(true);state.target=null;state.jump=null;state.action='idle';},testMode});
+    screenshots=createScreenshotFeature({electron:require('electron'),getPet:()=>win,getPlacement:currentPlacement,getWindows:()=>[win,playerWindow,settingsWindow,utilities?.window()],canUse:()=>state.visible&&!suspended&&!quitting,onStatus:text=>{note(text);lastMenuKey='';refreshMenu();},onInspect:id=>openUtilities({review:id}),onCapture:()=>{utilities?.hide(true);hidePlayer(true);state.target=null;state.jump=null;state.action='idle';},testMode});
     utilities=createCompanion({electron:require('electron'),getAnchor:()=>{const p=currentPlacement(),s=state.size,c=Math.cos(p.rotation),sn=Math.sin(p.rotation),x=p.x+p.anchorX,y=p.y+p.anchorY;const ys=[-.65,.65].flatMap(dx=>[0,-1.2].map(dy=>y+dx*s*sn+dy*s*c));return{x:x+sn*s*.8+c*state.direction*s*.1,y:y-c*s*.8+sn*state.direction*s*.1,top:Math.min(...ys),bottom:Math.max(...ys)};},getPetState:()=>({mode:state.baseMode,size:state.size,visible:state.visible,roam:state.roam,follow:state.follow}),applyPet:async p=>{setMode(p.mode);setSize(p.size);state.roam=p.roam;state.follow=p.follow;setVisible(p.visible);persist();publishSettings();},controlAudio:level=>controlAudio('set',level),getAudio:()=>audioState,getPins:()=>desktopActions.pins(),launchPin:id=>desktopActions.launch(id),getShots:()=>screenshots,getIcon:()=>catIcon(),canUse:allowHidden=>!suspended&&!quitting&&(allowHidden||state.visible),onChange:()=>{publishSettings();clipboardPhotos?.sample();},onNotice:message=>note(message),testMode});
     utilities.start();
     clipboardPhotos=createClipboardPhotos({clipboard,nativeImage,enabled:()=>utilities.summary().settings.clipboardPhotos,canUse:()=>state.visible&&!suspended&&!quitting,isBusy:()=>screenshots.isBusy(),onImage:image=>screenshots.addImage(image)});
@@ -608,7 +634,11 @@ else {
     syncMediaMonitor();if(!testMode)audioControl.start();
     updates.start();
     loop();
-    if(process.argv.includes('--meo-room-preview'))openWallpaper().then(()=>publishSettings()).catch(e=>note(e.message));
+    const previewRoom=process.argv.includes('--meo-room-preview');
+    const launchWallpaper=state.wallpaperAtLaunch&&(!testMode||process.argv.includes('--meo-wallpaper-startup-test'));
+    if(process.platform==='win32'&&(previewRoom||launchWallpaper)){
+      openWallpaper().then(publishSettings).catch(error=>{if(!quitting){note(error.message);publishSettings();}});
+    }
     if(!testMode&&!startsInBackground(process.argv))openSettings();
   }).catch(error=>{log(error.stack||error.message);app.quit();});
   app.on('second-instance',(_event,argv)=>{if(argv.includes('--meo-quit')){quitting=true;app.quit();return;}if(!startsInBackground(argv))openSettings();});

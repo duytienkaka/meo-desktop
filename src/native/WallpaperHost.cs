@@ -3,6 +3,7 @@ class WallpaperHost{
  delegate bool EnumProc(IntPtr h,IntPtr p);
  [DllImport("user32.dll",CharSet=CharSet.Auto)] static extern IntPtr FindWindow(string c,string n);
  [DllImport("user32.dll",CharSet=CharSet.Auto)] static extern IntPtr FindWindowEx(IntPtr p,IntPtr a,string c,string n);
+ [DllImport("user32.dll")] static extern bool EnumChildWindows(IntPtr parent,EnumProc callback,IntPtr param);
  [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc p,IntPtr l);
  [DllImport("user32.dll")] static extern IntPtr SendMessageTimeout(IntPtr h,uint m,IntPtr w,IntPtr l,uint f,uint t,out IntPtr r);
  [DllImport("user32.dll",SetLastError=true)] static extern IntPtr SetParent(IntPtr h,IntPtr p);
@@ -46,27 +47,51 @@ class WallpaperHost{
  [DllImport("user32.dll")] static extern bool GetMonitorInfo(IntPtr monitor,ref MonitorInfo info);
 
  static volatile string protectedRegions="";
+ static bool Intersects(Rect a,Rect b){return a.Left<b.Right&&a.Right>b.Left&&a.Top<b.Bottom&&a.Bottom>b.Top;}
+ static string ReadProtectedRegions(IntPtr bar){
+  Rect barBounds;
+  if(bar==IntPtr.Zero||!GetWindowRect(bar,out barBounds))return "";
+  var areas=new System.Collections.Generic.List<Rect>();
+  var taskLists=new System.Collections.Generic.List<Rect>();
+  var shellControl=new System.Text.StringBuilder(128);
+  // These controls still have separate child windows in the classic Windows 10 taskbar.
+  EnumChildWindows(bar,(child,param)=>{
+   if(!IsWindowVisible(child))return true;
+   shellControl.Clear();GetClassName(child,shellControl,shellControl.Capacity);
+   string kind=shellControl.ToString();
+   Rect bounds;
+   if(!GetWindowRect(child,out bounds)||!Intersects(bounds,barBounds))return true;
+   if(kind=="MSTaskListWClass")taskLists.Add(bounds);
+   else if(kind=="TrayNotifyWnd"||kind=="Start"||kind=="TrayButton"||kind=="TrayDummySearchControl"||kind=="SearchBox"||kind=="TrayShowDesktopButton")areas.Add(bounds);
+   return true;
+  },IntPtr.Zero);
+  var accessible=new System.Collections.Generic.List<Rect>();
+  try{
+   var root=System.Windows.Automation.AutomationElement.FromHandle(bar);
+   var types=new System.Collections.Generic.List<System.Windows.Automation.Condition>();
+   foreach(var type in new[]{System.Windows.Automation.ControlType.Button,System.Windows.Automation.ControlType.Text,System.Windows.Automation.ControlType.ListItem,System.Windows.Automation.ControlType.TabItem})
+    types.Add(new System.Windows.Automation.PropertyCondition(System.Windows.Automation.AutomationElement.ControlTypeProperty,type));
+   if(taskLists.Count==0)types.Add(new System.Windows.Automation.PropertyCondition(System.Windows.Automation.AutomationElement.ControlTypeProperty,System.Windows.Automation.ControlType.Group));
+   var elements=root.FindAll(System.Windows.Automation.TreeScope.Descendants,new System.Windows.Automation.OrCondition(types.ToArray()));
+   foreach(System.Windows.Automation.AutomationElement element in elements){
+    try{
+     var current=element.Current;
+     var bounds=current.BoundingRectangle;
+     if(current.IsOffscreen||bounds.IsEmpty||bounds.Width<=0||bounds.Height<=0)continue;
+     var rect=new Rect{Left=(int)Math.Floor(bounds.Left),Top=(int)Math.Floor(bounds.Top),Right=(int)Math.Ceiling(bounds.Right),Bottom=(int)Math.Ceiling(bounds.Bottom)};
+     if(Intersects(rect,barBounds))accessible.Add(rect);
+    }catch(System.Windows.Automation.ElementNotAvailableException){}
+   }
+  }catch{}
+  foreach(Rect taskList in taskLists)
+   if(!accessible.Exists(rect=>Intersects(rect,taskList)))areas.Add(taskList);
+  areas.AddRange(accessible);
+  return string.Join("|",areas.ConvertAll(r=>string.Format("{0},{1},{2},{3}",r.Left,r.Top,r.Right-r.Left,r.Bottom-r.Top)).ToArray());
+ }
  static void WatchProtectedRegions(){
   while(true){
-   try{
-    var bar=FindWindow("Shell_TrayWnd",null);
-    var regions=new System.Text.StringBuilder();
-    if(bar!=IntPtr.Zero){
-     var root=System.Windows.Automation.AutomationElement.FromHandle(bar);
-     var condition=new System.Windows.Automation.OrCondition(
-      new System.Windows.Automation.PropertyCondition(System.Windows.Automation.AutomationElement.ControlTypeProperty,System.Windows.Automation.ControlType.Button),
-      new System.Windows.Automation.PropertyCondition(System.Windows.Automation.AutomationElement.ControlTypeProperty,System.Windows.Automation.ControlType.Group),
-      new System.Windows.Automation.PropertyCondition(System.Windows.Automation.AutomationElement.ControlTypeProperty,System.Windows.Automation.ControlType.Text));
-     var elements=root.FindAll(System.Windows.Automation.TreeScope.Descendants,condition);
-     foreach(System.Windows.Automation.AutomationElement element in elements){
-      var bounds=element.Current.BoundingRectangle;
-      if(bounds.IsEmpty||bounds.Width<=0||bounds.Height<=0)continue;
-      if(regions.Length>0)regions.Append("|");
-      regions.Append((int)Math.Floor(bounds.X)).Append(",").Append((int)Math.Floor(bounds.Y)).Append(",").Append((int)Math.Ceiling(bounds.Width)).Append(",").Append((int)Math.Ceiling(bounds.Height));
-     }
-    }
-    protectedRegions=regions.ToString();
-   }catch{protectedRegions="";}
+   try{protectedRegions=ReadProtectedRegions(FindWindow("Shell_TrayWnd",null));}
+   catch{protectedRegions="";}
    System.Threading.Thread.Sleep(400);
   }
  }
@@ -79,8 +104,9 @@ class WallpaperHost{
    var info=new MonitorInfo { Size=Marshal.SizeOf(typeof(MonitorInfo)) };
    bool visible=bar!=IntPtr.Zero&&IsWindowVisible(bar);
    if(bar!=IntPtr.Zero&&GetWindowRect(bar,out bounds)&&GetMonitorInfo(MonitorFromWindow(bar,2),ref info)){
-    int height=Math.Min(bounds.Bottom,info.Monitor.Bottom)-Math.Max(bounds.Top,info.Monitor.Top);
-    visible=visible&&height>=bounds.Bottom-bounds.Top-2&&bounds.Right-bounds.Left>bounds.Bottom-bounds.Top;
+    int visibleHeight=Math.Min(bounds.Bottom,info.Monitor.Bottom)-Math.Max(bounds.Top,info.Monitor.Top);
+    int visibleWidth=Math.Min(bounds.Right,info.Monitor.Right)-Math.Max(bounds.Left,info.Monitor.Left);
+    visible=visible&&visibleHeight>=bounds.Bottom-bounds.Top-2&&visibleWidth>=bounds.Right-bounds.Left-2;
     var foreground=GetForegroundWindow();Rect front;var frontOrigin=new Point();
     if(foreground!=lastForeground){
      lastForeground=foreground;shellForeground=false;
@@ -97,5 +123,5 @@ class WallpaperHost{
   }
  }
 
- static int Main(string[] a){SetProcessDpiAwarenessContext(new IntPtr(-4));if(a[0]=="taskbar"){WatchTaskbar();return 0;}if(a[0]=="watch"){while(true){var b=new System.Text.StringBuilder(256);GetClassName(GetForegroundWindow(),b,256);Console.WriteLine(b.ToString()=="WorkerW"||b.ToString()=="Progman"?"desktop":"app");System.Threading.Thread.Sleep(500);}}IntPtr p=FindWindow("Progman",null),r,host=IntPtr.Zero;EnumWindows((h,l)=>{if(FindWindowEx(h,IntPtr.Zero,"SHELLDLL_DefView",null)!=IntPtr.Zero)host=FindWindowEx(IntPtr.Zero,h,"WorkerW",null);return true;},IntPtr.Zero);if(host==IntPtr.Zero)host=FindWindowEx(p,IntPtr.Zero,"WorkerW",null);if(host==IntPtr.Zero){SendMessageTimeout(p,0x052C,new IntPtr(13),IntPtr.Zero,2,1000,out r);SendMessageTimeout(p,0x052C,new IntPtr(13),new IntPtr(1),2,1000,out r);EnumWindows((h,l)=>{if(FindWindowEx(h,IntPtr.Zero,"SHELLDLL_DefView",null)!=IntPtr.Zero)host=FindWindowEx(IntPtr.Zero,h,"WorkerW",null);return true;},IntPtr.Zero);}if(host==IntPtr.Zero)host=FindWindowEx(p,IntPtr.Zero,"WorkerW",null);if(host==IntPtr.Zero)host=p;if(host==IntPtr.Zero)return 2;IntPtr child=new IntPtr(long.Parse(a[0]));SetWindowLong(child,-16,0x52000000);SetWindowLong(child,-20,GetWindowLong(child,-20)&~0x20301);SetParent(child,host);if(GetParent(child)!=host){Console.Error.WriteLine(Marshal.GetLastWin32Error());return 3;}var origin=new Point { X=int.Parse(a[1]),Y=int.Parse(a[2]) };ScreenToClient(host,ref origin);MoveWindow(child,origin.X,origin.Y,int.Parse(a[3]),int.Parse(a[4]),true);SetWindowPos(child,new IntPtr(1),0,0,0,0,0x33);if(!FitClient(child,host,int.Parse(a[1]),int.Parse(a[2]),int.Parse(a[3]),int.Parse(a[4]))){Console.Error.WriteLine("Wallpaper client area did not match the monitor bounds.");return 4;}Console.WriteLine("attached");return 0;}
+ static int Main(string[] a){try{SetProcessDpiAwarenessContext(new IntPtr(-4));}catch(EntryPointNotFoundException){}if(a[0]=="taskbar"){WatchTaskbar();return 0;}if(a[0]=="watch"){while(true){var b=new System.Text.StringBuilder(256);GetClassName(GetForegroundWindow(),b,256);Console.WriteLine(b.ToString()=="WorkerW"||b.ToString()=="Progman"?"desktop":"app");System.Threading.Thread.Sleep(500);}}IntPtr p=FindWindow("Progman",null),r,host=IntPtr.Zero;EnumWindows((h,l)=>{if(FindWindowEx(h,IntPtr.Zero,"SHELLDLL_DefView",null)!=IntPtr.Zero)host=FindWindowEx(IntPtr.Zero,h,"WorkerW",null);return true;},IntPtr.Zero);if(host==IntPtr.Zero)host=FindWindowEx(p,IntPtr.Zero,"WorkerW",null);if(host==IntPtr.Zero){SendMessageTimeout(p,0x052C,new IntPtr(13),IntPtr.Zero,2,1000,out r);SendMessageTimeout(p,0x052C,new IntPtr(13),new IntPtr(1),2,1000,out r);EnumWindows((h,l)=>{if(FindWindowEx(h,IntPtr.Zero,"SHELLDLL_DefView",null)!=IntPtr.Zero)host=FindWindowEx(IntPtr.Zero,h,"WorkerW",null);return true;},IntPtr.Zero);}if(host==IntPtr.Zero)host=FindWindowEx(p,IntPtr.Zero,"WorkerW",null);if(host==IntPtr.Zero)host=p;if(host==IntPtr.Zero)return 2;IntPtr child=new IntPtr(long.Parse(a[0]));SetWindowLong(child,-16,0x52000000);SetWindowLong(child,-20,GetWindowLong(child,-20)&~0x20301);SetParent(child,host);if(GetParent(child)!=host){Console.Error.WriteLine(Marshal.GetLastWin32Error());return 3;}var origin=new Point { X=int.Parse(a[1]),Y=int.Parse(a[2]) };ScreenToClient(host,ref origin);MoveWindow(child,origin.X,origin.Y,int.Parse(a[3]),int.Parse(a[4]),true);SetWindowPos(child,new IntPtr(1),0,0,0,0,0x33);if(!FitClient(child,host,int.Parse(a[1]),int.Parse(a[2]),int.Parse(a[3]),int.Parse(a[4]))){Console.Error.WriteLine("Wallpaper client area did not match the monitor bounds.");return 4;}Console.WriteLine("attached");return 0;}
 }

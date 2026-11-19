@@ -18,7 +18,7 @@ function createCompanion({electron,getAnchor,getPetState,applyPet,controlAudio,g
  const downloadMonitor=createDownloadMonitor({onFile:async location=>{const count=await store.addFiles([location],'download');if(count)pulse('download','Mèo giữ file mới: '+path.basename(location));},onStatus:message=>{downloadStatus=message;changed();}});
  function summary(){return {...store.overview(),battery,batteryStatus,downloadStatus};}
  function badge(){const state=store.overview(),low=state.settings.battery&&battery.available&&!battery.charging&&battery.percent<=20;return {profile:state.activeProfile,pulseId:pulseUntil,count:state.count,due:state.due,text:state.text,kind:state.due?'reminder':Date.now()<pulseUntil?pulseKind:low?'battery':state.count?'bag':'',pulse:Date.now()<pulseUntil,percent:battery.percent};}
- function snapshot(){const state=store.snapshot(),shots=getShots()?.snapshot();return {...state,items:state.items.map(i=>({...i,thumb:thumbs.get(i.id)||'',missing:i.kind==='file'&&!fs.existsSync(i.location)})),photos:shots?.photos||[],photosBusy:!!(shots?.busy||shots?.capturing),pins:getPins(),battery,batteryStatus,downloadStatus,applying};}
+ function snapshot(){const state=store.snapshot(),shots=getShots()?.snapshot();return {...state,items:state.items.map(i=>({...i,sourceImage:i.kind==='text'&&!!i.sourceImage,thumb:thumbs.get(i.id)||'',missing:i.kind==='file'&&!fs.existsSync(i.location)})),photos:shots?.photos||[],photoTarget:shots?.target||null,photosBusy:!!(shots?.busy||shots?.capturing),pins:getPins(),battery,batteryStatus,downloadStatus,applying};}
  async function refreshThumbs(){for(const item of store.snapshot().items){if(item.kind!=='file'||thumbs.has(item.id))continue;thumbs.set(item.id,'');try{const stat=await fs.promises.stat(item.location);let image;if(stat.isFile()&&stat.size<8*1024*1024&&/\.(png|jpe?g|webp|gif)$/i.test(item.location))image=await nativeImage.createThumbnailFromPath(item.location,{width:84,height:64});else image=await app.getFileIcon(item.location,{size:'normal'});thumbs.set(item.id,image.isEmpty()?'':image.toDataURL());}catch{}}changed();}
  async function importImage(bytes){const buffer=Buffer.from(bytes||[]);if(!buffer.length||buffer.length>8*1024*1024)throw new Error('Ảnh tối đa 8 MB.');const image=nativeImage.createFromBuffer(buffer),size=image.getSize();if(image.isEmpty()||size.width>12000||size.height>12000)throw new Error('Ảnh không hợp lệ hoặc quá lớn.');fs.mkdirSync(importDirectory,{recursive:true});const location=path.join(importDirectory,'Meo-anh-'+Date.now()+'-'+crypto.randomUUID().slice(0,8)+'.png');fs.writeFileSync(location,image.toPNG());try{await store.addFiles([location],'image');}finally{fs.unlinkSync(location);}return location;}
  async function drop(value){if(!canUse()&&!(open&&canUse(true)))throw new Error('Thả đồ khi mèo ở desktop.');if(!value||!Array.isArray(value.paths)||!Array.isArray(value.images)||value.images.length>3)throw new Error('Đồ thả vào không hợp lệ.');if(value.paths.length)await store.addFiles(value.paths);else if(value.images.length){if(value.images.length+store.snapshot().items.length>20)throw new Error('Túi đầy. Bỏ bớt món trước khi thêm ảnh.');for(const bytes of value.images)await importImage(bytes);}else store.addText(value.text);await refreshThumbs();pulse('bag','Mèo đã cất đồ vào túi.');return snapshot();}
@@ -45,11 +45,32 @@ function createCompanion({electron,getAnchor,getPetState,applyPet,controlAudio,g
    case 'capture':hide(true);await getShots().capture();break;
    case 'remove-photo':getShots().remove(value.id);break;
    case 'clear-photos':if(getShots().isBusy())throw new Error('Hãy chờ thao tác ảnh hoàn tất.');getShots().clear();break;
+   case 'copy-capture-text':case 'paste-capture-text':case 'paste-capture-pair':
+    await getShots().shareSelection(value);break;
+   case 'save-capture-text':{
+    const shots=getShots();shots.store.get(value.id);
+    if(value.withImage===true)await shots.withSourceFile(value.id,file=>store.addCaptureText(value.text,file));
+    else await store.addCaptureText(value.text);
+    break;
+   }
    case 'keep-photo':{const photo=getShots().store.get(value.id);if(!photo)throw new Error('Ảnh không còn trong túi chụp.');await importImage(photo.image.toPNG());await refreshThumbs();break;}
    default:throw new Error('Thao tác tiện ích không hợp lệ.');
   }
   changed();return snapshot();
  }
+ ipcMain.handle('meo:utils:review',(event,value)=>{
+  if(!valid(event)||!open)throw new Error('Túi chưa mở.');
+  if(value?.kind==='capture')return getShots().capturePreview(value.id);
+  if(value?.kind!=='note')throw new Error('Món đồ không hợp lệ.');
+  const note=store.item(value.id);
+  if(note.kind!=='text')throw new Error('Đây không phải đoạn chữ.');
+  const source=store.sourceImage(note.id);
+  const image=source&&fs.existsSync(source.location)?nativeImage.createFromPath(source.location):null;
+  if(!image||image.isEmpty())return {text:note.text,image:null};
+  const {width,height}=image.getSize();
+  const preview=Math.max(width,height)>1600?image.resize(width>=height?{width:1600}:{height:1600}):image;
+  return {text:note.text,image:preview.toDataURL()};
+ });
  ipcMain.handle('meo:utils:get',event=>{if(!valid(event))throw new Error('Cửa sổ không hợp lệ.');return snapshot();});
  ipcMain.handle('meo:utils:action',(event,value)=>{if(!valid(event)||!open)throw new Error('Túi chưa mở.');return action(value);});
  ipcMain.handle('meo:utils:drop',(event,value)=>{if(!valid(event)||!open)throw new Error('Túi chưa mở.');return drop(value);});

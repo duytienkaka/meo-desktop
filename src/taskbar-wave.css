@@ -8,3 +8,5 @@ canvas,#backdrop{opacity:0;clip-path:inset(0 50%);transition:opacity 220ms ease,
 body:not(.behind):not(.protected) canvas,body:not(.protected) #backdrop{visibility:hidden}
 
 body.wave-preview{background:#111116}
+.vertical canvas,.vertical #backdrop{clip-path:inset(50% 0)}
+.vertical.shown canvas,.vertical.shown #backdrop{clip-path:inset(0)}

@@ -17,7 +17,7 @@ function createPhotoStore({onRemove=()=>{}}={}){
  function select(id){get(id);selected=id;}
  function remove(id){const photo=get(id);photos=photos.filter(p=>p.id!==id);if(selected===id)selected=photos.at(-1)?.id||null;onRemove(photo);}
  function clear(){for(const photo of photos)onRemove(photo);photos=[];selected=null;}
- return {add,get,select,remove,clear,list:()=>photos.map(({id,createdAt,width,height,thumb})=>({id,createdAt,width,height,thumb})),selected:()=>selected};
+ return {add,get,select,remove,clear,has:id=>photos.some(photo=>photo.id===id),list:()=>photos.map(({id,createdAt,width,height,thumb})=>({id,createdAt,width,height,thumb})),selected:()=>selected};
 }
 function decodeTarget(value){
  if(value?.own===true)return {own:true};
