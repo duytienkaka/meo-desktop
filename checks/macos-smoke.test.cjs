@@ -12,7 +12,18 @@ const assert=require('node:assert/strict'),path=require('node:path'),fs=require(
  await app.evaluate(({app,nativeImage})=>{const shots=global.__meo.screenshots,image=nativeImage.createFromPath(app.getAppPath()+'/assets/meo-mac.png');for(let i=0;i<4;i++)shots.addImage(image);if(shots.snapshot().photos.length!==3||!shots.snapshot().supported)throw new Error('Mac photo store unavailable');global.__meo.setMode('play');});
  await pet.waitForFunction(()=>!document.querySelector('#photo-pocket').hidden&&document.querySelector('#send-photos').textContent==='Đưa 3 ảnh ↗');assert.equal(await pet.locator('#send-photos').count(),1);
  const dir=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'meo-mac-smoke-')),file=path.join(dir,'photo.png');fs.copyFileSync(path.join(__dirname,'../assets/meo-mac.png'),file);try{await app.evaluate(async(_,file)=>global.__meo.screenshots.bridge.files([file]),file);}finally{fs.unlinkSync(file);fs.rmdirSync(dir);}
- const pocketBounds=await pet.locator('#photo-pocket').boundingBox();assert.ok(pocketBounds.width<=90&&pocketBounds.height<=30);assert.deepEqual(errors,[]);
+ const pocketBounds=await pet.locator('#photo-pocket').boundingBox();assert.ok(pocketBounds.width<=90&&pocketBounds.height<=58);assert.equal(await pet.locator('#inspect-photos button').count(),3);assert.deepEqual(errors,[]);
+ const fixture=await pet.evaluate(()=>{
+  const c=document.createElement('canvas');c.width=1050;c.height=180;
+  const ctx=c.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle='black';ctx.font='52px Arial';ctx.fillText('Chụp màn hình và nhận diện chữ',24,82);
+  return c.toDataURL();
+ });
+ const recognized=await app.evaluate(({app,nativeImage},url)=>{
+  const localRequire=process.getBuiltinModule('module').createRequire(app.getAppPath()+'/package.json');
+  return localRequire('./src/screenshot-ocr.cjs').recognizeScreenshot(nativeImage.createFromDataURL(url));
+ },fixture);
+ assert.equal(recognized,'Chụp màn hình và nhận diện chữ');
  await app.evaluate(()=>global.__meo.screenshots.clear());
- await app.close();app=null;console.log(JSON.stringify({passed:true,platform:process.platform,arch:process.arch,checks:['system volume read without mutation','packaged app launches','isolated renderer','free placement','settings and pinned app picker enabled','music card renders','no renderer errors','compact three-photo UI','native PNG file clipboard preparation']}));
+ await app.close();app=null;console.log(JSON.stringify({passed:true,platform:process.platform,arch:process.arch,checks:['system volume read without mutation','packaged app launches','isolated renderer','free placement','settings and pinned app picker enabled','music card renders','no renderer errors','compact three-photo UI','Vietnamese OCR from the packaged app','native PNG file clipboard preparation']}));
 })().catch(async error=>{console.error(error);if(app)await app.close().catch(()=>{});process.exitCode=1;});
