@@ -7,6 +7,7 @@ function createTaskbarMusic({supported,onError,onWindowsChanged=()=>{},
  createMeter=options=>require('./output-meter.cjs').createOutputMeter(options),
  createWatcher=()=>spawn(path.join(__dirname,'native/MeoWallpaperHost.exe'),['taskbar'],{windowsHide:true})
 }){
+ let options={};
  let enabled=false,watcher=null,waveWindow=null,loaded=false,geometry=null,track=null;
  let behind=false,layered=false,suspended=false,shown=false,buffer='';
  let regions=[],boundsKey='',protectionKey='',trackKey='';
@@ -15,7 +16,7 @@ function createTaskbarMusic({supported,onError,onWindowsChanged=()=>{},
   if(loaded&&waveWindow&&!waveWindow.isDestroyed())waveWindow.webContents.send('taskbar:level',level);
  },onError});
  ipcMain.on('meo:taskbar:ready',event=>{
-  if(waveWindow&&event.sender.id===waveWindow.webContents.id){loaded=true;sync();}
+  if(waveWindow&&event.sender.id===waveWindow.webContents.id){loaded=true;waveWindow.webContents.send('taskbar:options',options);sync();}
  });
  function destroyWindow(){
   clearTimeout(hideTimer);hideTimer=null;
@@ -67,8 +68,8 @@ function createTaskbarMusic({supported,onError,onWindowsChanged=()=>{},
   if(nextProtection!==protectionKey){
    protectionKey=nextProtection;waveWindow.webContents.send('taskbar:protection',protection);
   }
-  const nextTrack=JSON.stringify({playing:!!track.playing});
-  if(nextTrack!==trackKey){trackKey=nextTrack;waveWindow.webContents.send('taskbar:track',{playing:!!track.playing});}
+  const nextTrack=JSON.stringify({playing:!!track.playing,artwork:track.artwork||''});
+  if(nextTrack!==trackKey){trackKey=nextTrack;waveWindow.webContents.send('taskbar:track',{playing:!!track.playing,artwork:track.artwork||''});}
   show(true);
  }
  function launchWatcher(){
@@ -109,6 +110,7 @@ function createTaskbarMusic({supported,onError,onWindowsChanged=()=>{},
   geometry=null;regions=[];buffer='';destroyWindow();
  }
  return{
+  configure(value){options={...value};if(loaded)waveWindow?.webContents.send('taskbar:options',options);},
   setEnabled(value){
    const next=supported&&value===true;
    if(next===enabled)return;

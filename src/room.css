@@ -128,3 +128,6 @@
 
 #cat-hunger{border:1px solid #ffffff29;cursor:pointer;min-width:76px;height:30px;background:linear-gradient(135deg,#292932,#151519);color:#f2eff5;box-shadow:0 3px 10px #0003}
 #cat-hunger:hover{background:#373740}
+#room-keepsake{position:absolute;left:88%;top:59%;width:4%;height:6%;object-fit:contain;z-index:8;pointer-events:none;filter:drop-shadow(0 2px 3px #38241777)}
+#room-care-notice{position:absolute;bottom:13%;left:50%;transform:translateX(-50%);padding:8px 15px;border-radius:15px;background:#272027ee;color:#f5e7d0;font:13px "Segoe UI",sans-serif;z-index:22;pointer-events:none}
+.keepsake-slot.new-gift img{filter:drop-shadow(0 0 4px #ffd57a)}
