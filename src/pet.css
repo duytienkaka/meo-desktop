@@ -11,11 +11,17 @@ canvas { display: block; width: 100%; height: 100%; background: transparent; tou
 .muted .mute-mark { display: block; }
 #audio-hud.muted { color: var(--muted); }
 #audio-hud.muted #audio-level:after { content: " · tắt"; font-size: 10px; }
-#photo-pocket { position: absolute; z-index: 3; width: 88px; height: 27px; }
-#send-photos { display: block; width: 100%; height: 100%; padding: 4px 6px; border: 1px solid var(--line-strong); border-radius: 10px; background: linear-gradient(135deg,#22222b,#101014); box-shadow: 0 2px 6px #0004; font-size: 10px; color: #eeedf6; cursor: pointer; white-space: nowrap; }
-#send-photos:hover:enabled { background: #30303a; border-color: #d8d7f266; }
+#photo-pocket { position: absolute; z-index: 3; width: 88px; }
+#photo-pocket button { display: block; width: 100%; height: 27px; padding: 4px 6px; border: 1px solid var(--line-strong); border-radius: 10px; background: linear-gradient(135deg,#22222b,#101014); box-shadow: 0 2px 6px #0004; font-size: 10px; color: #eeedf6; cursor: pointer; white-space: nowrap; }
+#photo-pocket button:hover:enabled { background: #30303a; border-color: #d8d7f266; }
 @keyframes hud-in { from { opacity: 0; scale: .92; } to { opacity: 1; scale: 1; } }
 
 #feed-cat{position:absolute;z-index:4;min-width:72px;height:28px;padding:4px 12px;border:1px solid var(--line-strong);border-radius:12px;background:linear-gradient(135deg,#292932,#151519);color:var(--ink);font:12px "Segoe UI",sans-serif;cursor:pointer;box-shadow:0 3px 10px #0003}
 #feed-cat:hover{background:#373740}
 #feed-cat[hidden]{display:none}
+
+#photo-pocket button[hidden]{display:none}
+#send-photo-text{margin-top:4px}
+#inspect-photos{display:flex;justify-content:center;gap:3px;margin-bottom:4px}
+#inspect-photos button{width:27px;height:24px;padding:0;overflow:hidden;border-radius:6px}
+#inspect-photos img{width:100%;height:100%;object-fit:cover;display:block}

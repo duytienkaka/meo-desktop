@@ -2,21 +2,38 @@
 const path=require('node:path'),fs=require('node:fs'),crypto=require('node:crypto');
 const {setTimeout:delay}=require('node:timers/promises');
 const {createPhotoStore,selectionRect}=require('./screenshot-core.cjs');
+const {recognizeScreenshot}=require('./screenshot-ocr.cjs');
 const {createScreenshotBridge}=require('./screenshot-bridge.cjs');
-function createScreenshotFeature({electron,getPet,getPlacement,getWindows,canUse,onStatus=()=>{},onCapture=()=>{},testMode=false}){
- const {app,BrowserWindow,ipcMain,screen,desktopCapturer,nativeImage}=electron;
+function createScreenshotFeature({electron,getPet,getPlacement,getWindows,canUse,onStatus=()=>{},onCapture=()=>{},onInspect=()=>{},testMode=false,recognize=testMode&&!process.argv.includes('--meo-ocr-test')?null:recognizeScreenshot}){
+ const {app,BrowserWindow,ipcMain,screen,desktopCapturer,nativeImage,clipboard}=electron;
  const supported=['win32','darwin'].includes(process.platform),temporary=path.join(app.getPath('temp'),'MeoDesktop-photos-'+crypto.randomUUID());
- const leasedFiles=new Set();
- const store=createPhotoStore({onRemove:photo=>{if(photo.file&&!leasedFiles.has(photo.file))try{fs.unlinkSync(photo.file);}catch{}}});
- let overlays=[],capturing=false,captureRevision=0,captureRestore=[],target=null,busy=false,lastState='',flightWindows=[],lastAction='';
+ const leasedFiles=new Set(),sourceReaders=new Map();
+ const store=createPhotoStore({onRemove:photo=>{if(photo.file&&!leasedFiles.has(photo.file)&&!sourceReaders.has(photo.file))try{fs.unlinkSync(photo.file);}catch{}}});
+ let ocrQueue=Promise.resolve();
+ let overlays=[],capturing=false,captureRevision=0,captureRestore=[],target=null,busy=false,sharingText=false,lastState='',flightWindows=[],lastAction='';
  function receiveTarget(value){if(value?.own)return;target=value;publish();}
  const bridge=createScreenshotBridge({onTarget:receiveTarget});
  function targetValid(){return target&&Date.now()-target.seenAt<120000;}
- function snapshot(){return {supported,photos:store.list(),selected:store.selected(),capturing,busy,target:targetValid()?{name:target.name,title:target.title}:null,message:lastAction};}
+ function snapshot(){return {supported,photos:store.list().map(photo=>({...photo,ocr:store.get(photo.id).text===undefined?'pending':store.get(photo.id).text?'text':store.get(photo.id).text===null?'unavailable':'empty'})),hasText:store.list().some(({id})=>Boolean(store.get(id).text)),selected:store.selected(),capturing,busy,sharingText,target:targetValid()?{name:target.name,title:target.title}:null,message:lastAction};}
  function publish(){const value=snapshot(),key=JSON.stringify(value);if(key===lastState)return;lastState=key;for(const window of [getPet()])if(window&&!window.isDestroyed())window.webContents.send('meo:shots:state',value);}
  function status(text){lastAction=text;onStatus(text);publish();}
  function requirePet(event){if(!getPet()||event.sender.id!==getPet().webContents.id)throw new Error('Cửa sổ mèo không hợp lệ.');}
- function addImage(image){const full=store.list().length===3,photo=store.add(image);if(!testMode)bridge.start();lastState='';status(full?'Mèo giữ 3 ảnh gần nhất.':'Mèo đang giữ ảnh cho bạn.');return photo;}
+ function addImage(image){
+  const full=store.list().length===3,photo=store.add(image);
+  if(!testMode)bridge.start();
+  lastState='';status(full?'Mèo giữ 3 ảnh gần nhất.':'Mèo đang giữ ảnh cho bạn.');
+  if(!recognize)photo.text=null;
+  if(recognize)ocrQueue=ocrQueue.then(async()=>{
+   // Skip images that were deleted or displaced while waiting.
+   if(!store.has(photo.id))return;
+   try{
+    const text=await recognize(photo.image);
+    if(!store.has(photo.id))return;
+    photo.text=text;publish();
+   }catch{if(store.has(photo.id)){photo.text=null;publish();}}
+  });
+  return photo;
+ }
  function restoreCapture(){for(const item of captureRestore)if(item.visible&&!item.window.isDestroyed()&&canUse())item.window.showInactive();captureRestore=[];capturing=false;publish();}
  function closeOverlays(){for(const overlay of overlays)if(!overlay.window.isDestroyed())overlay.window.destroy();overlays=[];}
  function cancelCapture(){captureRevision++;closeOverlays();restoreCapture();}
@@ -41,6 +58,19 @@ function createScreenshotFeature({electron,getPet,getPlacement,getWindows,canUse
  ipcMain.handle('meo:capture:select',(event,rect)=>{const entry=validCapture(event),crop=selectionRect(rect,entry.display.bounds,entry.image.getSize()),image=nativeImage.createFromBuffer(entry.image.crop(crop).toPNG());captureRevision++;closeOverlays();restoreCapture();addImage(image);return true;});
  ipcMain.on('meo:capture:cancel',event=>{try{validCapture(event);cancelCapture();}catch{}});
  function ensureFile(photo){if(photo.file&&fs.existsSync(photo.file))return photo.file;fs.mkdirSync(temporary,{recursive:true});photo.file=path.join(temporary,photo.id+'.png');fs.writeFileSync(photo.file,photo.image.toPNG());return photo.file;}
+ async function withSourceFile(id,work){
+  const file=ensureFile(store.get(id));
+  sourceReaders.set(file,(sourceReaders.get(file)||0)+1);
+  try{return await work(file);}
+  finally{
+   const remaining=sourceReaders.get(file)-1;
+   if(remaining)sourceReaders.set(file,remaining);
+   else{
+    sourceReaders.delete(file);
+    if(!store.has(id)&&!leasedFiles.has(file))try{fs.unlinkSync(file);}catch{}
+   }
+  }
+ }
  async function fly(photos,destination){
   const placement=getPlacement(),from={x:placement.x+placement.anchorX,y:placement.y+placement.anchorY-65},to=process.platform==='win32'?screen.screenToDipPoint({x:Math.round(destination.x),y:Math.round(destination.y)}):{x:destination.x,y:destination.y};
   const displays=screen.getAllDisplays(),left=Math.min(...displays.map(d=>d.bounds.x)),top=Math.min(...displays.map(d=>d.bounds.y)),right=Math.max(...displays.map(d=>d.bounds.x+d.bounds.width)),bottom=Math.max(...displays.map(d=>d.bounds.y+d.bounds.height));
@@ -57,6 +87,44 @@ function createScreenshotFeature({electron,getPet,getPlacement,getWindows,canUse
    await bridge.paste(destination);status('Đã đưa '+photos.length+' ảnh tới '+destination.name+'. Kiểm tra bản nháp và bỏ ảnh không muốn trước khi gửi.');
   }finally{busy=false;publish();}
  }
+ function capturePreview(id){
+  const photo=store.get(id),{width,height}=photo.image.getSize();
+  const scaled=Math.max(width,height)>1600?photo.image.resize(width>=height?{width:1600}:{height:1600}):photo.image;
+  return {image:scaled.toDataURL(),text:photo.text||''};
+ }
+ function validateText(value){
+  if(typeof value!=='string'||!value.trim()||value.length>120000)throw new Error('Chọn hoặc nhập đoạn chữ để dùng.');
+  return value;
+ }
+ async function shareSelection(value){
+  if(busy||capturing||!canUse())throw new Error('Hãy chờ thao tác hiện tại hoàn tất.');
+  const text=validateText(value.text);
+  const withImage=value.action==='paste-capture-pair',photo=withImage?store.get(value.id):null;
+  const paste=value.action!=='copy-capture-text';
+  if(paste&&!targetValid())throw new Error('Bấm vào ô nhập trước hoặc chọn Sao chép chữ.');
+  const destination=target;
+  busy=true;sharingText=true;publish();
+  try{
+   const file=photo?ensureFile(photo):null;
+   clipboard.writeText(text);
+   if(paste)await bridge.paste(destination,'text');
+   if(file){
+    try{
+     await delay(350);
+     if(!canUse()||target?.hwnd!==destination.hwnd||target?.focus!==destination.focus)throw new Error('Ô nhập đã thay đổi.');
+     await bridge.files([file]);leasedFiles.add(file);
+     await bridge.paste(destination);
+    }catch{
+     throw new Error('Chữ đã dán. Ảnh chưa dán được, hãy chọn lại ô nhập để đưa ảnh.');
+    }
+   }
+   status(file?'Đã dán ảnh và chữ.':paste?'Đã dán chữ.':'Đã sao chép chữ.');
+  }finally{busy=false;sharingText=false;publish();}
+ }
+ function shareText(paste){
+  const text=store.list().map(({id})=>store.get(id).text).filter(Boolean).join('\n\n');
+  return shareSelection({action:paste?'paste-capture-text':'copy-capture-text',text});
+ }
  function remove(id){
   if(busy||capturing)throw new Error('Hãy chờ thao tác ảnh hoàn tất.');
   store.remove(id);
@@ -65,9 +133,9 @@ function createScreenshotFeature({electron,getPet,getPlacement,getWindows,canUse
  }
  function clear(){if(busy)return;store.clear();bridge.stop();target=null;status('Mèo đã bỏ các ảnh đang giữ.');}
  ipcMain.handle('meo:shots:get',event=>{requirePet(event);return snapshot();});
- ipcMain.handle('meo:shots:pet',async(event,value)=>{requirePet(event);try{if(value?.action==='capture')return await capture();if(value?.action==='send-all'){await sendAll();return snapshot();}throw new Error('Thao tác ảnh không hợp lệ.');}catch(error){status(error.message);throw error;}});
+ ipcMain.handle('meo:shots:pet',async(event,value)=>{requirePet(event);try{if(value?.action==='capture')return await capture();if(value?.action==='inspect'){const photo=store.get(value.id);await onInspect(photo.id);return snapshot();}if(value?.action==='send-all'){await sendAll();return snapshot();}if(['send-text','copy-text'].includes(value?.action)){await shareText(value.action==='send-text');return snapshot();}throw new Error('Thao tác ảnh không hợp lệ.');}catch(error){status(error.message);throw error;}});
  function hide(){if(capturing)cancelCapture();for(const window of flightWindows)if(!window.isDestroyed())window.destroy();flightWindows=[];}
  function dispose(){captureRevision++;closeOverlays();bridge.stop();store.clear();for(const window of flightWindows)if(window&&!window.isDestroyed())window.destroy();for(const file of leasedFiles)try{fs.unlinkSync(file);}catch{}leasedFiles.clear();try{fs.rmdirSync(temporary);}catch{}}
- return {capture,clear,remove,sendAll,hide,dispose,snapshot,addImage,receiveTarget,bridge,store,isBusy:()=>capturing||busy,isCapturing:()=>capturing,captureWindows:()=>overlays.map(o=>o.window)};
+ return {capture,clear,remove,sendAll,shareSelection,capturePreview,withSourceFile,hide,dispose,snapshot,addImage,receiveTarget,bridge,store,isBusy:()=>capturing||busy,isCapturing:()=>capturing,captureWindows:()=>overlays.map(o=>o.window)};
 }
 module.exports={createScreenshotFeature};

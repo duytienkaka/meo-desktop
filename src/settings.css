@@ -210,3 +210,4 @@ footer { grid-column: 1/-1; display: flex; align-items: center; gap: 20px; paddi
 #care-gifts button:hover,#care-gifts button[aria-pressed=true]{border-color:#c9b795}
 #care-gifts img{width:42px;height:36px;object-fit:contain}#care-gifts img.locked{filter:grayscale(1);opacity:.45}
 #care-gifts small{color:#c9b795}#care-gift-detail:empty{display:none}
+.room-info .room-launch{margin:16px 0 8px;padding:10px 0;border-top:1px solid var(--line);border-bottom:0}

@@ -46,3 +46,20 @@ test('interrupted copies are cleaned safely on restart and total storage limit i
 test('storage aliases cannot bypass the check against copying a parent into its own bag',async t=>{
  const directory=fixture(t),real=path.join(directory,'real'),alias=path.join(directory,'alias');fs.mkdirSync(real);fs.symlinkSync(real,alias,process.platform==='win32'?'junction':'dir');const store=createCompanionStore({directory:alias,downloads:directory});await assert.rejects(store.addFiles([real]),/kho túi/);assert.equal(store.snapshot().items.length,0);
 });
+test('OCR note keeps one owned source attachment through restart and removes only its copy',async t=>{
+ const directory=fixture(t),source=path.join(directory,'source.png');
+ fs.writeFileSync(source,'image data');
+ let store=createCompanionStore({directory,downloads:directory});
+ await store.addCaptureText('Phần chữ đã chọn',source);
+ await store.addCaptureText('Chỉ có chữ',null);
+ const [plain,note]=store.snapshot().items;
+ assert.equal(store.sourceImage(plain.id),null);
+ const image=store.sourceImage(note.id);
+ assert.notEqual(image.location,source);
+ store=createCompanionStore({directory,downloads:directory});
+ assert.equal(store.item(note.id).text,'Phần chữ đã chọn');
+ assert.equal(fs.readFileSync(store.sourceImage(note.id).location,'utf8'),'image data');
+ await store.remove(note.id);
+ assert.equal(fs.existsSync(image.location),false);
+ assert.equal(fs.existsSync(source),true);
+});

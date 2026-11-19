@@ -52,11 +52,13 @@ function draw(now){
  raf=0;if(!visible||!playing)return;
  if(now-last<33){raf=requestAnimationFrame(draw);return;}
  const dt=last?Math.min(.1,(now-last)/1000):.04;last=now;
- const width=innerWidth,height=innerHeight,scale=Math.min(devicePixelRatio,1.25);
- if(canvas.width!==Math.round(width*scale)||canvas.height!==Math.round(height*scale)){
-  canvas.width=Math.round(width*scale);canvas.height=Math.round(height*scale);gradient=null;
+ const vertical=innerHeight>innerWidth,scale=Math.min(devicePixelRatio,1.25);
+ const width=vertical?innerHeight:innerWidth,height=vertical?innerWidth:innerHeight;
+ if(canvas.width!==Math.round(innerWidth*scale)||canvas.height!==Math.round(innerHeight*scale)){
+  canvas.width=Math.round(innerWidth*scale);canvas.height=Math.round(innerHeight*scale);gradient=null;
  }
- ctx.setTransform(scale,0,0,scale,0,0);
+ if(vertical)ctx.setTransform(0,scale,-scale,0,canvas.width,0);
+ else ctx.setTransform(scale,0,0,scale,0,0);
  if(!gradient){
   gradient=ctx.createLinearGradient(0,0,width,0);
   const colors=options.colors==='cover'?palette:rainbow;
@@ -67,7 +69,7 @@ function draw(now){
  const fresh=now-received<350,live=fresh?peak:0;
  const cap=height*options.height/100;
  for(let i=0;i<count;i++){
-  const position=options.style==='mirror'?Math.abs(i/(count-1)*2-1):i/(count-1);
+  const position=options.style==='mirror'?Math.abs(i/Math.max(1,count-1)*2-1):i/Math.max(1,count-1);
   const source=hasBands?bands:history;
   const at=position*(source.length-1),index=Math.floor(at),fraction=at-index;
   const old=source[index]*(1-fraction)+source[Math.min(source.length-1,index+1)]*fraction;
@@ -108,15 +110,20 @@ function update(){
 }
 function protectIcons(){
  if(behind){document.body.style.clipPath='none';return;}
- const width=innerWidth,height=innerHeight,merged=[];
- const intervals=protection.map(rect=>[Math.max(0,Math.floor(rect.x-24)),Math.min(width,Math.ceil(rect.x+rect.width+24))]).filter(([left,right])=>right>left).sort((a,b)=>a[0]-b[0]);
+ const width=innerWidth,height=innerHeight,vertical=height>width,merged=[];
+ document.body.classList.toggle('vertical',vertical);
+ const length=vertical?height:width;
+ const intervals=protection.filter(rect=>rect.x<width&&rect.y<height&&rect.x+rect.width>0&&rect.y+rect.height>0).map(rect=>{
+  const start=vertical?rect.y:rect.x,span=vertical?rect.height:rect.width;
+  return [Math.max(0,Math.floor(start-12)),Math.min(length,Math.ceil(start+span+12))];
+ }).filter(([left,right])=>right>left).sort((a,b)=>a[0]-b[0]);
  for(const interval of intervals){
   const previous=merged[merged.length-1];
   if(previous&&interval[0]<=previous[1]+2)previous[1]=Math.max(previous[1],interval[1]);
   else merged.push(interval);
  }
  let path='M0 0H'+width+'V'+height+'H0Z';
- for(const [left,right] of merged)path+='M'+left+' 0H'+right+'V'+height+'H'+left+'Z';
+ for(const [start,end] of merged)path+=vertical?'M0 '+start+'H'+width+'V'+end+'H0Z':'M'+start+' 0H'+end+'V'+height+'H'+start+'Z';
  document.body.style.clipPath='path(evenodd, "'+path+'")';
  document.body.classList.toggle('protected',merged.length>0);
 }

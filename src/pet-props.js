@@ -6,7 +6,7 @@
  const ease=value=>{const t=Math.max(0,Math.min(1,value));return t*t*(3-2*t);};
  function motion(name,age,quiet=false){const duration=durations[name]||1,active=age>=0&&age<duration,progress=Math.max(0,Math.min(1,age/duration));return {event:active&&!quiet?name:'',age,quiet,progress,beat:active&&!quiet?Math.sin(Math.PI*progress):0};}
  function update(f,photos){
-  const b=f.utilityBadge||{},current={count:b.count||0,due:b.due||0,pulse:b.pulseId,photos:photos.photos.length,busy:!!photos.busy};let next='';
+  const b=f.utilityBadge||{},current={count:b.count||0,due:b.due||0,pulse:b.pulseId,photos:photos.photos.length,busy:!!photos.busy&&!photos.sharingText};let next='';
   if(previous){if(current.count>previous.count)next='store';if(current.pulse!==previous.pulse&&b.pulse)next=({download:'catch',bag:'store',charging:'charge',battery:'low',reminder:'remind'})[b.kind]||'';if(current.photos>previous.photos)next='photos';if(current.busy&&!previous.busy)next='throw';if(current.due>previous.due)next='remind';if(current.due<previous.due)next='done';}
   if(previous?.photos&&!current.photos&&['photos','throw'].includes(event))event='';
   previous=current;

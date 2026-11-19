@@ -61,7 +61,7 @@ function createTaskbarMusic({supported,onError,onWindowsChanged=()=>{},
   const bar=screen.screenToDipRect(null,geometry),key=JSON.stringify(bar);
   if(key!==boundsKey){boundsKey=key;waveWindow.setBounds(bar,false);}
   const protection=regions.map(rect=>{
-   const dip=screen.screenToDipRect(null,rect);return {x:dip.x-bar.x,width:dip.width};
+   const dip=screen.screenToDipRect(null,rect);return {x:dip.x-bar.x,y:dip.y-bar.y,width:dip.width,height:dip.height};
   });
   const nextProtection=JSON.stringify(protection);
   waveWindow.webContents.send('taskbar:behind',behind);
