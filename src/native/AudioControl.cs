@@ -8,13 +8,15 @@ using System.Text;
 using System.Threading;
 using System.Web.Script.Serialization;
 
-internal static class AudioControl {
+internal static partial class AudioControl {
  [ComImport,Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] interface Enumerator {
   [PreserveSig] int EnumAudioEndpoints(int flow,uint state,out IntPtr devices);
   [PreserveSig] int GetDefaultAudioEndpoint(int flow,int role,out Device device);
  }
  [ComImport,Guid("D666063F-1587-4E43-81F1-B948E807363F"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] interface Device {
   [PreserveSig] int Activate(ref Guid iid,uint context,IntPtr parameters,[MarshalAs(UnmanagedType.IUnknown)] out object value);
+  [PreserveSig] int OpenPropertyStore(uint mode,out IntPtr store);
+  [PreserveSig] int GetId([MarshalAs(UnmanagedType.LPWStr)] out string id);
  }
  [ComImport,Guid("5CDF2C82-841E-4546-9722-0CF74078229A"),InterfaceType(ComInterfaceType.InterfaceIsIUnknown)] interface Volume {
   [PreserveSig] int RegisterControlChangeNotify(IntPtr notify);
@@ -94,6 +96,7 @@ internal static class AudioControl {
   finally{if(endpoint!=null)Marshal.ReleaseComObject(endpoint);if(device!=null)Marshal.ReleaseComObject(device);if(enumerator!=null)Marshal.ReleaseComObject(enumerator);}
  }
  public static int Main(string[] args) {
+  int spectrumParent;if(args.Length==2&&args[0]=="spectrum"&&int.TryParse(args[1],out spectrumParent))return WatchSpectrum(spectrumParent);
   int meterParent;if(args.Length==2&&args[0]=="meter"&&int.TryParse(args[1],out meterParent))return WatchMeter(meterParent);
   int parentId;if(args.Length!=1||!int.TryParse(args[0],out parentId))return 2;Console.OutputEncoding=new UTF8Encoding(false);
   var queue=new BlockingCollection<string>(64);bool closed=false;

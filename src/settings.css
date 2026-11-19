@@ -193,3 +193,20 @@ footer { grid-column: 1/-1; display: flex; align-items: center; gap: 20px; paddi
 .city-entry button:hover{background:#474247}
 
 .care-panel{display:grid;gap:12px;margin-top:24px;padding:18px;background:#ffffff05;border:1px solid #ffffff12;border-radius:16px;color:#ddd5c8;font-size:13px}.care-panel progress{width:100%;height:6px;accent-color:#c9b795}.care-panel button{padding:12px;border-radius:12px}
+
+#wave-controls{border-top:1px solid var(--line);margin-top:12px}
+#wave-controls .row{min-height:54px}
+#wave-controls select{min-width:170px}
+#wave-preview{display:block;border:1px solid var(--line);border-radius:12px;width:100%;height:64px;background:#111116;pointer-events:none;box-sizing:border-box;margin:8px 0 18px}
+.wave-preview-label{font-size:12px;color:var(--muted);margin-top:12px}
+.care-stat{display:flex;justify-content:space-between;align-items:center;gap:12px}
+#care-xp-text,#care-hunger,#care-gift-detail{color:#c2b9ae}
+#care-fullness{accent-color:#aed694}
+.care-next{display:flex;align-items:center;gap:10px}.care-next img{width:42px;height:38px;object-fit:contain}
+.care-next[hidden],.care-panel label[hidden]{display:none}
+#care-notice{color:#cce9ad} .care-collection summary{cursor:pointer;padding:8px 0}
+#care-gifts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+#care-gifts button{display:grid;justify-items:center;gap:4px;background:#ffffff06;color:inherit;border:1px solid #ffffff16;cursor:pointer}
+#care-gifts button:hover,#care-gifts button[aria-pressed=true]{border-color:#c9b795}
+#care-gifts img{width:42px;height:36px;object-fit:contain}#care-gifts img.locked{filter:grayscale(1);opacity:.45}
+#care-gifts small{color:#c9b795}#care-gift-detail:empty{display:none}

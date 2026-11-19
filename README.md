@@ -48,15 +48,15 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 
 ## Tải xuống và cài ứng dụng
 
-**Bản hiện tại: 1.2.2. Người dùng cài app không cần Node.js hay công cụ lập trình.**
+**Bản hiện tại: 1.3.0. Người dùng cài app không cần Node.js hay công cụ lập trình.**
 
 | Máy của bạn | Bấm để tải | Yêu cầu |
 | --- | --- | --- |
-| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.2.2/Meo-Desktop-Setup-1.2.2-x64.exe)** | Windows 10/11, x64 |
-| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.2.2/Meo-Desktop-1.2.2-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
-| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.2.2/Meo-Desktop-1.2.2-mac-x64.dmg)** | macOS 13 Ventura trở lên |
+| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.3.0/Meo-Desktop-Setup-1.3.0-x64.exe)** | Windows 10/11, x64 |
+| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.3.0/Meo-Desktop-1.3.0-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
+| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.3.0/Meo-Desktop-1.3.0-mac-x64.dmg)** | macOS 13 Ventura trở lên |
 
-[Xem Release 1.2.2 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.2.2) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+[Xem Release 1.3.0 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.3.0) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 1. Chọn đúng bộ cài trong bảng. Trên Mac, xem loại chip tại menu Apple → **About This Mac** nếu chưa biết chọn bản nào.
 2. **Windows:** mở `.exe` và làm theo trình cài đặt. **Mac:** mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app từ đó.
@@ -68,15 +68,15 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 
 ## Tính năng chính
 
-**Mới trong 1.2.2:**
+**Mới trong 1.3.0**
 
-- **Nuôi mèo trong phòng:** thức ăn miễn phí, trạng thái đói, kinh nghiệm và lên cấp. Khi mèo đói có nút Cho ăn ngay cạnh mèo. Kéo bát để mèo chạy theo.
-- **Hoạt ảnh ăn riêng cho bốn mèo:** đến bát thì bát trên sàn ẩn đi, mèo cúi ăn với đúng mẫu bát gốm đã đặt.
-- **Kệ kỷ niệm nhiều tầng:** quà thường mở theo cấp và bộ ba hiếm, hiện vật chưa sở hữu ở trạng thái khóa. Mèo giơ quà khi lên cấp.
-- **Phòng sống động hơn:** bàn nhạc và nốt nhạc bay khi phát, mèo đến nghe nhạc, đèn ấm, cảnh cửa sổ theo thời tiết và nhắc uống nước.
-- Chỉnh giao diện phòng, bố cục cài đặt, kệ gỗ và bát ăn. Sửa nốt nhạc dừng khi chuyển sang ứng dụng khác và màu đêm tràn khỏi cửa sổ.
+- Mèo đói sau một giờ app hoạt động. Bữa khi đói nhận 45 XP, bữa khi no nhận 0 XP.
+- Bảng Chăm sóc mèo hiển thị độ no, thời gian đến lúc đói, XP còn thiếu và hình phần thưởng ở mốc kế tiếp.
+- Kỷ niệm giải thích điều kiện nhận, đánh dấu quà mới đến khi xem và cho đặt đồ đã sở hữu trên bàn trong phòng.
+- Vuốt ve và chơi len ngoài desktop được tính thưởng chung với các tương tác trong phòng. Sửa thao tác kéo bát.
+- Sóng nhạc Windows 11 có 32 dải tần, đỉnh sáng, ba kiểu hiển thị, màu theo ảnh bìa và các thanh chỉnh có bản xem trước.
 
-Các tính năng phòng và nuôi mèo hỗ trợ Windows.
+Bảng chăm sóc và bộ sưu tập dùng được trên Windows và Mac. Phòng, bát kéo thả và trang trí trong phòng hỗ trợ Windows.
 
 Sóng nhạc đo mức âm thanh chung của thiết bị đầu ra, có thể phản ứng với âm thanh từ ứng dụng khác; không thu hoặc lưu bản ghi âm. Khi tắt tùy chọn, app dừng các cửa sổ và tiến trình hỗ trợ tương ứng. Thành phần ExplorerTAP đã nạp trong Explorer có thể còn trong bộ nhớ đến khi Explorer khởi động lại; giao diện taskbar được khôi phục khi tắt kính. Các tính năng taskbar không áp dụng cho Windows 10 hoặc macOS.
 
@@ -219,7 +219,7 @@ Phần này dành cho **người phát triển**. Nếu chỉ muốn dùng app, 
    npm start -- --background
    ```
 
-Mã tương ứng với bộ cài 1.2.2 nằm ở [tag v1.2.2](https://github.com/duytienkaka/meo-desktop/tree/v1.2.2). Dùng `git switch --detach v1.2.2` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
+Mã tương ứng với bộ cài 1.3.0 nằm ở [tag v1.3.0](https://github.com/duytienkaka/meo-desktop/tree/v1.3.0). Dùng `git switch --detach v1.3.0` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
 
 ### Kiểm tra và đóng gói
 

@@ -5,6 +5,12 @@ const root=path.resolve(__dirname,'..'),env={...process.env};delete env.ELECTRON
  const pet=await app.firstWindow();await pet.waitForFunction(()=>window.meoPet?.snapshot().frame);
  await app.evaluate(()=>{global.__meo.setMode('play');global.__meo.setPaused(false);global.__meo.setVisible(true);global.__meo.screenshots.clear();global.__meo.utilities.badge=()=>({count:0,due:0});Object.defineProperty(global.__meo.wallpaper,'desktop',{get:()=>global.__meo.desktopFocused!==false});});
  const opened=app.waitForEvent('window');await app.evaluate(()=>global.__meo.openSettings());const settings=await opened;await settings.waitForSelector('#wallpaper');
+ await settings.locator('#care-fullness').waitFor();
+ assert.match(await settings.locator('#care-xp-text').innerText(),/XP/);
+ await settings.locator('#care-collection-title').click();
+ await settings.locator('[data-gift="star"]').click();
+ assert.match(await settings.locator('#care-gift-detail').innerText(),/2%.*10 giây/);
+ await settings.locator('#care-collection-title').click();
  await settings.evaluate(()=>window.settings.update({roomLighting:'afternoon'}));await settings.evaluate(()=>window.settings.update({roomSpot:'bed'}));await settings.evaluate(()=>window.settings.update({wallpaper:true}));
  const candidates=app.windows().filter(w=>w.url().endsWith('/room.html'));
  let room;for(const candidate of candidates){if(await candidate.evaluate(()=>!document.querySelector('.room-controls').hidden)){room=candidate;break;}}
@@ -90,12 +96,27 @@ const root=path.resolve(__dirname,'..'),env={...process.env};delete env.ELECTRON
  await room.waitForFunction(()=>!document.querySelector('#food-bowl').hidden&&window.meoRoom.snapshot().pose?.target==='food');
  await input.waitForFunction(()=>targets.some(t=>t.kind==='food'));
  const foodBox=await room.locator('#food-bowl').boundingBox();
+ // A cat hit region can overlap the bowl as it approaches. The visible bowl wins.
+ await input.evaluate(box=>targets.unshift({kind:'pet',x:box.x,y:box.y,width:box.width,height:box.height}),foodBox);
  await input.mouse.move(foodBox.x+foodBox.width/2,foodBox.y+foodBox.height/2);await input.mouse.down();
- await input.mouse.move(scene.x+scene.width*.4,scene.y+scene.height*.94,{steps:5});await input.mouse.up();
+ await input.mouse.move(scene.x+scene.width*.7,scene.y+scene.height*.94,{steps:8});
+ await room.waitForFunction(()=>Math.abs(window.ROOM_FEATURES.foodPoint().x-.7)<.01);
+ assert.equal(await room.evaluate(()=>window.meoRoom.snapshot().mealAge),null,'held bowl cannot start a meal');
+ await input.mouse.move(scene.x+scene.width*.4,scene.y+scene.height*.94,{steps:8});
+ await input.mouse.up();
+ await room.waitForFunction(()=>Math.abs(window.ROOM_FEATURES.foodPoint().x-.4)<.01);
  await room.waitForFunction(()=>window.meoRoom.snapshot().mealAge!==null&&document.querySelector('#food-bowl').hidden,null,{timeout:24000});
  await input.waitForFunction(()=>!targets.some(t=>t.kind==='food'));
  await room.screenshot({path:path.join(root,'.cache/room-eating.png')});
  await room.waitForFunction(()=>window.meoRoom.snapshot().mealAge===null&&document.querySelector('#food-bowl').hidden,null,{timeout:10000});
+ // Feeding again must leave enough space to grab the bowl before the cat arrives.
+ const fedPose=await room.evaluate(()=>window.meoRoom.snapshot().pose);
+ await settings.evaluate(()=>window.settings.update({roomFeed:true}));
+ await room.waitForFunction(()=>!document.querySelector('#food-bowl').hidden);
+ const nextFood=await room.evaluate(()=>window.ROOM_FEATURES.foodPoint());
+ assert.ok(Math.abs(nextFood.x-fedPose.x)>.16,'new bowl is placed away from the cat');
+ await room.waitForFunction(()=>window.meoRoom.snapshot().mealAge!==null,null,{timeout:24000});
+ await room.waitForFunction(()=>window.meoRoom.snapshot().mealAge===null,null,{timeout:10000});
  await room.emulateMedia({reducedMotion:'no-preference'});
  await app.evaluate(({powerMonitor})=>{
   powerMonitor.isOnBatteryPower=()=>false;

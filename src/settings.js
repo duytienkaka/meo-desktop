@@ -18,7 +18,7 @@
     const descriptions={friend:'Một góc nhỏ để chỉnh dáng vẻ và thói quen của mèo.',auto:'Những phản ứng nhỏ khiến mỗi ngày thú vị hơn.',apps:'Ghim những ứng dụng bạn dùng mỗi ngày.',utilities:'Túi đồ, lời nhắc và chế độ máy trong một góc nhỏ.',updates:'Kiểm tra, xem thay đổi và chọn lúc cập nhật ứng dụng.'};
     document.querySelector('#page-description').textContent=descriptions[name];
     document.querySelectorAll('.nav').forEach(button=>{const active=button.dataset.tab===name;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
-    document.querySelectorAll('.page').forEach(page=>page.classList.toggle('active',page.id==='page-'+name));document.querySelector('#page-title').textContent=titles[name];document.querySelector('main').scrollTo({top:0});
+    document.querySelectorAll('.page').forEach(page=>page.classList.toggle('active',page.id==='page-'+name));previewWave();document.querySelector('#page-title').textContent=titles[name];document.querySelector('main').scrollTo({top:0});
   }
   document.querySelectorAll('.nav').forEach(button=>button.addEventListener('click',()=>changeTab(button.dataset.tab)));
   document.querySelector('.brand').addEventListener('click',event=>{event.preventDefault();changeTab('friend');});
@@ -54,6 +54,56 @@
   document.querySelector('#room-controls-side').onchange=e=>update({roomControlsSide:e.target.value});
   document.querySelector('#room-lamp').onchange=e=>update({roomFeatures:{lamp:e.target.value}});
  document.querySelector('#room-break').onchange=e=>update({roomFeatures:{breakMinutes:Number(e.target.value)}});
+ const giftItems=[...ROOM_KEEPSAKES.common,...ROOM_KEEPSAKES.rare];
+ const giftList=document.querySelector('#care-gifts'),decoration=document.querySelector('#care-decoration');
+ let giftKey='',selectedGift=null;
+ const giftImage=id=>'../assets/room/keepsake-'+id+'.webp';
+ function renderCare(features={},mac){
+  const care=features.care||{level:1,xp:0,nextLevel:100,highest:1,secondsUntilHungry:3600};
+  const unlocked=features.unlocked||[],fresh=features.newGifts||[];
+  document.querySelector('#care-status').textContent='Cấp '+care.level;
+  const xp=document.querySelector('#care-xp');xp.max=care.nextLevel;xp.value=care.xp;
+  document.querySelector('#care-xp-text').textContent=care.xp+'/'+care.nextLevel+' XP · Còn '+(care.nextLevel-care.xp)+' XP';
+  const minutes=Math.ceil(care.secondsUntilHungry/60);
+  document.querySelector('#care-fullness').value=care.secondsUntilHungry;
+  document.querySelector('#care-hunger').textContent=care.hungry?'Mèo đang đói · Ăn xong nhận 45 XP':minutes>=60?'Mèo đang no · Khoảng 1 giờ nữa sẽ đói':'Mèo đang no · Khoảng '+minutes+' phút nữa sẽ đói';
+  document.querySelector('#care-feed').textContent=care.hungry?'Cho ăn':'Cho ăn thêm';
+  document.querySelector('#care-feed').title=care.hungry?'Thức ăn miễn phí':'Thức ăn miễn phí · 0 XP khi đang no';
+  const notice=document.querySelector('#care-notice');notice.hidden=!features.notice;notice.textContent=features.notice?.message||'';
+  const next=ROOM_KEEPSAKES.common.find(item=>item.level>care.highest)||(!mac&&care.highest<5?{name:'Phòng chiều hồng',level:5}:null);
+  document.querySelector('#care-next').hidden=!next;
+  if(next){
+   document.querySelector('#care-next-image').src=next.id?giftImage(next.id):'../assets/room/preview.jpg';
+   document.querySelector('#care-next-text').textContent='Mốc tiếp theo · Cấp '+next.level+' mở '+next.name;
+  }
+  document.querySelector('#care-collection-title').textContent='Kỷ niệm · '+unlocked.length+'/'+giftItems.length+(fresh.length?' · '+fresh.length+' mới':'');
+  const key=JSON.stringify([unlocked,fresh,selectedGift]);
+  if(key!==giftKey){
+   giftKey=key;
+   const focused=document.activeElement?.dataset.gift;
+   giftList.replaceChildren(...giftItems.map(item=>{
+    const button=document.createElement('button');button.type='button';button.dataset.gift=item.id;
+    button.setAttribute('aria-pressed',String(item.id===selectedGift));
+    const image=document.createElement('img');image.src=giftImage(item.id);image.alt='';
+    image.classList.toggle('locked',!unlocked.includes(item.id));
+    const name=document.createElement('span');name.textContent=item.name;
+    const status=document.createElement('small');status.textContent=fresh.includes(item.id)?'Mới':unlocked.includes(item.id)?'Đã sở hữu':item.level?'Cấp '+item.level:'Hiếm · Đang khóa';
+    button.append(image,name,status);
+    button.onclick=()=>{selectedGift=item.id;renderCare(features,mac);if(fresh.includes(item.id))update({roomFeatures:{seenGift:item.id}});};
+    return button;
+   }));
+   if(focused)giftList.querySelector('[data-gift="'+focused+'"]')?.focus();
+   decoration.replaceChildren(new Option('Để trống',''),...giftItems.filter(item=>unlocked.includes(item.id)).map(item=>new Option(item.name,item.id)));
+  }
+  decoration.closest('label').hidden=mac;
+  decoration.value=features.decoration||'';
+  const item=giftItems.find(item=>item.id===selectedGift);
+  document.querySelector('#care-gift-detail').textContent=!item?'':item.level?item.name+' · Mở khi đạt cấp '+item.level+'.':item.name+' · Mỗi lượt vuốt ve, chọc hoặc chơi len hợp lệ có 2% cơ hội nhận một món hiếm chưa có. Tối đa một lượt thưởng mỗi 10 giây.';
+  document.querySelector('#care-theme').value=features.roomTheme||'classic';
+  document.querySelector('#care-theme option[value="rose"]').disabled=care.highest<5;
+  document.querySelector('#care-theme').closest('label').hidden=mac;
+ }
+ decoration.onchange=()=>update({roomFeatures:{decoration:decoration.value||null}});
  document.querySelector('#care-feed').onclick=()=>update({roomFeed:true});
  document.querySelector('#care-theme').onchange=e=>update({roomFeatures:{roomTheme:e.target.value}});
  document.querySelector('#room-city-form').onsubmit=e=>{e.preventDefault();update({roomFeatures:{city:document.querySelector('#room-city').value}});};
@@ -73,18 +123,40 @@
     glassTimer=setTimeout(()=>update({taskbarGlassOpacity:opacity}),100);
   };
   glassSlider.onchange=()=>{glassEditing=false;clearTimeout(glassTimer);update({taskbarGlassOpacity:Number(glassSlider.value)});};
+  let waveEditing=false;
+  const waveKeys=['style','colors','peaks','height','sensitivity','decay'];
+  const waveFrame=document.querySelector('#wave-preview');
+  function waveValues(){
+    return Object.fromEntries(waveKeys.map(key=>{
+      const input=document.querySelector('#wave-'+key);
+      return [key,input.type==='checkbox'?input.checked:input.type==='range'?Number(input.value):input.value];
+    }));
+  }
+  function previewWave(){
+    for(const key of ['height','sensitivity','decay'])document.querySelector('#wave-'+key+'-value').textContent=document.querySelector('#wave-'+key).value+'%';
+    waveFrame.contentWindow?.postMessage({type:'wave-preview',options:waveValues(),artwork:snapshot?.waveArtwork||'',active:!document.hidden&&document.querySelector('#page-auto').classList.contains('active')},'*');
+  }
+  for(const key of waveKeys){
+    const input=document.querySelector('#wave-'+key);
+    input.oninput=()=>{waveEditing=true;previewWave();};
+    input.onchange=()=>{waveEditing=false;update({waveOptions:waveValues()});previewWave();};
+  }
+  waveFrame.onload=previewWave;
+  document.addEventListener('visibilitychange',previewWave);
+  document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>requestAnimationFrame(previewWave)));
   function render(value){
+    const wave=value.waveOptions||{style:'bars',colors:'rainbow',height:70,sensitivity:100,decay:65,peaks:true};
+    for(const key of waveKeys){
+      const input=document.querySelector('#wave-'+key);
+      input.disabled=!value.taskbarSupported;
+      if(!waveEditing){if(input.type==='checkbox')input.checked=wave[key];else input.value=wave[key];}
+    }
     if(!glassEditing)glassSlider.value=String(value.taskbarGlassOpacity??40);glassSlider.disabled=!value.taskbarSupported||!value.taskbarTransparent;
     document.querySelector('#taskbar-glass-value').textContent=glassSlider.value+'%';
     document.querySelector('#taskbarTransparent').checked=!!value.taskbarTransparent;document.querySelector('#taskbarTransparent').disabled=!value.taskbarSupported;document.querySelector('#taskbar-transparency-status').textContent=value.taskbarTransparency?.message||'Windows 11 · Nền trong suốt thật.';
     document.querySelector('#taskbarMusic').checked=!!value.taskbarMusic;document.querySelector('#taskbarMusic').disabled=!value.taskbarSupported;
     document.querySelector('#room-controls-side').value=value.roomControlsSide||'right';document.querySelector('#room-controls-side').disabled=value.platform==='darwin';
-    const care=value.roomFeatures?.care||{level:1,xp:0,nextLevel:100,highest:1};
- document.querySelector('#care-status').textContent='Mèo cấp '+care.level;
- document.querySelector('#care-xp').max=care.nextLevel;document.querySelector('#care-xp').value=care.xp;
- document.querySelector('#care-hunger').textContent=care.hungry?'Mèo đang đói':'Mèo đang no · Thức ăn miễn phí';
- document.querySelector('#care-theme').value=value.roomFeatures?.roomTheme||'classic';
- document.querySelector('#care-theme option[value="rose"]').disabled=care.highest<5;
+    renderCare(value.roomFeatures,value.platform==='darwin');
  document.querySelector('#room-lamp').value=value.roomFeatures?.lamp||'auto';
  document.querySelector('#room-break').value=String(value.roomFeatures?.breakMinutes||0);
  const cityField=document.querySelector('#room-city');
@@ -121,7 +193,7 @@
     document.querySelector('.pinned-section>.hint').textContent='Thả file, ảnh hoặc đoạn chữ vào mèo để giữ trong túi. Ghim ứng dụng bằng nút + Ghim ứng dụng phía trên.';
     const pk=JSON.stringify(value.pinnedApps||[]);if(pk!==pinsKey){pinsKey=pk;renderPins(value.pinnedApps||[]);}
     document.querySelector('#pin-count').textContent=(value.pinnedApps||[]).length;document.querySelector('#add-pin').disabled=!value.pinSupported||(value.pinnedApps||[]).length>=20;
-    snapshot=value;
+    snapshot=value;previewWave();
     const roomEnter=document.querySelector('#room-enter');
     roomEnter.disabled=value.platform!=='win32';
     roomEnter.textContent=value.roomPinned?'Trở lại tự động':'Vào phòng ngay';

@@ -6,3 +6,5 @@ canvas,#backdrop{opacity:0;clip-path:inset(0 50%);transition:opacity 220ms ease,
 @media(prefers-reduced-motion:reduce){canvas,#backdrop{transition:none}}
 
 body:not(.behind):not(.protected) canvas,body:not(.protected) #backdrop{visibility:hidden}
+
+body.wave-preview{background:#111116}
