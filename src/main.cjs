@@ -28,8 +28,8 @@ app.setName('Meo Desktop');
 app.setPath('userData',testMode?path.resolve(__dirname,'../checks/user-data'):path.join(app.getPath('appData'),'MeoDesktop'));
 if(!app.requestSingleInstanceLock()){app.quit();}
 else {
-  const roomFeatures=require('./room-features.cjs').createRoomFeatures(app.getPath('userData'));
-  const wallpaper=createWallpaper({onMusicTable:openRoomMusic,onFeature:kind=>applyCare(kind),onError:error=>log(error.detail||error.message)});
+  const roomFeatures=require('./room-features.cjs').createRoomFeatures(app.getPath('userData'),{onError:error=>log('Care storage: '+error.message)});
+  const wallpaper=createWallpaper({onMusicTable:openRoomMusic,onFeature:kind=>{if(kind==='feed'&&powerMonitor.isOnBatteryPower())roomPinned=true;else applyCare(kind);},onError:error=>log(error.detail||error.message)});
   const startup=createStartup({app,testMode});
   const updates=createUpdates({app,testMode,openExternal:url=>shell.openExternal(url),onChange:()=>publishSettings(),beforeInstall:()=>{if(screenshots?.isBusy())throw new Error('Hãy chờ thao tác ảnh hoàn tất trước khi cài.');if(!saveSettings())throw new Error('Chưa lưu được cài đặt. Hãy thử lại trước khi cập nhật.');}});
   const desktopActions=createDesktopActions({directory:app.getPath('userData'),shell,clipboard}),pinIcons=new Map();
@@ -563,7 +563,8 @@ else {
       if(roomActive&&!state.paused)roomTime+=dt;
       if(wallpaper.active){const date=new Date(),lighting=roomClock.sample(date.getHours()+date.getMinutes()/60,state.roomLighting);const destination=state.mode==='music'?'desk':state.mode==='sleep'?'bed':state.roam?(Math.floor(roomTime/75)%3===0?lighting.preferred:['bed','desk','sill'][Math.floor(roomTime/75)%3]):roomSpot;
        roomFeatures.tick(wallpaper.desktop,!suspended);
-       wallpaper.update({features:roomFeatures.snapshot(),musicPlaying:mediaData.playing,roomInside:roomOwnsPet,animateNotes:mediaData.playing&&!state.paused,canOpenMusic:canUseMusicTable(),controlsSide:state.roomControlsSide,interactive:wallpaper.desktop,paused:!(wallpaper.desktop||roomPinned)||state.paused||powerMonitor.isOnBatteryPower(),showPet:roomActive&&state.visible,music:state.mode==='music',nearPlant:false,cursor:{x:cursor.x-screen.getPrimaryDisplay().bounds.x,y:cursor.y-screen.getPrimaryDisplay().bounds.y},roam:state.roam,lighting,destination,character:state.character,size:state.size});}
+       const roomOnBattery=!roomPinned&&powerMonitor.isOnBatteryPower();
+       wallpaper.update({canFeedOnBattery:roomOnBattery&&!state.paused,features:roomFeatures.snapshot(),musicPlaying:mediaData.playing,roomInside:roomOwnsPet,animateNotes:mediaData.playing&&!state.paused,canOpenMusic:canUseMusicTable(),controlsSide:state.roomControlsSide,interactive:wallpaper.desktop,paused:!(wallpaper.desktop||roomPinned)||state.paused||roomOnBattery,showPet:roomActive&&state.visible,music:state.mode==='music',nearPlant:false,cursor:{x:cursor.x-screen.getPrimaryDisplay().bounds.x,y:cursor.y-screen.getPrimaryDisplay().bounds.y},roam:state.roam,lighting,destination,character:state.character,size:state.size});}
 
       tickFrame();
       if(playerWindow?.isVisible())updatePlayerMouse();

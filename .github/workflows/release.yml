@@ -46,10 +46,14 @@ jobs:
         run: |
           ./scripts/build-wallpaper.ps1
           ./scripts/build-audio.ps1
+          ./scripts/build-screenshot.ps1
           ./scripts/build-taskbar.ps1
       - name: Build Windows installer and validate update metadata
         if: matrix.platform == 'windows'
         run: npm run setup:win
+      - name: Verify packaged Windows app
+        if: matrix.platform == 'windows'
+        run: node checks/windows-smoke.test.cjs
       - name: Build macOS installer
         if: matrix.platform == 'macos'
         run: npm run setup:mac -- ${{ matrix.arch }}

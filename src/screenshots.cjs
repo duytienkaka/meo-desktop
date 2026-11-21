@@ -9,7 +9,7 @@ function createScreenshotFeature({electron,getPet,getPlacement,getWindows,canUse
  const supported=['win32','darwin'].includes(process.platform),temporary=path.join(app.getPath('temp'),'MeoDesktop-photos-'+crypto.randomUUID());
  const leasedFiles=new Set(),sourceReaders=new Map();
  const store=createPhotoStore({onRemove:photo=>{if(photo.file&&!leasedFiles.has(photo.file)&&!sourceReaders.has(photo.file))try{fs.unlinkSync(photo.file);}catch{}}});
- let ocrQueue=Promise.resolve();
+ let recognizing=false;
  let overlays=[],capturing=false,captureRevision=0,captureRestore=[],target=null,busy=false,sharingText=false,lastState='',flightWindows=[],lastAction='';
  function receiveTarget(value){if(value?.own)return;target=value;publish();}
  const bridge=createScreenshotBridge({onTarget:receiveTarget});
@@ -18,20 +18,26 @@ function createScreenshotFeature({electron,getPet,getPlacement,getWindows,canUse
  function publish(){const value=snapshot(),key=JSON.stringify(value);if(key===lastState)return;lastState=key;for(const window of [getPet()])if(window&&!window.isDestroyed())window.webContents.send('meo:shots:state',value);}
  function status(text){lastAction=text;onStatus(text);publish();}
  function requirePet(event){if(!getPet()||event.sender.id!==getPet().webContents.id)throw new Error('Cửa sổ mèo không hợp lệ.');}
+ async function readPendingImages(){
+  if(recognizing||!recognize)return;
+  recognizing=true;
+  try{
+   while(true){
+    const pending=store.list().find(({id})=>store.get(id).text===undefined);
+    if(!pending)break;
+    const photo=store.get(pending.id);
+    try{photo.text=await recognize(photo.image);}
+    catch{photo.text=null;}
+    if(store.has(photo.id))publish();
+   }
+  }finally{recognizing=false;}
+ }
  function addImage(image){
   const full=store.list().length===3,photo=store.add(image);
-  if(!testMode)bridge.start();
-  lastState='';status(full?'Mèo giữ 3 ảnh gần nhất.':'Mèo đang giữ ảnh cho bạn.');
   if(!recognize)photo.text=null;
-  if(recognize)ocrQueue=ocrQueue.then(async()=>{
-   // Skip images that were deleted or displaced while waiting.
-   if(!store.has(photo.id))return;
-   try{
-    const text=await recognize(photo.image);
-    if(!store.has(photo.id))return;
-    photo.text=text;publish();
-   }catch{if(store.has(photo.id)){photo.text=null;publish();}}
-  });
+  if(!testMode)bridge.start();
+  status(full?'Mèo giữ 3 ảnh gần nhất.':'Mèo đang giữ ảnh cho bạn.');
+  void readPendingImages();
   return photo;
  }
  function restoreCapture(){for(const item of captureRestore)if(item.visible&&!item.window.isDestroyed()&&canUse())item.window.showInactive();captureRestore=[];capturing=false;publish();}
@@ -43,12 +49,16 @@ function createScreenshotFeature({electron,getPet,getPlacement,getWindows,canUse
   try{
    await delay(180);if(revision!==captureRevision)return;
    const displays=screen.getAllDisplays(),maxWidth=Math.max(...displays.map(d=>Math.ceil(d.bounds.width*d.scaleFactor))),maxHeight=Math.max(...displays.map(d=>Math.ceil(d.bounds.height*d.scaleFactor)));
-   if(process.platform==='darwin'&&electron.systemPreferences.getMediaAccessStatus('screen')==='denied')throw new Error('Cho phép Mèo tại System Settings → Privacy & Security → Screen Recording, rồi mở lại ứng dụng.');
+   const permission=process.platform==='darwin'?electron.systemPreferences.getMediaAccessStatus('screen'):null;
+   if(permission==='denied'||permission==='restricted')throw new Error('Cho phép Mèo tại System Settings → Privacy & Security → Screen Recording, rồi mở lại ứng dụng.');
    const sources=await desktopCapturer.getSources({types:['screen'],thumbnailSize:{width:maxWidth,height:maxHeight},fetchWindowIcons:false});if(revision!==captureRevision)return;
    for(const display of displays){
     const source=sources.find(s=>s.display_id===String(display.id));if(!source||source.thumbnail.isEmpty())continue;
     const window=new BrowserWindow({...display.bounds,show:false,frame:false,transparent:false,backgroundColor:'#111814',hasShadow:false,resizable:false,movable:false,skipTaskbar:true,alwaysOnTop:true,enableLargerThanScreen:true,title:'Mèo · Chọn vùng chụp',webPreferences:{preload:path.join(__dirname,'capture-preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,backgroundThrottling:false}});
-    const entry={window,display,image:source.thumbnail};overlays.push(entry);window.setMenu(null);window.setBounds(display.bounds,false);window.setAlwaysOnTop(true,'screen-saver');window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());window.on('closed',()=>{if(capturing&&revision===captureRevision)cancelCapture();});window.once('ready-to-show',()=>{if(revision!==captureRevision)return;window.show();if(display.id===screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).id)window.focus();});window.loadFile(path.join(__dirname,'capture.html'));
+    const entry={window,display,image:source.thumbnail};overlays.push(entry);window.setMenu(null);window.setBounds(display.bounds,false);window.setAlwaysOnTop(true,'screen-saver');window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());window.on('closed',()=>{if(capturing&&revision===captureRevision)cancelCapture();});window.once('ready-to-show',()=>{if(revision!==captureRevision)return;window.show();if(display.id===screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).id)window.focus();});window.loadFile(path.join(__dirname,'capture.html')).catch(()=>{
+     if(revision!==captureRevision)return;
+     cancelCapture();status('Chưa mở được cửa sổ chọn vùng chụp. Hãy thử lại.');
+    });
    }
    if(!overlays.length)throw new Error('Chưa chụp được màn hình. Hãy thử lại.');
   }catch(error){if(revision===captureRevision){cancelCapture();status(error.message);}throw error;}

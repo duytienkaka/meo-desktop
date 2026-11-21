@@ -36,3 +36,18 @@ test('new keepsakes persist until viewed and only owned items can be placed',asy
  await features.configure({seenGift:'yarn'});
  assert.deepEqual(createRoomFeatures(directory).snapshot().newGifts,[]);
 });
+test('care remains usable when its data directory is temporarily unwritable',async t=>{
+ const directory=fs.mkdtempSync(path.join(os.tmpdir(),'meo-care-storage-'));
+ t.after(()=>fs.rmSync(directory,{recursive:true,force:true}));
+ const location=path.join(directory,'blocked');
+ fs.writeFileSync(location,'regular file');
+ const errors=[];
+ const features=createRoomFeatures(location,{onError:error=>errors.push(error.code)});
+ assert.doesNotThrow(()=>features.flush());
+ assert.equal(features.interact('food-eaten'),'Đã no · 0 XP');
+ assert.equal(features.snapshot().care.hungry,false);
+ assert.equal(errors.length,2);
+ fs.unlinkSync(location);
+ features.flush();
+ assert.ok(fs.existsSync(path.join(location,'room-features.json')));
+});

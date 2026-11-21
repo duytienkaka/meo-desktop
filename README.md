@@ -48,15 +48,15 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 
 ## Tải xuống và cài ứng dụng
 
-**Bản hiện tại: 1.3.2. Người dùng cài app không cần Node.js hay công cụ lập trình.**
+**Bản hiện tại: 1.3.3. Người dùng cài app không cần Node.js hay công cụ lập trình.**
 
 | Máy của bạn | Bấm để tải | Yêu cầu |
 | --- | --- | --- |
-| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.3.2/Meo-Desktop-Setup-1.3.2-x64.exe)** | Windows 10/11, x64 |
-| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.3.2/Meo-Desktop-1.3.2-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
-| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.3.2/Meo-Desktop-1.3.2-mac-x64.dmg)** | macOS 13 Ventura trở lên |
+| Windows 64-bit | **[⬇ Tải bộ cài Windows (.exe)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.3.3/Meo-Desktop-Setup-1.3.3-x64.exe)** | Windows 10/11, x64 |
+| Mac Apple Silicon — M1 trở lên | **[⬇ Tải bản Mac Apple Silicon (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.3.3/Meo-Desktop-1.3.3-mac-arm64.dmg)** | macOS 13 Ventura trở lên |
+| Mac Intel | **[⬇ Tải bản Mac Intel (.dmg)](https://github.com/duytienkaka/meo-desktop/releases/download/v1.3.3/Meo-Desktop-1.3.3-mac-x64.dmg)** | macOS 13 Ventura trở lên |
 
-[Xem Release 1.3.2 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.3.2) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
+[Xem Release 1.3.3 và SHA-256](https://github.com/duytienkaka/meo-desktop/releases/tag/v1.3.3) · [Tất cả phiên bản](https://github.com/duytienkaka/meo-desktop/releases)
 
 1. Chọn đúng bộ cài trong bảng. Trên Mac, xem loại chip tại menu Apple → **About This Mac** nếu chưa biết chọn bản nào.
 2. **Windows:** mở `.exe` và làm theo trình cài đặt. **Mac:** mở `.dmg`, kéo **Meo.app** vào **Applications**, rồi mở app từ đó.
@@ -68,7 +68,13 @@ Tab lời bài hát của bản 1.0.1; nội dung trong ảnh là dữ liệu ki
 
 ## Tính năng chính
 
-**Mới trong 1.3.2**
+**Mới trong 1.3.3**
+
+- Nút **Cho ăn** đánh thức phòng khi máy đang tiết kiệm pin. Mèo ăn xong vẫn nhận XP theo quy tắc chăm sóc.
+- Nếu công cụ chọn vùng chụp gặp lỗi, mèo hiện lại để bạn thử lại. Ảnh vẫn dùng được khi nhận diện chữ thất bại.
+- Tiến trình chăm sóc được thử lưu lại nếu máy tạm thời không ghi được dữ liệu.
+
+**Từ bản 1.3.2**
 
 - Windows tự căn sóng nhạc về đúng vị trí taskbar sau khi thoát toàn màn hình hoặc khi cửa sổ sóng bị dịch chuyển.
 - Khi không gắn được phòng vào desktop Windows, app thử lại một lần. Nếu vẫn lỗi, nút Cho ăn vẫn dùng được ngoài phòng và giữ nguyên quy tắc XP.
@@ -225,7 +231,7 @@ Phần này dành cho **người phát triển**. Nếu chỉ muốn dùng app, 
    npm start -- --background
    ```
 
-Mã tương ứng với bộ cài 1.3.2 nằm ở [tag v1.3.2](https://github.com/duytienkaka/meo-desktop/tree/v1.3.2). Dùng `git switch --detach v1.3.2` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
+Mã tương ứng với bộ cài 1.3.3 nằm ở [tag v1.3.3](https://github.com/duytienkaka/meo-desktop/tree/v1.3.3). Dùng `git switch --detach v1.3.3` nếu muốn xem đúng source bản phát hành; khi phát triển, tạo nhánh riêng theo [GIT-GUIDE.md](GIT-GUIDE.md).
 
 ### Kiểm tra và đóng gói
 
