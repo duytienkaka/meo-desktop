@@ -78,6 +78,7 @@ const root=path.resolve(__dirname,'..'),env={...process.env};delete env.ELECTRON
  }
  assert.equal(await toggle.innerText(),inside?'↗\nRa phòng':'↗\nVào phòng');
  }
+ await settings.evaluate(()=>window.settings.update({roomPinned:false}));
  await app.evaluate(({powerMonitor})=>{powerMonitor.isOnBatteryPower=()=>true;});
  await room.waitForFunction(()=>window.meoRoom.snapshot().state.paused);
  assert.equal(await notes.isVisible(),true);
@@ -91,19 +92,34 @@ const root=path.resolve(__dirname,'..'),env={...process.env};delete env.ELECTRON
  assert.equal(await app.evaluate(()=>global.__meo.roomOpenCalls.length),2);
  assert.equal(await settings.locator('[data-room]').count(),0);
  assert.equal(await settings.locator('[data-room-play]').count(),3);
- await app.evaluate(({powerMonitor})=>{powerMonitor.isOnBatteryPower=()=>false;});
- await settings.evaluate(()=>window.settings.update({roomFeed:true}));
+ // The in-room feeding button must remain usable on a battery-powered laptop.
+ await input.waitForFunction(()=>targets.some(t=>t.kind==='feed'));
+ const hungryButton=await room.locator('#cat-hunger').boundingBox();
+ await input.mouse.click(hungryButton.x+hungryButton.width/2,hungryButton.y+hungryButton.height/2);
+
+ await room.waitForFunction(()=>!window.meoRoom.snapshot().state.paused);
  await room.waitForFunction(()=>!document.querySelector('#food-bowl').hidden&&window.meoRoom.snapshot().pose?.target==='food');
  await input.waitForFunction(()=>targets.some(t=>t.kind==='food'));
  const foodBox=await room.locator('#food-bowl').boundingBox();
  // A cat hit region can overlap the bowl as it approaches. The visible bowl wins.
  await input.evaluate(box=>targets.unshift({kind:'pet',x:box.x,y:box.y,width:box.width,height:box.height}),foodBox);
- await input.mouse.move(foodBox.x+foodBox.width/2,foodBox.y+foodBox.height/2);await input.mouse.down();
+ const foodCenter={x:foodBox.x+foodBox.width/2,y:foodBox.y+foodBox.height/2};
+ await app.evaluate(({screen},point)=>{
+  const b=screen.getPrimaryDisplay().bounds;
+  global.__meo.cursor={x:point.x+b.x,y:point.y+b.y};
+ },foodCenter);
+ await room.waitForFunction(point=>{
+  const actual=window.meoRoom.snapshot().state.cursor;
+  return actual?.x===point.x&&actual?.y===point.y;
+ },foodCenter);
+ await input.mouse.move(foodCenter.x,foodCenter.y);await input.mouse.down();
+ assert.equal(await input.evaluate(()=>foodDrag),true,'pointer grabbed visible bowl');
  await input.mouse.move(scene.x+scene.width*.7,scene.y+scene.height*.94,{steps:8});
  await room.waitForFunction(()=>Math.abs(window.ROOM_FEATURES.foodPoint().x-.7)<.01);
  assert.equal(await room.evaluate(()=>window.meoRoom.snapshot().mealAge),null,'held bowl cannot start a meal');
  await input.mouse.move(scene.x+scene.width*.4,scene.y+scene.height*.94,{steps:8});
  await input.mouse.up();
+ await app.evaluate(()=>{global.__meo.cursor=null;});
  await room.waitForFunction(()=>Math.abs(window.ROOM_FEATURES.foodPoint().x-.4)<.01);
  await room.waitForFunction(()=>window.meoRoom.snapshot().mealAge!==null&&document.querySelector('#food-bowl').hidden,null,{timeout:24000});
  await input.waitForFunction(()=>!targets.some(t=>t.kind==='food'));
@@ -133,5 +149,5 @@ const root=path.resolve(__dirname,'..'),env={...process.env};delete env.ELECTRON
  assert.match(await room.locator('#souvenir-card').innerText(),/Chuông nhỏ/);
  await room.screenshot({path:path.join(root,'.cache/room-features-preview.png')});
  assert.deepEqual(errors,[]);
- console.log('PASS: Settings ball, visible pounce, tease, affection, automatic room entry music table playback, room-only player opening, battery mode and no renderer errors.');
+ console.log('PASS: Settings ball, visible pounce, tease, affection, automatic room entry music table playback, room-only player opening, battery mode, feeding on battery and no renderer errors.');
 })().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{await app?.close();});

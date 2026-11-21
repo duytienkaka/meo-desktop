@@ -130,7 +130,7 @@
   document.body.classList.toggle('rose-room',f.roomTheme==='rose'&&(f.care?.highest||1)>=5);
   bowl.hidden=!bowlVisible||eating!==null;
   bowl.style.left=(foodPosition.x*100)+'%';bowl.style.top=(foodPosition.y*100)+'%';
-  hunger.hidden=!f.care||!s.showPet||!s.interactive||s.paused||bowlVisible||eating!==null;
+  hunger.hidden=!f.care||!s.showPet||!s.interactive||(s.paused&&!s.canFeedOnBattery)||bowlVisible||eating!==null;
   hunger.textContent=f.care?.hungry?'Cho ăn':'Cho ăn thêm';
   if(pet){hunger.style.left=(pet.x+pet.width*.5)+'px';hunger.style.top=(pet.y-30)+'px';}
   const on=f.lamp==='on'||(f.lamp==='auto'&&autoLamp);
@@ -149,11 +149,14 @@
 
  }
  function targets(s){
-  if(!s.roomInside||!s.showPet||!s.interactive||s.paused)return [];
-  const entries=[['lamp',document.querySelector('#object-lamp')],['souvenirs',shelf]];
-  if(!hunger.hidden)entries.unshift(['feed',hunger]);
-  if(bowlVisible&&eating===null)entries.unshift(['food',bowl]);
-  if(current.due)for(const button of reminder.querySelectorAll('button'))entries.push([button.dataset.feature,button]);
+  if(!s.roomInside||!s.showPet||!s.interactive)return [];
+  const entries=[];
+  if(!hunger.hidden)entries.push(['feed',hunger]);
+  if(!s.paused){
+   entries.push(['lamp',document.querySelector('#object-lamp')],['souvenirs',shelf]);
+   if(bowlVisible&&eating===null)entries.unshift(['food',bowl]);
+   if(current.due)for(const button of reminder.querySelectorAll('button'))entries.push([button.dataset.feature,button]);
+  }
   return entries.map(([kind,el])=>{const {x,y,width,height}=el.getBoundingClientRect();return{kind,x,y,width,height};});
  }
  window.ROOM_FEATURES={food,bowl,stepMeal,get mealAge(){return eating;},foodPoint:()=>foodPosition,destination,render,targets,inspect(){inspection=!inspection;}};
