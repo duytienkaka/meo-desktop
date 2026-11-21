@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path');
 const {common,rare}=require('./keepsakes.js');
-function createRoomFeatures(directory){
+function createRoomFeatures(directory,{onError=()=>{}}={}){
  const file=path.join(directory,'room-features.json');let saved={};try{saved=JSON.parse(fs.readFileSync(file,'utf8'));}catch{}
  const data={lamp:'auto',city:null,breakMinutes:0,interactions:0,unlocked:[],seenGifts:null,decoration:null,...saved};
  const care=require('./care.cjs').createCare(data.care);
@@ -32,10 +32,11 @@ function createRoomFeatures(directory){
   if('lamp' in p){if(!['auto','on','off'].includes(p.lamp))throw new Error('Đèn không hợp lệ.');data.lamp=p.lamp;}
   save();
  }
+ function flush(){try{save();}catch(error){onError(error);}}
  function tick(active,running=true){
   const now=performance.now(),elapsed=(now-careClock)/1000;careClock=now;
   if(running&&elapsed<5)care.tick(elapsed);
-  if(now-lastCareSave>60000){lastCareSave=now;save();}
+  if(now-lastCareSave>60000){lastCareSave=now;flush();}
   if(data.breakMinutes&&!dueAt)dueAt=Date.now()+data.breakMinutes*60000;
   if(active&&data.city&&!busy&&Date.now()>nextWeather){
    busy=true;nextWeather=Date.now()+900000;const token=revision,c=data.city;
@@ -45,7 +46,7 @@ function createRoomFeatures(directory){
  function interact(k){
 
   if(k==='break-done'||k==='break-snooze'){dueAt=data.breakMinutes?Date.now()+(k==='break-snooze'?5:data.breakMinutes)*60000:0;return;}
-  if(k==='lamp'){data.lamp=data.lamp==='off'?'on':'off';save();return;}
+  if(k==='lamp'){data.lamp=data.lamp==='off'?'on':'off';flush();return;}
   const feeding=k==='food-eaten',now=Date.now();
   if(!feeding&&(!['pet','tease','ball'].includes(k)||now-lastReward<10000))return;
   const before=owned(),previous=care.snapshot();
@@ -61,7 +62,7 @@ function createRoomFeatures(directory){
    ...received.map(item=>'Nhận '+item.name),
    previous.highest<5&&progress.highest>=5?'Mở Phòng chiều hồng':null].filter(Boolean).join(' · ');
   if(message)notice={message,until:now+4500};
-  save();
+  flush();
   return message;
  }
  function snapshot(){
@@ -69,6 +70,6 @@ function createRoomFeatures(directory){
   const unlocked=owned();
   return {...data,care:progress,unlocked,newGifts:unlocked.filter(id=>!data.seenGifts.includes(id)),notice:notice?.until>Date.now()?notice:null,weather,due:!!(dueAt&&Date.now()>=dueAt)};
  }
- return {configure,interact,tick,flush:save,snapshot};
+ return {configure,interact,tick,flush,snapshot};
 }
 module.exports={createRoomFeatures};

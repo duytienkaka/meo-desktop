@@ -8,8 +8,20 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   desktopCapturer.getSources=async()=>screen.getAllDisplays().map(d=>({display_id:String(d.id),thumbnail:global.__baseImage.resize({width:Math.round(d.bounds.width*d.scaleFactor),height:Math.round(d.bounds.height*d.scaleFactor)})}));
   global.__meo.setVisible(true);global.__meo.setMode('play');global.__meo.setPaused(true);const area=global.__meo.state().display.workArea;global.__meo.placeFree({x:area.x+area.width/2,y:area.y+area.height*.7});
  });
+ // A failed capture renderer must restore the pet and leave a subsequent capture usable.
+ await desktop.evaluate(async({BrowserWindow})=>{
+  const load=BrowserWindow.prototype.loadFile;
+  BrowserWindow.prototype.loadFile=function(file,...args){
+   if(file.endsWith('capture.html'))return Promise.reject(new Error('Capture renderer could not load'));
+   return load.call(this,file,...args);
+  };
+  try{await global.__meo.screenshots.capture();}
+  finally{BrowserWindow.prototype.loadFile=load;}
+ });
+ await pet.waitForFunction(async()=>{const value=await window.meo.shots.get();return !value.capturing&&value.message.includes('cửa sổ chọn vùng');});
+ assert.equal(await desktop.evaluate(()=>global.__meo.window().isVisible()),true);
  const opened=desktop.waitForEvent('window');await desktop.evaluate(()=>global.__meo.screenshots.capture());const overlay=await opened;await overlay.waitForFunction(()=>document.querySelector('#screen').naturalWidth>0);await overlay.waitForTimeout(150);await overlay.mouse.move(40,120);await overlay.mouse.down();await overlay.mouse.move(240,220,{steps:8});await overlay.mouse.up();await pet.waitForFunction(()=>document.querySelector('#send-photos').textContent==='Đưa 1 ảnh ↗');
- assert.equal(desktop.windows().length,1);await desktop.evaluate(()=>{for(let i=0;i<3;i++)global.__meo.screenshots.addImage(global.__baseImage.resize({width:160+i*20,height:120+i*10}));});await pet.waitForFunction(()=>document.querySelector('#send-photos').textContent==='Đưa 3 ảnh ↗');assert.equal(desktop.windows().length,1);assert.equal(await pet.locator('#photo-pocket > button:visible').count(),1);assert.equal(await pet.locator('#pocket-photos').count(),0);const bounds=await pet.locator('#photo-pocket').boundingBox();assert.ok(bounds.width<=90&&bounds.height<=58);assert.equal((await desktop.evaluate(()=>global.__meo.screenshots.snapshot())).photos.length,3);
+ assert.equal(desktop.windows().length,1);await desktop.evaluate(()=>{for(let i=0;i<3;i++)global.__meo.screenshots.addImage(global.__baseImage.resize({width:160+i*20,height:120+i*10}));});await pet.waitForFunction(()=>document.querySelector('#send-photos').textContent==='Đưa 3 ảnh ↗');assert.equal(desktop.windows().length,1);await pet.locator('#photo-pocket').waitFor({state:'visible'});assert.equal(await pet.locator('#photo-pocket > button:visible').count(),1);assert.equal(await pet.locator('#pocket-photos').count(),0);const bounds=await pet.locator('#photo-pocket').boundingBox();assert.ok(bounds.width<=90&&bounds.height<=58);assert.equal((await desktop.evaluate(()=>global.__meo.screenshots.snapshot())).photos.length,3);
  await pet.screenshot({path:path.join(__dirname,'screenshots/pet-compact-photo-stack.png')});
  // A separate Chromium receiver verifies actual paste events carry all PNG files together.
  fs.writeFileSync(path.join(temp,'package.json'),JSON.stringify({name:'meo-photo-paste-receiver',main:'main.cjs'}));
@@ -54,7 +66,10 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  assert.equal(await desktop.evaluate(({clipboard})=>clipboard.readText()),'https://example.org/help');
  await card.locator('#review-text').evaluate(el=>el.setSelectionRange(0,12));
  await card.locator('#review-pair').click();
- await input.waitForFunction(()=>window.received.length===1&&window.textEvents.includes('ERR_TEST_123'));
+ await input.waitForFunction(()=>window.received.length===1&&window.textEvents.includes('ERR_TEST_123'),null,{timeout:10000}).catch(async error=>{
+  console.error(await card.locator('#error').textContent(),await input.evaluate(()=>({files:window.received,texts:window.textEvents})));
+  throw error;
+ });
  assert.equal(await input.evaluate(()=>window.enters),0);
  await card.locator('#review-attach').check();
  await card.locator('#review-save').click();
